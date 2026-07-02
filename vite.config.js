@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 import { cloudflare } from "@cloudflare/vite-plugin";
 
 const pad = (n) => String(n).padStart(2, '0')
-const now = new Date()
+const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Budapest"}))
 const version = `v${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
 
 export default defineConfig({
