@@ -5,7 +5,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 
 const pad = (n) => String(n).padStart(2, '0')
 const now = new Date()
-const version = `v${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())} (CI/CD Automatikus Frissítés)`
+const version = `v${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
 
 export default defineConfig({
   define: {
