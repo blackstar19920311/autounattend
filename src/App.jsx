@@ -225,7 +225,7 @@ export default function App() {
           <div className="scrollable-sections" onScroll={handleMainScroll}>
           <UserManual />
           <div id="presets"><PresetsSection config={config} setConfig={updateConfig} resetPresetRef={resetPresetRef} /></div>
-          <div id="system-info"><SystemInfoSection config={config} setConfig={updateConfig} /></div>
+          <div id="system-info"><SystemInfoSection config={config} setConfig={updateConfig} errors={errors} /></div>
           <div id="partitioning"><PartitionSection config={config} setConfig={updateConfig} errors={errors} /></div>
           <div id="bypasses"><BypassSection config={config} setConfig={updateConfig} /></div>
           <div id="wifi"><WifiSection config={config} setConfig={updateConfig} errors={errors} /></div>
