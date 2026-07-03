@@ -249,7 +249,7 @@ export const translations = {
     'tt.personalizationDesc': 'Az asztali ikonok megjelenítése, a tálca vizuális tisztítása és a Start menü funkcióinak testreszabása (pl. áttetszőség és webes keresés kikapcsolása).',
     'tt.privacyDesc': 'A Windows diagnosztikai adatgyűjtésének csökkentése, az Edge üdvözlőképernyőjének és a Fiókfelügyelet (UAC) letiltása. Figyelem: az UAC kikapcsolása biztonsági kockázatot jelenthet!',
     'tt.performanceDesc': 'A gyorsindítás, az automatikus alvó állapot és az egérgyorsítás letiltása a jobb rendszerteljesítmény és a precízebb egérmozgás érdekében.',
-    'tt.csDesc': 'A telepítés után automatikusan lefutó műveletek, mint a frissítések letöltése, alkalmazások (Winget, Office) telepítése, és a számítógép tartományba léptetése.',
+    'tt.csDesc': 'A telepítés után automatikusan lefutó műveletek, mint a frissítések letöltése, különböző alkalmazások és az Office csomag telepítése, valamint a számítógép tartományba léptetése.',
     'tt.bloatwareDesc': 'A Windows előre telepített alkalmazásainak (bloatware) eltávolítása. A kiválasztott programok már a telepítés során törlésre kerülnek, így nem foglalják a helyet és az erőforrásokat.'
 
   },
@@ -503,7 +503,7 @@ export const translations = {
     'tt.personalizationDesc': 'Customize desktop icons, clean up the taskbar, and modify Start menu features (e.g., disabling transparency and web search).',
     'tt.privacyDesc': 'Reduce Windows diagnostic data collection and disable the Edge welcome screen and User Account Control (UAC). Warning: Disabling UAC may present a security risk!',
     'tt.performanceDesc': 'Disable fast startup, automatic sleep mode, and mouse acceleration for better system performance and accurate mouse tracking.',
-    'tt.csDesc': 'Post-installation tasks that run automatically, such as downloading updates, installing applications (Winget, Office), and joining a domain.',
+    'tt.csDesc': 'Post-installation tasks that run automatically, such as downloading updates, installing various applications and the Office suite, and joining a domain.',
     'tt.bloatwareDesc': 'Removes pre-installed Windows applications (bloatware). The selected apps will be removed during setup, saving disk space and system resources.'
 
   }
