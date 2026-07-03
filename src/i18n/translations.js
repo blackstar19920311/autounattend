@@ -501,7 +501,7 @@ export const translations = {
   'presets.sub.media2.desc': 'PC Name: MEDIA2-',
 
     'tt.bypassDesc': 'Bypass Windows 11 hardware, network, and license requirements. This is especially useful when installing on officially unsupported hardware or setting up with an offline local account.',
-    'tt.systemInfoDesc': 'Configure the computer name, Windows product key, regional and language settings, and additional keyboard layouts.',
+    'tt.systemInfoDesc': 'Configure the computer name, Windows product key, and regional and language settings.',
     'tt.userAccountDesc': 'Configure the local administrator account settings. This includes the option to bypass the password prompt for automatic login.',
     'tt.presetsDesc': 'Load pre-configured profiles that automatically fill out the form for the most common use cases with a single click.',
     'tt.wifiDesc': 'Configure the Wi-Fi connection behavior during setup, including automatic connection, manual network selection, or completely skipping the network setup.',
