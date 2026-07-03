@@ -25,7 +25,7 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
   ];
 
   return (
-    <Card title={t('part.title')} icon={<HardDrive size={20} />}>
+    <Card title={t('part.title')} icon={<HardDrive size={20} / tooltip={t('tt.partitionDesc')}>}>
       <SegmentedControl
         label={t('part.mode')}
         options={partitionModeOptions}
@@ -38,7 +38,6 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
           <Toggle
             label={t('part.fullWipe')}
             description={t('part.fullWipe.desc')}
-            tooltip={t('tt.partFullWipe')}
             checked={partitioning.fullWipe}
             onChange={(checked) => updatePartitioning({ fullWipe: checked })}
           />

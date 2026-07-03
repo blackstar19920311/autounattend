@@ -12,11 +12,10 @@ export default function PrivacySection({ config, setConfig }) {
   };
 
   return (
-    <Card title={t('section.privacy')} icon={<EyeOff size={20} />}>
+    <Card title={t('section.privacy')} icon={<EyeOff size={20} / tooltip={t('tt.privacyDesc')}>}>
       <Toggle
         label={t('privacy.telemetry.title')}
         description={t('privacy.telemetry.desc')}
-        tooltip={t('tt.disableTelemetry')}
         checked={config.disableTelemetry}
         onChange={handleToggle('disableTelemetry')}
         id="disableTelemetry"
@@ -24,7 +23,6 @@ export default function PrivacySection({ config, setConfig }) {
       <Toggle
         label={t('privacy.edgeFirstRun')}
         description={t('privacy.edgeFirstRun.desc')}
-        tooltip={t('tt.edgeFirstRun')}
         checked={config.disableEdgeFirstRun}
         onChange={handleToggle('disableEdgeFirstRun')}
         id="disableEdgeFirstRun"
@@ -32,7 +30,6 @@ export default function PrivacySection({ config, setConfig }) {
       <Toggle
         label={t('privacy.uac.title')}
         description={t('privacy.uac.desc')}
-        tooltip={t('tt.disableUAC')}
         checked={config.disableUAC}
         onChange={handleToggle('disableUAC')}
         id="disableUAC"

@@ -13,7 +13,7 @@ export default function SystemInfoSection({ config, setConfig }) {
   };
 
   return (
-    <Card title={t('sysinfo.title')} icon={<Monitor size={20} />}>
+    <Card title={t('sysinfo.title')} icon={<Monitor size={20} / tooltip={t('tt.systemInfoDesc')}>}>
       <div className="form-group">
         <SegmentedControl
           label={t('sysinfo.arch')}
@@ -35,7 +35,6 @@ export default function SystemInfoSection({ config, setConfig }) {
         id="addEnglishKeyboard"
         label={t('sysinfo.kb')}
         description={t('sysinfo.kb.desc')}
-        tooltip={t('tt.kb')}
         checked={config.addEnglishKeyboard}
         onChange={(value) => setConfig((prev) => ({ ...prev, addEnglishKeyboard: value }))}
       />
