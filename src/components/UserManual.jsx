@@ -66,6 +66,11 @@ export default function UserManual() {
                     <li>A telepítés során a gép többször is újraindulhat magától. Ez normális.</li>
                     <li>Az egyéni szkriptek (pl. alkalmazások letöltése, takarítás) az <strong>első felhasználói bejelentkezéskor</strong> fognak lefutni egy fekete parancssor ablakban. Kérlek, <strong>ne zárd be</strong> ezt az ablakot, várd meg amíg magától befejezi a munkát és eltűnik! Minden egyes szkript lefutása után egy felugró ablak (PowerShell popup) tájékoztat majd arról, hogy az adott telepítés sikeres vagy sikertelen volt.</li>
                   </ul>
+                <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
+                  <strong>⚠️ Kiemelten fontos:</strong>
+                  <p style={{ margin: 0 }}>
+                    Kérjük, <strong>várja meg az összes szkript lefutását és a felugró üzeneteket</strong>, mielőtt használni kezdené a gépet vagy újraindítaná azt! Ellenkező esetben a háttérben futó folyamatok megszakadhatnak, és a telepítés nem lesz teljes.
+                  </p>
                 </div>
               </>
             ) : (
@@ -94,6 +99,12 @@ export default function UserManual() {
                     <li>The computer may restart several times during the installation. This is normal.</li>
                     <li>Custom scripts (e.g., app downloads, cleanup) will run in a black command prompt window upon the <strong>first user login</strong>. Please <strong>do not close</strong> this window; wait until it finishes its tasks and closes automatically! After each script runs, a popup message (PowerShell popup) will appear informing you whether the installation was successful or unsuccessful.</li>
                   </ul>
+                </div>
+                <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
+                  <strong>⚠️ Extremely Important:</strong>
+                  <p style={{ margin: 0 }}>
+                    Please <strong>wait for all scripts to finish and all popup messages to appear</strong> before starting to use the computer or restarting it! Otherwise, the background processes may be interrupted and the installation will be incomplete.
+                  </p>
                 </div>
               </>
             )}
