@@ -9,7 +9,7 @@ A modern, fast, and user-friendly web application to generate custom `autounatte
 ## 🚀 Live Demo
 
 You can access the live version of this application here:
-- **[Primary: Cloudflare Pages](https://autounattend.pages.dev/)**
+- **[Primary: Cloudflare Pages](https://autounattend.banyai.workers.dev/)**
 - **[Mirror: GitHub Pages](https://blackstar19920311.github.io/autounattend/)**
 
 *(Both environments are automatically synced and deployed via GitHub Actions.)*
