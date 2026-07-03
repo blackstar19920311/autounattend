@@ -242,7 +242,7 @@ export const translations = {
 
     'tt.bypassDesc': 'A Windows 11 telepítésének hardveres, hálózati és licenc feltételeinek megkerülése. Hasznos, ha hivatalosan nem támogatott hardverre, vagy offline helyi fiókkal telepíted a rendszert.',
     'tt.systemInfoDesc': 'A számítógép neve, a Windows termékkulcs, a nyelvi és területi beállítások, valamint a kiegészítő billentyűzetkiosztások módosítása.',
-    'tt.userAccountDesc': 'Az automatikusan létrejövő helyi rendszergazda fiók beállításai. Jelszó nélküliség és automatikus bejelentkezés is bekapcsolható.',
+    'tt.userAccountDesc': 'Az automatikusan létrejövő helyi rendszergazda fiók beállításai. Opcionálisan bekapcsolható az automatikus bejelentkezés a jelszókérés megkerülésével.',
     'tt.presetsDesc': 'Előre elkészített beállítás-csomagok, amelyek egy kattintással kitöltik az űrlapot a leggyakoribb felhasználási szokásokhoz.',
     'tt.wifiDesc': 'A Wi-Fi hálózathoz való csatlakozás viselkedésének beállítása a telepítés során (automatikus csatlakozás, hálózatválasztás vagy a hálózati beállítások teljes kihagyása).',
     'tt.partitionDesc': 'A kiválasztott meghajtó particionálási szabályai. Figyelem: a "Teljes lemeztörlés" (CLEAN ALL) opció SSD-n csökkentheti az élettartamot, így csak indokolt esetben javasolt!',
@@ -496,7 +496,7 @@ export const translations = {
 
     'tt.bypassDesc': 'Bypasses Windows 11 hardware, network, and license requirements. Useful when installing on officially unsupported hardware or setting up with an offline local account.',
     'tt.systemInfoDesc': 'Configure the computer name, Windows product key, regional and language settings, and additional keyboard layouts.',
-    'tt.userAccountDesc': 'Configure the local administrator account settings. You can also enable automatic login or passwordless entry.',
+    'tt.userAccountDesc': 'Configure the local administrator account settings. You can optionally bypass the password prompt for automatic login.',
     'tt.presetsDesc': 'Pre-configured settings profiles that automatically fill out the form for the most common use cases with a single click.',
     'tt.wifiDesc': 'Configure Wi-Fi connection behavior during setup (connect automatically, choose manually, or skip network setup completely).',
     'tt.partitionDesc': 'Partitioning rules for the selected drive. Warning: The "Full Wipe" (CLEAN ALL) option on SSDs can reduce lifespan, use only when strictly necessary!',
