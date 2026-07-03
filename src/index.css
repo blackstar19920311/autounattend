@@ -1567,3 +1567,58 @@ body, html { margin: 0; padding: 0; height: 100vh; overflow: hidden; }
     justify-content: center;
   }
 }
+
+/* --- Tooltips --- */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  cursor: help;
+  transition: color 0.2s ease;
+  z-index: 10;
+}
+.tooltip-container:hover {
+  color: var(--accent);
+}
+.tooltip-text {
+  position: absolute;
+  bottom: 140%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: normal;
+  line-height: 1.4;
+  white-space: normal;
+  width: max-content;
+  max-width: 280px;
+  box-shadow: var(--shadow-elevated);
+  border: 1px solid var(--border-color);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 100;
+  text-align: center;
+}
+.tooltip-text::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--border-color) transparent transparent transparent;
+}
+.tooltip-container:hover .tooltip-text {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+

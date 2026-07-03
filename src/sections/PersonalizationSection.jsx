@@ -34,30 +34,35 @@ export default function PersonalizationSection({ config, setConfig }) {
       <div className="checkbox-group">
         <Checkbox
           label={t('pers.desktopIcons.computer')}
+          tooltip={t('tt.iconsComputer')}
           checked={config.desktopIcons.computer}
           onChange={handleDesktopIcon('computer')}
           id="icon-computer"
         />
         <Checkbox
           label={t('pers.desktopIcons.recycleBin')}
+          tooltip={t('tt.iconsRecycleBin')}
           checked={config.desktopIcons.recycleBin}
           onChange={handleDesktopIcon('recycleBin')}
           id="icon-recycleBin"
         />
         <Checkbox
           label={t('pers.desktopIcons.userFiles')}
+          tooltip={t('tt.iconsUserFiles')}
           checked={config.desktopIcons.userFiles}
           onChange={handleDesktopIcon('userFiles')}
           id="icon-userFiles"
         />
         <Checkbox
           label={t('pers.desktopIcons.controlPanel')}
+          tooltip={t('tt.iconsControlPanel')}
           checked={config.desktopIcons.controlPanel}
           onChange={handleDesktopIcon('controlPanel')}
           id="icon-controlPanel"
         />
         <Checkbox
           label={t('pers.desktopIcons.network')}
+          tooltip={t('tt.iconsNetwork')}
           checked={config.desktopIcons.network}
           onChange={handleDesktopIcon('network')}
           id="icon-network"
@@ -75,6 +80,7 @@ export default function PersonalizationSection({ config, setConfig }) {
       <Toggle
         label={t('pers.taskbar.hideIcons')}
         description={t('pers.taskbar.hideIcons.desc')}
+        tooltip={t('tt.hideTaskbarIcons')}
         checked={config.hideTaskbarIcons}
         onChange={handleToggle('hideTaskbarIcons')}
         id="hideTaskbarIcons"
@@ -82,6 +88,7 @@ export default function PersonalizationSection({ config, setConfig }) {
       <Toggle
         label={t('pers.transparency')}
         description={t('pers.transparency.desc')}
+        tooltip={t('tt.transparency')}
         checked={config.disableTransparency}
         onChange={handleToggle('disableTransparency')}
         id="disableTransparency"
@@ -91,12 +98,14 @@ export default function PersonalizationSection({ config, setConfig }) {
       <h3 className="subsection">{t('pers.startMenu')}</h3>
       <Toggle
         label={t('pers.startMenu.hideRecent')}
+        tooltip={t('tt.hideRecent')}
         checked={config.hideRecentApps}
         onChange={handleToggle('hideRecentApps')}
         id="hideRecentApps"
       />
       <Toggle
         label={t('pers.startMenu.hideMostUsed')}
+        tooltip={t('tt.hideMostUsed')}
         checked={config.hideMostUsedApps}
         onChange={handleToggle('hideMostUsedApps')}
         id="hideMostUsedApps"
@@ -104,6 +113,7 @@ export default function PersonalizationSection({ config, setConfig }) {
       <Toggle
         label={t('pers.startMenu.hideRecommended')}
         description={t('pers.startMenu.hideRecommended.desc')}
+        tooltip={t('tt.hideRecommended')}
         checked={config.hideRecommendedFiles}
         onChange={handleToggle('hideRecommendedFiles')}
         id="hideRecommendedFiles"
@@ -111,6 +121,7 @@ export default function PersonalizationSection({ config, setConfig }) {
       <Toggle
         label={t('pers.startMenu.hideTips')}
         description={t('pers.startMenu.hideTips.desc')}
+        tooltip={t('tt.hideTips')}
         checked={config.hideTipsAndSuggestions}
         onChange={handleToggle('hideTipsAndSuggestions')}
         id="hideTipsAndSuggestions"
@@ -118,6 +129,7 @@ export default function PersonalizationSection({ config, setConfig }) {
       <Toggle
         label={t('pers.startMenu.disableWebSearch')}
         description={t('pers.startMenu.disableWebSearch.desc')}
+        tooltip={t('tt.disableWebSearch')}
         checked={config.disableWebSearch}
         onChange={handleToggle('disableWebSearch')}
         id="disableWebSearch"
@@ -125,6 +137,7 @@ export default function PersonalizationSection({ config, setConfig }) {
       <Toggle
         label={t('pers.startMenu.cleanPins')}
         description={t('pers.startMenu.cleanPins.desc')}
+        tooltip={t('tt.cleanPins')}
         checked={config.cleanStartPins}
         onChange={handleToggle('cleanStartPins')}
         id="cleanStartPins"

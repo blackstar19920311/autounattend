@@ -35,6 +35,7 @@ export default function SystemInfoSection({ config, setConfig }) {
         id="addEnglishKeyboard"
         label={t('sysinfo.kb')}
         description={t('sysinfo.kb.desc')}
+        tooltip={t('tt.kb')}
         checked={config.addEnglishKeyboard}
         onChange={(value) => setConfig((prev) => ({ ...prev, addEnglishKeyboard: value }))}
       />

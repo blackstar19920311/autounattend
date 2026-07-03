@@ -17,6 +17,7 @@ export default function BypassSection({ config, setConfig }) {
       <Toggle
         label={t('bypass.hardware')}
         description={t('bypass.hardware.desc')}
+        tooltip={t('tt.bypassHardware')}
         checked={config.bypassHardware}
         onChange={handleToggle('bypassHardware')}
         id="bypassHardware"
@@ -24,6 +25,7 @@ export default function BypassSection({ config, setConfig }) {
       <Toggle
         label={t('bypass.network')}
         description={t('bypass.network.desc')}
+        tooltip={t('tt.bypassNetwork')}
         checked={config.bypassNetwork}
         onChange={handleToggle('bypassNetwork')}
         id="bypassNetwork"
@@ -31,6 +33,7 @@ export default function BypassSection({ config, setConfig }) {
       <Toggle
         label={t('bypass.eula')}
         description={t('bypass.eula.desc')}
+        tooltip={t('tt.bypassEula')}
         checked={config.autoAcceptEula}
         onChange={handleToggle('autoAcceptEula')}
         id="autoAcceptEula"

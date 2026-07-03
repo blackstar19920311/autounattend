@@ -50,6 +50,7 @@ export default function UserAccountSection({ config, setConfig, errors = {} }) {
           <div className="computer-name-separator" />
           <Checkbox
             label={t('user.randomSuffix')}
+            tooltip={t('user.suffix.desc')}
             checked={config.randomSuffix}
             onChange={(value) => setConfig((prev) => ({ ...prev, randomSuffix: value }))}
             id="random-suffix"
@@ -96,6 +97,7 @@ export default function UserAccountSection({ config, setConfig, errors = {} }) {
         id="autoLogin"
         label={t('user.autoLogin')}
         description={t('user.autoLogin.desc')}
+        tooltip={t('tt.autoLogin')}
         checked={config.autoLogin}
         onChange={(value) => setConfig((prev) => ({ ...prev, autoLogin: value }))}
         disabled={!config.username}

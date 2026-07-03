@@ -16,6 +16,7 @@ export default function PerformanceSection({ config, setConfig }) {
       <Toggle
         label={t('perf.fastStartup')}
         description={t('perf.fastStartup.desc')}
+        tooltip={t('tt.fastStartup')}
         checked={config.disableFastStartup}
         onChange={handleToggle('disableFastStartup')}
         id="disableFastStartup"
@@ -23,6 +24,7 @@ export default function PerformanceSection({ config, setConfig }) {
       <Toggle
         label={t('perf.sleep')}
         description={t('perf.sleep.desc')}
+        tooltip={t('tt.sleep')}
         checked={config.disableSleep}
         onChange={handleToggle('disableSleep')}
         id="disableSleep"
@@ -30,6 +32,7 @@ export default function PerformanceSection({ config, setConfig }) {
       <Toggle
         label={t('perf.mouseAccel')}
         description={t('perf.mouseAccel.desc')}
+        tooltip={t('tt.mouseAccel')}
         checked={config.disableMouseAcceleration}
         onChange={handleToggle('disableMouseAcceleration')}
         id="disableMouseAcceleration"

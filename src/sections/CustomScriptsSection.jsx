@@ -198,7 +198,8 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
     <Card title={t('cs.title')} icon={<Code size={20} />}>
       <Toggle
         label={t('cs.update')}
-        description={t('cs.windowsUpdate.desc')}
+        description={t('cs.update.desc')}
+        tooltip={t('tt.csUpdate')}
         checked={!!data.windowsUpdate}
         onChange={handleBooleanToggle('windowsUpdate')}
         id="cs-windowsUpdate"
@@ -207,6 +208,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
       <Toggle
         label={t('cs.winget')}
         description={t('cs.winget.desc')}
+        tooltip={t('tt.csWinget')}
         checked={data.wingetApps !== 'none'}
         onChange={handleToggle('wingetApps', config.usePresets ? 'versionA' : 'custom')}
         id="cs-wingetApps"
@@ -266,6 +268,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
       <Toggle
         label={t('cs.office')}
         description={t('cs.office.desc')}
+        tooltip={t('tt.csOffice')}
         checked={data.office !== 'none'}
         onChange={handleToggle('office', 'versionB')}
         id="cs-office"
@@ -317,6 +320,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
       <Toggle
         label={t('cs.pcManager')}
         description={t('cs.pcManager.desc')}
+        tooltip={t('tt.csPcManager')}
         checked={!!data.pcManager}
         onChange={handleBooleanToggle('pcManager')}
         id="cs-pcManager"
@@ -325,6 +329,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
       <Toggle
         label={t('cs.domain.title')}
         description={t('cs.domain.desc')}
+        tooltip={t('tt.csDomain')}
         checked={!!data.domainJoin}
         onChange={handleBooleanToggle('domainJoin')}
         id="cs-domainJoin"
