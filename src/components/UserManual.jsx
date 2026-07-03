@@ -64,7 +64,7 @@ export default function UserManual() {
                   <strong>💡 Fontos tudnivalók:</strong>
                   <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <li>A telepítés során a gép többször is újraindulhat magától. Ez normális.</li>
-                    <li>Az egyéni szkriptek (pl. alkalmazások letöltése, takarítás) az <strong>első felhasználói bejelentkezéskor</strong> fognak lefutni egy fekete parancssor ablakban. Kérlek, <strong>ne zárd be</strong> ezt az ablakot, várd meg amíg magától befejezi a munkát és eltűnik!</li>
+                    <li>Az egyéni szkriptek (pl. alkalmazások letöltése, takarítás) az <strong>első felhasználói bejelentkezéskor</strong> fognak lefutni teljesen láthatatlanul, a háttérben.</li>
                   </ul>
                 </div>
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
@@ -98,7 +98,7 @@ export default function UserManual() {
                   <strong>💡 Important Notes:</strong>
                   <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <li>The computer may restart several times during the installation. This is normal.</li>
-                    <li>Custom scripts (e.g., app downloads, cleanup) will run in a black command prompt window upon the <strong>first user login</strong>. Please <strong>do not close</strong> this window; wait until it finishes its tasks and closes automatically!</li>
+                    <li>Custom scripts (e.g., app downloads, cleanup) will run completely silently in the background upon the <strong>first user login</strong>.</li>
                   </ul>
                 </div>
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
