@@ -3,6 +3,7 @@ export const translations = {
   hu: {
     'app.title': 'Windows 11 Autounattend Generátor',
     'app.subtitle': 'Automatizált telepítő (autounattend.xml) készítő',
+    'manual.title': 'Használati Útmutató (Kattints a kinyitáshoz)',
     'app.nav.sections': 'SZEKCIÓK',
     'section.presets': 'Előre elkészített profilok',
     'section.systemInfo': 'Rendszer és nyelv',
@@ -243,6 +244,7 @@ export const translations = {
   en: {
     'app.title': 'Windows 11 Autounattend Generator',
     'app.subtitle': 'Automated installer (autounattend.xml) creator',
+    'manual.title': 'User Manual (Click to expand)',
     'app.nav.sections': 'SECTIONS',
     'section.presets': 'Pre-made Profiles',
     'section.systemInfo': 'System and Language',

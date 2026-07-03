@@ -18,6 +18,7 @@ import CustomScriptsSection from './sections/CustomScriptsSection'
 // UI komponensek
 import SectionNav from './components/SectionNav'
 import XmlPreview from './components/XmlPreview'
+import UserManual from './components/UserManual'
 
 // Segédeszközök
 import { generateXml } from './utils/generateXml'
@@ -222,6 +223,7 @@ export default function App() {
             </div>
           )}
           <div className="scrollable-sections" onScroll={handleMainScroll}>
+          <UserManual />
           <div id="presets"><PresetsSection config={config} setConfig={updateConfig} resetPresetRef={resetPresetRef} /></div>
           <div id="system-info"><SystemInfoSection config={config} setConfig={updateConfig} /></div>
           <div id="partitioning"><PartitionSection config={config} setConfig={updateConfig} errors={errors} /></div>
