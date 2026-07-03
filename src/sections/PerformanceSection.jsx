@@ -12,7 +12,7 @@ export default function PerformanceSection({ config, setConfig }) {
   };
 
   return (
-    <Card title={t('perf.title')} icon={<Zap size={20} / tooltip={t('tt.performanceDesc')}>}>
+    <Card title={t('perf.title')} icon={<Zap size={20} />} tooltip={t('tt.performanceDesc')}>
       <Toggle
         label={t('perf.fastStartup')}
         description={t('perf.fastStartup.desc')}

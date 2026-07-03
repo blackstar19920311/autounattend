@@ -28,7 +28,7 @@ export default function PersonalizationSection({ config, setConfig }) {
   };
 
   return (
-    <Card title={t('section.personalization')} icon={<Palette size={20} / tooltip={t('tt.personalizationDesc')}>}>
+    <Card title={t('section.personalization')} icon={<Palette size={20} />} tooltip={t('tt.personalizationDesc')}>
       {/* 4.1 Asztali ikonok */}
       <h3 className="subsection">{t('pers.desktopIcons')}</h3>
       <div className="checkbox-group">

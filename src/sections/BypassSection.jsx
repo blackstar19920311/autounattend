@@ -13,7 +13,7 @@ export default function BypassSection({ config, setConfig }) {
   };
 
   return (
-    <Card title={t('section.bypasses')} icon={<ShieldAlert size={20} / tooltip={t('tt.bypassDesc')}>}>
+    <Card title={t('section.bypasses')} icon={<ShieldAlert size={20} />} tooltip={t('tt.bypassDesc')}>
       <Toggle
         label={t('bypass.hardware')}
         description={t('bypass.hardware.desc')}

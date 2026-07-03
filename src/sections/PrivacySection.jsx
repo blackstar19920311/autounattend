@@ -12,7 +12,7 @@ export default function PrivacySection({ config, setConfig }) {
   };
 
   return (
-    <Card title={t('section.privacy')} icon={<EyeOff size={20} / tooltip={t('tt.privacyDesc')}>}>
+    <Card title={t('section.privacy')} icon={<EyeOff size={20} />} tooltip={t('tt.privacyDesc')}>
       <Toggle
         label={t('privacy.telemetry.title')}
         description={t('privacy.telemetry.desc')}

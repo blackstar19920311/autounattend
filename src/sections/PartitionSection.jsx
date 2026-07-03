@@ -25,7 +25,7 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
   ];
 
   return (
-    <Card title={t('part.title')} icon={<HardDrive size={20} / tooltip={t('tt.partitionDesc')}>}>
+    <Card title={t('part.title')} icon={<HardDrive size={20} />} tooltip={t('tt.partitionDesc')}>
       <SegmentedControl
         label={t('part.mode')}
         options={partitionModeOptions}

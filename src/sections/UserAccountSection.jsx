@@ -32,7 +32,7 @@ export default function UserAccountSection({ config, setConfig, errors = {} }) {
     : prefix;
 
   return (
-    <Card title={t('section.userAccount')} icon={<User size={20} / tooltip={t('tt.userAccountDesc')}>}>
+    <Card title={t('section.userAccount')} icon={<User size={20} />} tooltip={t('tt.userAccountDesc')}>
       {/* Számítógépnév + random utótag checkbox egy sorban */}
       <div className="form-group">
         <label className="form-label">{t('user.computerName')}</label>

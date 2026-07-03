@@ -195,7 +195,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
   };
 
   return (
-    <Card title={t('cs.title')} icon={<Code size={20} / tooltip={t('tt.csDesc')}>}>
+    <Card title={t('cs.title')} icon={<Code size={20} />} tooltip={t('tt.csDesc')}>
       <Toggle
         label={t('cs.update')}
         description={t('cs.update.desc')}
