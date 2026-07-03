@@ -64,7 +64,7 @@ export default function UserManual() {
                   <strong>💡 Fontos tudnivalók:</strong>
                   <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <li>A telepítés során a gép többször is újraindulhat magától. Ez normális.</li>
-                    <li>Az egyéni szkriptek (pl. alkalmazások letöltése, takarítás) az <strong>első felhasználói bejelentkezéskor</strong> fognak lefutni egy fekete parancssor ablakban. Kérlek, <strong>ne zárd be</strong> ezt az ablakot, várd meg amíg magától befejezi a munkát és eltűnik! Minden egyes szkript lefutása után egy felugró ablak (PowerShell popup) tájékoztat majd arról, hogy az adott telepítés sikeres vagy sikertelen volt.</li>
+                    <li>Az egyéni szkriptek (pl. alkalmazások letöltése, takarítás) az <strong>első felhasználói bejelentkezéskor</strong> fognak lefutni egy fekete parancssor ablakban. Kérlek, <strong>ne zárd be</strong> ezt az ablakot, várd meg amíg magától befejezi a munkát és eltűnik! Minden egyes telepítő szkript lefutása után egy felugró ablak (PowerShell popup) fog fogadni. Ilyen üzenet várható a következőknél (amennyiben lettek kiválasztva): <strong>Alkalmazások telepítése</strong>, <strong>Microsoft Office telepítése</strong>, <strong>Microsoft PC Manager telepítése</strong> és <strong>Active Directory Tartományba léptetés</strong>.</li>
                   </ul>
                 </div>
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
@@ -98,7 +98,7 @@ export default function UserManual() {
                   <strong>💡 Important Notes:</strong>
                   <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <li>The computer may restart several times during the installation. This is normal.</li>
-                    <li>Custom scripts (e.g., app downloads, cleanup) will run in a black command prompt window upon the <strong>first user login</strong>. Please <strong>do not close</strong> this window; wait until it finishes its tasks and closes automatically! After each script runs, a popup message (PowerShell popup) will appear informing you whether the installation was successful or unsuccessful.</li>
+                    <li>Custom scripts (e.g., app downloads, cleanup) will run in a black command prompt window upon the <strong>first user login</strong>. Please <strong>do not close</strong> this window; wait until it finishes its tasks and closes automatically! After each custom installation script finishes, a popup message (PowerShell popup) will greet you. You can expect these messages for the following (if selected): <strong>Application installations</strong>, <strong>Microsoft Office installation</strong>, <strong>Microsoft PC Manager installation</strong>, and <strong>Active Directory Domain Join</strong>.</li>
                   </ul>
                 </div>
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
