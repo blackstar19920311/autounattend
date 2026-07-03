@@ -157,7 +157,7 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
   };
 
   return (
-    <Card title={t('presets.title')} icon={<Package size={20} className="text-accent" />}>
+    <Card title={t('presets.title')} icon={<Package size={20} className="text-accent" />} tooltip={t('tt.presetsDesc')}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, flex: 1 }}>

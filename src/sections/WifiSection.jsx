@@ -22,7 +22,7 @@ export default function WifiSection({ config, setConfig, errors = {} }) {
   };
 
   return (
-    <Card title={t('section.wifi')} icon={<Wifi size={20} />}>
+    <Card title={t('section.wifi')} icon={<Wifi size={20} />} tooltip={t('tt.wifiDesc')}>
       <div className="form-group">
         <SegmentedControl
           label={t('wifi.mode')}
