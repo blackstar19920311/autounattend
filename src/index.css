@@ -1574,13 +1574,19 @@ body, html { margin: 0; padding: 0; height: 100vh; overflow: hidden; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-tertiary);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-subtle);
+  color: var(--accent);
   cursor: help;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
   z-index: 10;
 }
 .tooltip-container:hover {
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  transform: scale(1.05);
 }
 .tooltip-text {
   position: absolute;
