@@ -90,15 +90,15 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
       </div>
 
       <div className="form-group">
-        <SegmentedControl
-          label={t('sysinfo.lang')}
+        <label className="form-label">{t('sysinfo.lang')}</label>
+        <select
+          className="select-display"
           value={config.installLanguage}
-          onChange={(val) => setConfig((prev) => ({ ...prev, installLanguage: val }))}
-          options={[
-            { value: 'hu', label: t('sysinfo.lang.hu') },
-            { value: 'en', label: t('sysinfo.lang.en') }
-          ]}
-        />
+          onChange={(e) => setConfig((prev) => ({ ...prev, installLanguage: e.target.value }))}
+        >
+          <option value="hu">{t('sysinfo.lang.hu')}</option>
+          <option value="en">{t('sysinfo.lang.en')}</option>
+        </select>
       </div>
 
       <Toggle
