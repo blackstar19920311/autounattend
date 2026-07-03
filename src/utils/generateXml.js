@@ -125,9 +125,12 @@ export function generateXml(config) {
     `name="${name}" processorArchitecture="${arch}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"`;
 
   // --- Billentyűzetkiosztás ---
-  const inputLocale = config.addEnglishKeyboard
-    ? '040e:0000040e;0409:00000409'
-    : '040e:0000040e';
+  let inputLocale = '040e:0000040e';
+  if (config.installLanguage === 'en') {
+    inputLocale = '0409:00000409';
+  } else if (config.addEnglishKeyboard) {
+    inputLocale = '040e:0000040e;0409:00000409';
+  }
 
   // --- windowsPE pass ---
   const windowsPE = buildWindowsPE(config, componentAttrs, inputLocale);

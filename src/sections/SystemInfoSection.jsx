@@ -101,13 +101,15 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
         </select>
       </div>
 
-      <Toggle
-        id="addEnglishKeyboard"
-        label={t('sysinfo.kb')}
-        description={t('sysinfo.kb.desc')}
-        checked={config.addEnglishKeyboard}
-        onChange={(value) => setConfig((prev) => ({ ...prev, addEnglishKeyboard: value }))}
-      />
+      {config.installLanguage !== 'en' && (
+        <Toggle
+          id="addEnglishKeyboard"
+          label={t('sysinfo.kb')}
+          description={t('sysinfo.kb.desc')}
+          checked={config.addEnglishKeyboard}
+          onChange={(value) => setConfig((prev) => ({ ...prev, addEnglishKeyboard: value }))}
+        />
+      )}
     </Card>
   );
 }
