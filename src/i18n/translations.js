@@ -241,8 +241,8 @@ export const translations = {
   'presets.sub.media2.desc': 'Gépnév: MEDIA2-',
 
     'tt.bypassDesc': 'A Windows 11 telepítésének hardveres, hálózati és licenc feltételeinek megkerülése. Hasznos, ha hivatalosan nem támogatott hardverre, vagy offline helyi fiókkal telepíted a rendszert.',
-    'tt.systemInfoDesc': 'A számítógép neve, nyelvi és területi beállításai, valamint a kiegészítő billentyűzetkiosztások módosítása.',
-    'tt.userAccountDesc': 'A telepítés után automatikusan létrehozásra kerülő helyi rendszergazda fiók beállításai. Bekapcsolható az automatikus bejelentkezés jelszókérés nélkül.',
+    'tt.systemInfoDesc': 'A nyelvi és területi beállítások, valamint a kiegészítő billentyűzetkiosztások módosítása.',
+    'tt.userAccountDesc': 'A számítógép neve, a Windows termékkulcs, valamint az automatikusan létrejövő helyi rendszergazda fiók beállításai. Bekapcsolható az automatikus bejelentkezés is.',
     'tt.partitionDesc': 'A kiválasztott meghajtó particionálási szabályai. Figyelem: a "Teljes lemeztörlés" (CLEAN ALL) opció SSD-n csökkentheti az élettartamot, így csak indokolt esetben javasolt!',
     'tt.personalizationDesc': 'Az asztali ikonok megjelenítése, a tálca vizuális tisztítása és a Start menü funkcióinak testreszabása (pl. áttetszőség és webes keresés kikapcsolása).',
     'tt.privacyDesc': 'A Windows diagnosztikai adatgyűjtésének csökkentése, az Edge üdvözlőképernyőjének és a Fiókfelügyelet (UAC) letiltása. Figyelem: az UAC kikapcsolása biztonsági kockázatot jelenthet!',
@@ -493,8 +493,8 @@ export const translations = {
   'presets.sub.media2.desc': 'PC Name: MEDIA2-',
 
     'tt.bypassDesc': 'Bypasses Windows 11 hardware, network, and license requirements. Useful when installing on officially unsupported hardware or setting up with an offline local account.',
-    'tt.systemInfoDesc': 'Configure the computer name, regional and language settings, and additional keyboard layouts.',
-    'tt.userAccountDesc': 'Settings for the local administrator account created during setup. You can enable automatic login without a password prompt.',
+    'tt.systemInfoDesc': 'Configure regional and language settings, and additional keyboard layouts.',
+    'tt.userAccountDesc': 'Configure the computer name, Windows product key, and local administrator account settings. You can also enable automatic login.',
     'tt.partitionDesc': 'Partitioning rules for the selected drive. Warning: The "Full Wipe" (CLEAN ALL) option on SSDs can reduce lifespan, use only when strictly necessary!',
     'tt.personalizationDesc': 'Customize desktop icons, clean up the taskbar, and modify Start menu features (e.g., disabling transparency and web search).',
     'tt.privacyDesc': 'Reduce Windows diagnostic data collection and disable the Edge welcome screen and User Account Control (UAC). Warning: Disabling UAC may present a security risk!',
