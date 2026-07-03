@@ -241,7 +241,7 @@ export const translations = {
   'presets.sub.media2.desc': 'Gépnév: MEDIA2-',
 
     'tt.kb': 'A rendszer a magyar mellett az amerikai angol billentyűzetkiosztást is telepíti.',
-    'tt.bypassHardware': 'Megkerüli a Windows 11 telepítésének hardveres feltételeit (TPM 2.0, Secure Boot, CPU típus és RAM mennyiség ellenőrzése).',
+    'tt.bypassHardware': 'Megkerüli a Windows 11 telepítésének hardveres feltételeit (TPM 2.0, Secure Boot, CPU típus és RAM mennyiség ellenőrzése). Hasznos, ha a rendszert hivatalosan nem támogatott hardverre telepíted.',
     'tt.bypassNetwork': 'A telepítő nem fog internetkapcsolatot és Microsoft-fiókot kérni. A telepítés helyi fiókkal folytatódik.',
     'tt.bypassEula': 'Automatikusan elfogadja a Microsoft Végfelhasználói Licencszerződését a telepítés kezdetén.',
     'tt.autoLogin': 'A telepítés után a Windows automatikusan, jelszókérés nélkül bejelentkezik az adott felhasználóval az első indításkor.',
@@ -260,7 +260,7 @@ export const translations = {
     'tt.cleanPins': 'Eltávolítja az összes alapértelmezetten kitűzött alkalmazást a Start menüből, csak a Gépház ikonja marad.',
     'tt.disableTelemetry': 'Csökkenti a diagnosztikai adatok és használati statisztikák Microsoft felé történő elküldését.',
     'tt.edgeFirstRun': 'Letiltja a Microsoft Edge első indításakor megjelenő üdvözlő és beállítási képernyőket.',
-    'tt.disableUAC': 'Kikapcsolja a Felhasználói fiókok felügyeletét (UAC), így a rendszer nem kér megerősítést a módosításoknál.',
+    'tt.disableUAC': 'Kikapcsolja a Felhasználói fiókok felügyeletét (UAC), így a rendszer nem kér megerősítést a módosításoknál. Figyelem: Ennek állandó kikapcsolása biztonsági kockázatot jelenthet!',
     'tt.fastStartup': 'Kikapcsolja a Gyorsindítás (Fast Startup) funkciót, így a számítógép teljes leállítást hajt végre.',
     'tt.sleep': 'Letiltja az automatikus alvó állapotot, és a rendszert Maximális teljesítmény energiasémára állítja.',
     'tt.mouseAccel': 'Kikapcsolja az egérkurzor gyorsítását (Rámutatás pontosságának javítása).',
@@ -283,7 +283,7 @@ export const translations = {
     'tt.csOffice': 'Letölti és csendesen feltelepíti a kiválasztott Microsoft Office csomagot.',
     'tt.csPcManager': 'Feltelepíti a Microsoft hivatalos PC Manager optimalizáló eszközét.',
     'tt.csDomain': 'Automatikusan belépteti a számítógépet a megadott Active Directory tartományba.',
-    'tt.partFullWipe': 'A lemez minden szektorát nullákkal írja felül (CLEAN ALL paranccsal).'
+    'tt.partFullWipe': 'A lemez minden szektorát nullákkal írja felül (CLEAN ALL paranccsal). Figyelem: SSD meghajtókon történő használata csökkentheti az eszköz élettartamát, így csak indokolt esetben javasolt!'
 
   },
   en: {
@@ -528,7 +528,7 @@ export const translations = {
   'presets.sub.media2.desc': 'PC Name: MEDIA2-',
 
     'tt.kb': 'Installs the US English keyboard layout alongside the main language.',
-    'tt.bypassHardware': 'Bypasses Windows 11 hardware checks (TPM 2.0, Secure Boot, CPU generation, RAM limits).',
+    'tt.bypassHardware': 'Bypasses Windows 11 hardware checks (TPM 2.0, Secure Boot, CPU generation, RAM limits). Useful when installing on officially unsupported hardware.',
     'tt.bypassNetwork': 'Prevents the installer from requiring an internet connection and a Microsoft Account. Setup continues with a local account.',
     'tt.bypassEula': 'Automatically accepts the Microsoft End User License Agreement during setup.',
     'tt.autoLogin': 'Windows automatically logs in to the desktop with this user account on the first boot, skipping the password screen.',
@@ -547,7 +547,7 @@ export const translations = {
     'tt.cleanPins': 'Removes all default pinned applications from the Start menu, leaving only the Settings icon.',
     'tt.disableTelemetry': 'Reduces the transmission of diagnostic data and usage statistics to Microsoft.',
     'tt.edgeFirstRun': 'Disables the initial welcome and setup screens that appear on the first launch of Microsoft Edge.',
-    'tt.disableUAC': 'Disables User Account Control (UAC) prompts when applications attempt to make changes.',
+    'tt.disableUAC': 'Disables User Account Control (UAC) prompts when applications attempt to make changes. Warning: Keeping this disabled may present a security risk!',
     'tt.fastStartup': 'Disables the Fast Startup feature, causing the computer to perform a full shutdown.',
     'tt.sleep': 'Disables automatic sleep mode and sets the system to the High Performance power plan.',
     'tt.mouseAccel': 'Disables "Enhance pointer precision" (Mouse Acceleration).',
@@ -570,7 +570,7 @@ export const translations = {
     'tt.csOffice': 'Downloads and silently installs the selected Microsoft Office suite.',
     'tt.csPcManager': 'Installs the official Microsoft PC Manager optimization tool.',
     'tt.csDomain': 'Automatically joins the computer to the specified Active Directory domain.',
-    'tt.partFullWipe': 'Overwrites every sector of the disk with zeroes (using the CLEAN ALL command).'
+    'tt.partFullWipe': 'Overwrites every sector of the disk with zeroes (using the CLEAN ALL command). Warning: Using this on SSDs can reduce the drive\\'s lifespan, so it is only recommended when strictly necessary.'
 
   }
 };
