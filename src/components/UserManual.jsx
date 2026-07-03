@@ -64,13 +64,13 @@ export default function UserManual() {
                   <strong>💡 Fontos tudnivalók:</strong>
                   <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <li>A telepítés során a gép többször is újraindulhat magától. Ez normális.</li>
-                    <li>Az egyéni szkriptek (pl. alkalmazások letöltése, takarítás) az <strong>első felhasználói bejelentkezéskor</strong> fognak lefutni egy fekete parancssor ablakban. Kérlek, <strong>ne zárd be</strong> ezt az ablakot, várd meg amíg magától befejezi a munkát és eltűnik! Minden egyes telepítő szkript lefutása után egy felugró ablak (PowerShell popup) fog fogadni. Ilyen üzenet várható a következőknél (amennyiben lettek kiválasztva): <strong>Alkalmazások telepítése</strong>, <strong>Microsoft Office telepítése</strong>, <strong>Microsoft PC Manager telepítése</strong> és <strong>Active Directory Tartományba léptetés</strong>.</li>
+                    <li>Az egyéni szkriptek (pl. alkalmazások letöltése, takarítás) az <strong>első felhasználói bejelentkezéskor</strong> fognak lefutni egy fekete parancssor ablakban. Kérlek, <strong>ne zárd be</strong> ezt az ablakot, várd meg amíg magától befejezi a munkát és eltűnik!</li>
                   </ul>
                 </div>
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
                   <strong>⚠️ Kiemelten fontos:</strong>
-                  <p style={{ margin: 0 }}>
-                    Kérjük, <strong>várja meg az összes szkript lefutását és a felugró üzeneteket</strong>, mielőtt használni kezdené a gépet vagy újraindítaná azt! Ellenkező esetben a háttérben futó folyamatok megszakadhatnak, és a telepítés nem lesz teljes.
+                  <p style={{ margin: 0, lineHeight: '1.6' }}>
+                    Kérjük, <strong>várja meg az összes szkript lefutását és a megerősítő felugró üzeneteket (PowerShell popup)</strong>, mielőtt használni kezdené a gépet vagy újraindítaná azt! A telepítés sikerességét igazoló ablakok a következő kiválasztott feladatok után fognak megjelenni: <strong>Alkalmazások telepítése</strong>, <strong>Microsoft Office telepítése</strong>, <strong>Microsoft PC Manager telepítése</strong>, valamint az <strong>Active Directory Tartományba léptetés</strong>. Ha ezek előtt megszakítja a folyamatot, a telepítés nem lesz teljes.
                   </p>
                 </div>
               </>
@@ -98,13 +98,13 @@ export default function UserManual() {
                   <strong>💡 Important Notes:</strong>
                   <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <li>The computer may restart several times during the installation. This is normal.</li>
-                    <li>Custom scripts (e.g., app downloads, cleanup) will run in a black command prompt window upon the <strong>first user login</strong>. Please <strong>do not close</strong> this window; wait until it finishes its tasks and closes automatically! After each custom installation script finishes, a popup message (PowerShell popup) will greet you. You can expect these messages for the following (if selected): <strong>Application installations</strong>, <strong>Microsoft Office installation</strong>, <strong>Microsoft PC Manager installation</strong>, and <strong>Active Directory Domain Join</strong>.</li>
+                    <li>Custom scripts (e.g., app downloads, cleanup) will run in a black command prompt window upon the <strong>first user login</strong>. Please <strong>do not close</strong> this window; wait until it finishes its tasks and closes automatically!</li>
                   </ul>
                 </div>
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
                   <strong>⚠️ Extremely Important:</strong>
-                  <p style={{ margin: 0 }}>
-                    Please <strong>wait for all scripts to finish and all popup messages to appear</strong> before starting to use the computer or restarting it! Otherwise, the background processes may be interrupted and the installation will be incomplete.
+                  <p style={{ margin: 0, lineHeight: '1.6' }}>
+                    Please <strong>wait for all scripts to finish and the confirmation popup messages (PowerShell popup) to appear</strong> before starting to use the computer or restarting it! You will receive a success/failure popup after the following selected tasks: <strong>Application installations</strong>, <strong>Microsoft Office installation</strong>, <strong>Microsoft PC Manager installation</strong>, and <strong>Active Directory Domain Join</strong>. Interrupting the background processes before these appear will result in an incomplete installation.
                   </p>
                 </div>
               </>
