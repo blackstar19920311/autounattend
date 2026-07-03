@@ -66,6 +66,7 @@ export default function UserManual() {
                     <li>A telepítés során a gép többször is újraindulhat magától. Ez normális.</li>
                     <li>Az egyéni szkriptek (pl. alkalmazások letöltése, takarítás) az <strong>első felhasználói bejelentkezéskor</strong> fognak lefutni egy fekete parancssor ablakban. Kérlek, <strong>ne zárd be</strong> ezt az ablakot, várd meg amíg magától befejezi a munkát és eltűnik! Minden egyes szkript lefutása után egy felugró ablak (PowerShell popup) tájékoztat majd arról, hogy az adott telepítés sikeres vagy sikertelen volt.</li>
                   </ul>
+                </div>
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
                   <strong>⚠️ Kiemelten fontos:</strong>
                   <p style={{ margin: 0 }}>
