@@ -218,7 +218,7 @@ try {
 <Configuration>
   <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="O365ProPlusRetail">
-      <Language ID="${config.installLanguage === 'en' ? 'en-us' : 'hu-hu'}" />
+      <Language ID="##OFFICE_LANG##" />
     </Product>
   </Add>
   <RemoveMSI />
@@ -344,7 +344,7 @@ try {
 <Configuration>
   <Add OfficeClientEdition="64" Channel="PerpetualVL2021">
     <Product ID="ProPlus2021Volume">
-      <Language ID="${config.installLanguage === 'en' ? 'en-us' : 'hu-hu'}" />
+      <Language ID="##OFFICE_LANG##" />
       <ExcludeApp ID="Teams" />
     </Product>
   </Add>

@@ -1126,7 +1126,7 @@ if($ok){
     if (config.customScripts.office === 'versionA') {
       addBase64ScriptToFirstLogon(
         commands,
-        SCRIPTS.officeA,
+        SCRIPTS.officeA.replace('##OFFICE_LANG##', config.installLanguage === 'en' ? 'en-us' : 'hu-hu'),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Microsoft Office telepítése (A verzió)'
@@ -1135,7 +1135,9 @@ if($ok){
     } else if (config.customScripts.office === 'versionB') {
       addBase64ScriptToFirstLogon(
         commands,
-        SCRIPTS.officeB.replace('##OFFICE_MAK_KEY##', config.customScripts.officeKey || ''),
+        SCRIPTS.officeB
+          .replace('##OFFICE_MAK_KEY##', config.customScripts.officeKey || '')
+          .replace('##OFFICE_LANG##', config.installLanguage === 'en' ? 'en-us' : 'hu-hu'),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Microsoft Office telepítése (B verzió)'
