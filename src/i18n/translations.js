@@ -200,8 +200,9 @@ export const translations = {
     'sysinfo.arch.64': '64-bites (amd64)',
     'sysinfo.arch.32': '32-bites (x86)',
     'sysinfo.arch.arm': 'ARM (arm64)',
-    'sysinfo.lang': 'Telepítés Nyelve',
+    'sysinfo.lang': 'Telepítés nyelve',
     'sysinfo.lang.hu': 'Magyar',
+    'sysinfo.lang.en': 'Angol',
     'sysinfo.kb': 'Angol (US) billentyűzet hozzáadása',
 
     'cs.title': 'Egyéni Szkriptek (FirstLogon)',
@@ -456,6 +457,7 @@ export const translations = {
     'sysinfo.arch.arm': 'ARM (arm64)',
     'sysinfo.lang': 'Installation Language',
     'sysinfo.lang.hu': 'Hungarian',
+    'sysinfo.lang.en': 'English',
     'sysinfo.kb': 'Add English (US) Keyboard',
 
     'cs.title': 'Custom Scripts (FirstLogon)',

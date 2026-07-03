@@ -90,8 +90,15 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
       </div>
 
       <div className="form-group">
-        <label className="form-label">{t('sysinfo.lang')}</label>
-        <div className="select-display select-display--disabled" aria-disabled="true">{t('sysinfo.lang.hu')}</div>
+        <SegmentedControl
+          label={t('sysinfo.lang')}
+          value={config.installLanguage}
+          onChange={(val) => setConfig((prev) => ({ ...prev, installLanguage: val }))}
+          options={[
+            { value: 'hu', label: t('sysinfo.lang.hu') },
+            { value: 'en', label: t('sysinfo.lang.en') }
+          ]}
+        />
       </div>
 
       <Toggle

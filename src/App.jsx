@@ -31,10 +31,20 @@ import { getDefaultConfig } from './data/defaultConfig'
    Fő alkalmazás komponens
    ============================================================ */
 export default function App() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
-  const [config, setConfig] = useState(getDefaultConfig)
-  const [xml, setXml] = useState('')
+  const [config, setConfig] = useState(() => {
+    const def = getDefaultConfig();
+    def.installLanguage = language;
+    return def;
+  });
+
+  // Sync installLanguage when UI language changes
+  useEffect(() => {
+    setConfig(prev => ({ ...prev, installLanguage: language }));
+  }, [language]);
+
+  const [xml, setXml] = useState('');
   const [errors, setErrors] = useState({})
   const [status, setStatus] = useState(null)
   const [activeSection, setActiveSection] = useState('presets')
