@@ -112,16 +112,26 @@ export default function App() {
   }, [showStatus, t])
 
   /* --- Szekció navigációs kattintás --- */
+  const isNavigatingRef = useRef(false)
+  const navTimeoutRef = useRef(null)
+
   const handleSectionClick = useCallback((sectionId) => {
+    setActiveSection(sectionId)
+    isNavigatingRef.current = true
+    if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
+    navTimeoutRef.current = setTimeout(() => {
+      isNavigatingRef.current = false
+    }, 800)
+
     const el = document.getElementById(sectionId)
     if (el) {
-      // Csak görgetünk, a highlight-ot rábízzuk az IntersectionObserver-re
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [])
 
   /* --- Gördítés figyelése (aljára érés) --- */
   const handleMainScroll = useCallback((e) => {
+    if (isNavigatingRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     if (scrollTop < 50) {
       setActiveSection(SECTIONS[0].id);
@@ -149,6 +159,8 @@ export default function App() {
           }
         }
         
+        if (isNavigatingRef.current) return;
+
         const scrollContainer = document.querySelector('.scrollable-sections');
         if (scrollContainer && scrollContainer.scrollTop < 50) {
           observerActiveRef.current = sectionIds[0];
@@ -176,6 +188,7 @@ export default function App() {
       clearTimeout(timer)
       observer.disconnect()
       if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current)
+      if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
     }
   }, [])
 
