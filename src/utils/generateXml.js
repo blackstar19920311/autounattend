@@ -127,7 +127,7 @@ export function generateXml(config, uiLanguage = 'hu') {
 
   // --- Billentyűzetkiosztás ---
   let inputLocale = '040e:0000040e';
-  if (uiLanguage === 'en' && config.installLanguage === 'en') {
+  if (uiLanguage === 'en') {
     inputLocale = '0409:00000409';
   } else if (config.addEnglishKeyboard) {
     inputLocale = '040e:0000040e;0409:00000409';
