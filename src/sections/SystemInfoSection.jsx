@@ -19,7 +19,7 @@ function formatProductKey(raw) {
 }
 
 export default function SystemInfoSection({ config, setConfig, errors = {} }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   
   const handleProductKeyChange = (value) => {
