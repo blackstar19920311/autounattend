@@ -70,7 +70,7 @@ export default function UserManual() {
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
                   <strong>⚠️ Kiemelten fontos:</strong>
                   <p style={{ margin: 0, lineHeight: '1.6' }}>
-                    Kérjük, <strong>várja meg az összes szkript lefutását és a megerősítő felugró üzeneteket (PowerShell popup)</strong>, mielőtt használni kezdené a gépet vagy újraindítaná azt! A telepítés sikerességét igazoló ablakok a következő kiválasztott feladatok után fognak megjelenni: <strong>Alkalmazások telepítése</strong>, <strong>Microsoft Office telepítése</strong>, <strong>Microsoft PC Manager telepítése</strong>, valamint az <strong>Active Directory Tartományba léptetés</strong>. Ha ezek előtt megszakítja a folyamatot, a telepítés nem lesz teljes.
+                    Kérjük, <strong>várja meg az összes szkript lefutását és a megerősítő felugró üzeneteket (PowerShell popup)</strong>, mielőtt használni kezdené a gépet vagy újraindítaná azt! A telepítés sikerességét igazoló ablakok (amennyiben az adott opció ki lett választva az űrlapon) a következő feladatok után fognak megjelenni: <strong>Alkalmazások telepítése</strong>, <strong>Microsoft Office telepítése</strong>, <strong>Microsoft PC Manager telepítése</strong>, valamint az <strong>Active Directory Tartományba léptetés</strong>. Ha ezek előtt megszakítja a folyamatot, a telepítés nem lesz teljes.
                   </p>
                 </div>
               </>
@@ -104,7 +104,7 @@ export default function UserManual() {
                 <div style={{ marginTop: '16px', padding: '12px 16px', backgroundColor: 'rgba(255, 69, 58, 0.1)', borderRadius: '8px', borderLeft: '4px solid #ff453a', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-primary)' }}>
                   <strong>⚠️ Extremely Important:</strong>
                   <p style={{ margin: 0, lineHeight: '1.6' }}>
-                    Please <strong>wait for all scripts to finish and the confirmation popup messages (PowerShell popup) to appear</strong> before starting to use the computer or restarting it! You will receive a success/failure popup after the following selected tasks: <strong>Application installations</strong>, <strong>Microsoft Office installation</strong>, <strong>Microsoft PC Manager installation</strong>, and <strong>Active Directory Domain Join</strong>. Interrupting the background processes before these appear will result in an incomplete installation.
+                    Please <strong>wait for all scripts to finish and the confirmation popup messages (PowerShell popup) to appear</strong> before starting to use the computer or restarting it! You will receive a success/failure popup after the following tasks (if the corresponding option was selected in the form): <strong>Application installations</strong>, <strong>Microsoft Office installation</strong>, <strong>Microsoft PC Manager installation</strong>, and <strong>Active Directory Domain Join</strong>. Interrupting the background processes before these appear will result in an incomplete installation.
                   </p>
                 </div>
               </>
