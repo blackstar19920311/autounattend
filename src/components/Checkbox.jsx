@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 /**
  * Windows 11 stílusú checkbox komponens
@@ -28,8 +28,8 @@ export default function Checkbox({ label, checked, onChange, disabled = false, i
         <span className="checkbox-label">{label}</span>
         {tooltip && (
           <div className="tooltip-container" onClick={(e) => e.preventDefault()}>
-            <HelpCircle size={16} className="tooltip-icon" />
-            <div className="tooltip-text">{tooltip}</div>
+            <Info size={16} className="tooltip-icon" />
+            <span className="tooltip-text">{tooltip}</span>
           </div>
         )}
       </div>

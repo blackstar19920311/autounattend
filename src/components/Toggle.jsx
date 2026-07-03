@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 /**
  * Windows 11 stílusú kapcsoló (toggle/switch) komponens.
@@ -24,8 +24,8 @@ export default function Toggle({ label, description, checked, onChange, disabled
           <label htmlFor={effectiveId} className="toggle-label">{label}</label>
           {tooltip && (
             <div className="tooltip-container">
-              <HelpCircle size={16} className="tooltip-icon" />
-              <div className="tooltip-text">{tooltip}</div>
+              <Info size={16} className="tooltip-icon" />
+              <span className="tooltip-text">{tooltip}</span>
             </div>
           )}
         </div>
