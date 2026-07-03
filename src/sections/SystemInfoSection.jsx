@@ -96,8 +96,12 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
           value={config.installLanguage}
           onChange={(e) => setConfig((prev) => ({ ...prev, installLanguage: e.target.value }))}
         >
-          <option value="hu">{t('sysinfo.lang.hu')}</option>
-          <option value="en">{t('sysinfo.lang.en')}</option>
+          <option value="hu">
+            {t('sysinfo.lang.hu')} ({t('sysinfo.lang.hu.kb')})
+          </option>
+          <option value="en">
+            {t('sysinfo.lang.en')} ({language === 'hu' ? t('sysinfo.lang.hu.kb') : t('sysinfo.lang.en.kb')})
+          </option>
         </select>
       </div>
 

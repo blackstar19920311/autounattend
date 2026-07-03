@@ -203,6 +203,8 @@ export const translations = {
     'sysinfo.lang': 'Telepítés nyelve',
     'sysinfo.lang.hu': 'Magyar',
     'sysinfo.lang.en': 'Angol',
+    'sysinfo.lang.hu.kb': 'Magyar billentyűzet',
+    'sysinfo.lang.en.kb': 'US billentyűzet',
     'sysinfo.kb': 'Angol (US) billentyűzet hozzáadása',
 
     'cs.title': 'Egyéni Szkriptek (FirstLogon)',
@@ -458,6 +460,8 @@ export const translations = {
     'sysinfo.lang': 'Installation Language',
     'sysinfo.lang.hu': 'Hungarian',
     'sysinfo.lang.en': 'English',
+    'sysinfo.lang.hu.kb': 'Hungarian keyboard',
+    'sysinfo.lang.en.kb': 'US keyboard',
     'sysinfo.kb': 'Add English (US) Keyboard',
 
     'cs.title': 'Custom Scripts (FirstLogon)',
