@@ -78,7 +78,7 @@ export default function App() {
       return
     }
     try {
-      const generatedXml = generateXml(config)
+      const generatedXml = generateXml(config, language)
       setXml(generatedXml)
       setErrors({})
       showStatus('success', t('app.status.success'))

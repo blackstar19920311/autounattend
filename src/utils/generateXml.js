@@ -117,16 +117,17 @@ ${scriptContent}
 /**
  * Generates a valid Windows 11 autounattend.xml string from the given config.
  * @param {Object} config - The full configuration object.
+ * @param {string} uiLanguage - The current UI language.
  * @returns {string} The generated XML string.
  */
-export function generateXml(config) {
+export function generateXml(config, uiLanguage = 'hu') {
   const arch = config.architecture || 'amd64';
   const componentAttrs = (name) =>
     `name="${name}" processorArchitecture="${arch}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"`;
 
   // --- Billentyűzetkiosztás ---
   let inputLocale = '040e:0000040e';
-  if (config.installLanguage === 'en') {
+  if (uiLanguage === 'en' && config.installLanguage === 'en') {
     inputLocale = '0409:00000409';
   } else if (config.addEnglishKeyboard) {
     inputLocale = '040e:0000040e;0409:00000409';

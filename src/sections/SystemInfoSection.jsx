@@ -101,7 +101,7 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
         </select>
       </div>
 
-      {config.installLanguage !== 'en' && (
+      {language === 'hu' && (
         <Toggle
           id="addEnglishKeyboard"
           label={t('sysinfo.kb')}
