@@ -570,7 +570,7 @@ export const translations = {
     'tt.csOffice': 'Downloads and silently installs the selected Microsoft Office suite.',
     'tt.csPcManager': 'Installs the official Microsoft PC Manager optimization tool.',
     'tt.csDomain': 'Automatically joins the computer to the specified Active Directory domain.',
-    'tt.partFullWipe': 'Overwrites every sector of the disk with zeroes (using the CLEAN ALL command). Warning: Using this on SSDs can reduce the drive\\'s lifespan, so it is only recommended when strictly necessary.'
+    'tt.partFullWipe': "Overwrites every sector of the disk with zeroes (using the CLEAN ALL command). Warning: Using this on SSDs can reduce the drive's lifespan, so it is only recommended when strictly necessary."
 
   }
 };
