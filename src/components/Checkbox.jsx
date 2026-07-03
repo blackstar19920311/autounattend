@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { Info } from 'lucide-react';
+import FluentHelpIcon from './FluentHelpIcon';
 
 /**
  * Windows 11 stílusú checkbox komponens
@@ -28,7 +28,7 @@ export default function Checkbox({ label, checked, onChange, disabled = false, i
         <span className="checkbox-label">{label}</span>
         {tooltip && (
           <div className="tooltip-container" onClick={(e) => e.preventDefault()}>
-            <Info size={16} className="tooltip-icon" />
+            <FluentHelpIcon size={16} className="tooltip-icon" />
             <span className="tooltip-text">{tooltip}</span>
           </div>
         )}

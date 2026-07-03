@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { Info } from 'lucide-react';
+import FluentHelpIcon from './FluentHelpIcon';
 
 /**
  * Windows 11 stílusú kapcsoló (toggle/switch) komponens.
@@ -24,7 +24,7 @@ export default function Toggle({ label, description, checked, onChange, disabled
           <label htmlFor={effectiveId} className="toggle-label">{label}</label>
           {tooltip && (
             <div className="tooltip-container">
-              <Info size={16} className="tooltip-icon" />
+              <FluentHelpIcon size={16} className="tooltip-icon" />
               <span className="tooltip-text">{tooltip}</span>
             </div>
           )}
