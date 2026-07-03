@@ -67,11 +67,11 @@ foreach($a in $apps){
     try{$p.Kill()}catch{}
     $ok=$false
     $logLine += "TIMEOUT!"
-    Add-Content -Path $FullLog -Value "    $logLine"
+    Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
     continue
   }
   $logLine += "ExitCode: $($p.ExitCode)"
-  Add-Content -Path $FullLog -Value "    $logLine"
+  Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
   $validExitCodes = @(0, 3010, 1641, 1638, -1978335228, -1978335215, -1978335231, -1978335189)
   if($validExitCodes -notcontains $p.ExitCode){
     $ok=$false
@@ -123,7 +123,8 @@ $apps=@(
   @{Id="Microsoft.VCRedist.2015+.x86";Source="winget"},
   @{Id="RARLab.WinRAR";Source="winget"},
   @{Id="Ghisler.TotalCommander";Source="winget"},
-  @{Id="VeyonSolutions.Veyon";Source="winget";Override="/S /NoMaster"}
+  @{Id="VeyonSolutions.Veyon";Source="winget";Override="/S /NoMaster"},
+  @{Id="VideoLAN.VLC";Source="winget"}
 )
 
 $ok=$true
@@ -143,11 +144,11 @@ foreach($a in $apps){
     try{$p.Kill()}catch{}
     $ok=$false
     $logLine += "TIMEOUT!"
-    Add-Content -Path $FullLog -Value "    $logLine"
+    Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
     continue
   }
   $logLine += "ExitCode: $($p.ExitCode)"
-  Add-Content -Path $FullLog -Value "    $logLine"
+  Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
   $validExitCodes = @(0, 3010, 1641, 1638, -1978335228, -1978335215, -1978335231, -1978335189)
   if($validExitCodes -notcontains $p.ExitCode){
     $ok=$false

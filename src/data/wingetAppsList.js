@@ -9,5 +9,6 @@ export const WINGET_APPS = [
   { id: 'qBittorrent.qBittorrent', name: 'qBittorrent', source: 'winget', defaultLocation: 'D:\\Apps\\qBittorrent' },
   { id: 'Microsoft.VCRedist.2015+.x64', name: 'Visual C++ Redist 2015+ (x64)', source: 'winget', defaultLocation: '', forceDefaultLocation: true },
   { id: 'Microsoft.VCRedist.2015+.x86', name: 'Visual C++ Redist 2015+ (x86)', source: 'winget', defaultLocation: '', forceDefaultLocation: true },
-  { id: 'VeyonSolutions.Veyon', name: 'Veyon', source: 'winget', defaultLocation: '', forceDefaultLocation: true, override: '/S /NoMaster' }
+  { id: 'VeyonSolutions.Veyon', name: 'Veyon', source: 'winget', defaultLocation: '', forceDefaultLocation: true, override: '/S /NoMaster' },
+  { id: 'VideoLAN.VLC', name: 'VLC media player', source: 'winget', defaultLocation: 'D:\\Apps\\VLC' }
 ];

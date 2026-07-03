@@ -74,20 +74,20 @@ function addBase64ScriptToFirstLogon(commands, scriptContent, tempB64Path, destP
 $FullLog = "C:\\InstallFull.log"
 $ScriptName = '${description.replace(/'/g, "''")}'
 
-Add-Content -Path $FullLog -Value ""
-Add-Content -Path $FullLog -Value "------------------------------------------------------------"
-Add-Content -Path $FullLog -Value "# $ScriptName"
-Add-Content -Path $FullLog -Value "------------------------------------------------------------"
+Add-Content -Path $FullLog -Value "" -Encoding utf8
+Add-Content -Path $FullLog -Value "------------------------------------------------------------" -Encoding utf8
+Add-Content -Path $FullLog -Value "# $ScriptName" -Encoding utf8
+Add-Content -Path $FullLog -Value "------------------------------------------------------------" -Encoding utf8
 
 try {
 ${scriptContent}
-    Add-Content -Path $ShortLog -Value "[$((Get-Date).ToString('HH:mm:ss'))] SIKERES: $ScriptName"
-    Add-Content -Path $FullLog -Value ""
-    Add-Content -Path $FullLog -Value "[SIKERES] A szegmens hibátlanul lefutott."
+    Add-Content -Path $ShortLog -Value "[$((Get-Date).ToString('HH:mm:ss'))] SIKERES: $ScriptName" -Encoding utf8
+    Add-Content -Path $FullLog -Value "" -Encoding utf8
+    Add-Content -Path $FullLog -Value "[SIKERES] A szegmens hibátlanul lefutott." -Encoding utf8
 } catch {
-    Add-Content -Path $ShortLog -Value "[$((Get-Date).ToString('HH:mm:ss'))] HIBÁS: $ScriptName"
-    Add-Content -Path $FullLog -Value ""
-    Add-Content -Path $FullLog -Value "[HIBA] $($_.Exception.Message)"
+    Add-Content -Path $ShortLog -Value "[$((Get-Date).ToString('HH:mm:ss'))] HIBÁS: $ScriptName" -Encoding utf8
+    Add-Content -Path $FullLog -Value "" -Encoding utf8
+    Add-Content -Path $FullLog -Value "[HIBA] $($_.Exception.Message)" -Encoding utf8
     exit 1
 }`;
 
@@ -971,6 +971,11 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
         scriptB = scriptB.replace(/;Location="D:\\\\[^"]+"/g, '');
         scriptB = scriptB.replace(/;Override="\/q INSTALLDIR=D:\\\\[^"]+"/g, '');
         scriptB = scriptB.replace(/\$customDirs=@\([\s\S]*?\}\n\}\n/g, '');
+      } else {
+        scriptB = scriptB.replace(
+          '$apps=@(',
+          'if(-not (Test-Path "D:\\Apps\\VLC")){ New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force | Out-Null }\nNew-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null\nNew-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null\n$apps=@('
+        );
       }
       addBase64ScriptToFirstLogon(
         commands,
@@ -1012,11 +1017,23 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
 
       const hasSteam = selectedApps.some(a => a.id === 'Valve.Steam');
       const hasDiscord = selectedApps.some(a => a.id === 'Discord.Discord');
+      const hasVlc = selectedApps.some(a => a.id === 'VideoLAN.VLC');
 
       const customDirsList = selectedApps
         .filter(a => config.partitioning?.mode !== 'auto' && a.location && a.location.trim() !== '')
         .map(a => `'${a.location.trim().replace(/'/g, "''")}'`)
         .join(',\n  ');
+
+      let vlcHook = '';
+      if (config.partitioning?.mode !== 'auto' && hasVlc) {
+        vlcHook = `
+if(-not (Test-Path "D:\\Apps\\VLC")){ New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force | Out-Null }
+New-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force | Out-Null
+Set-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null
+New-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force | Out-Null
+Set-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null
+`;
+      }
 
       const wingetScript = `$ErrorActionPreference="Stop"
 $ProgressPreference="SilentlyContinue"
@@ -1053,7 +1070,7 @@ foreach($dir in $customDirs){
     New-Item -ItemType Directory -Path $dir | Out-Null
   }
 }
-
+${vlcHook}
 $apps=@(
   ${appsScriptList}
 )
@@ -1074,11 +1091,11 @@ foreach($a in $apps){
     try{$p.Kill()}catch{}
     $ok=$false
     $logLine += "TIMEOUT!"
-    Add-Content -Path $FullLog -Value "    $logLine"
+    Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
     continue
   }
   $logLine += "ExitCode: $($p.ExitCode)"
-  Add-Content -Path $FullLog -Value "    $logLine"
+  Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
   $validExitCodes = @(0, 3010, 1641, 1638, -1978335228, -1978335215, -1978335231, -1978335189)
   if($validExitCodes -notcontains $p.ExitCode){
     $ok=$false
@@ -1167,10 +1184,17 @@ if($ok){
   }
 
   // --- Végső takarítás ---
-  commands.push({
-    command: `cmd /c powershell -Command "Remove-Item -Path C:\\Windows\\Temp\\* -Recurse -Force -ErrorAction SilentlyContinue; Add-Content -Path C:\\InstallSummary.log -Value ('[' + (Get-Date -Format 'HH:mm:ss') + '] SIKERES: Végső takarítás (Ideiglenes fájlok törlése)') -Encoding utf8; Add-Content -Path C:\\InstallFull.log -Value '' -Encoding utf8; Add-Content -Path C:\\InstallFull.log -Value '------------------------------------------------------------' -Encoding utf8; Add-Content -Path C:\\InstallFull.log -Value '# Végső takarítás' -Encoding utf8; Add-Content -Path C:\\InstallFull.log -Value '------------------------------------------------------------' -Encoding utf8; Add-Content -Path C:\\InstallFull.log -Value '' -Encoding utf8; Add-Content -Path C:\\InstallFull.log -Value '[SIKERES] A szegmens hibátlanul lefutott.' -Encoding utf8"`,
-    description: 'Ideiglenes telepítési fájlok és szkriptek törlése (Takarítás)',
-  });
+  const cleanupScript = `
+Remove-Item -Path C:\\Windows\\Temp\\* -Recurse -Force -ErrorAction SilentlyContinue
+  `.trim();
+
+  addBase64ScriptToFirstLogon(
+    commands,
+    cleanupScript,
+    'C:\\Windows\\Temp\\cleanup.b64',
+    'C:\\Windows\\Temp\\cleanup.ps1',
+    'Végső takarítás (Ideiglenes fájlok és szkriptek törlése)'
+  );
 
   return commands;
 }
