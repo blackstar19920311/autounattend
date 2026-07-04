@@ -89,7 +89,12 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
         />
       </div>
 
-
+      <div className="form-group">
+        <label className="form-label">{t('sysinfo.lang')}</label>
+        <div className="info-box" style={{ padding: '12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          💡 {t('sysinfo.lang.info')}
+        </div>
+      </div>
 
       {language === 'hu' && (
         <Toggle
