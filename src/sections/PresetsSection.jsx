@@ -186,7 +186,6 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
           marginLeft: '-8px',
           marginRight: '-8px'
         }}>
-        {config.usePresets && (
         <>
         <div style={{ marginTop: '20px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
@@ -300,7 +299,6 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
           </div>
         </div>
         </>
-        )}
       </div>
       </div>
     </Card>
