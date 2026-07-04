@@ -1659,6 +1659,18 @@ body, html { margin: 0; padding: 0; height: 100vh; overflow: hidden; }
   cursor: not-allowed;
 }
 
+.custom-select-trigger.small {
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+.input-field.small {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 0.85rem;
+}
+
 .custom-select-icon {
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--text-tertiary);

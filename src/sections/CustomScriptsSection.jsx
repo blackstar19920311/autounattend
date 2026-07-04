@@ -75,6 +75,7 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
         {forceDefaultLocation || !isSelected ? null : (
           <>
             <CustomSelect
+              size="small"
               value={d1Value}
               onChange={(val) => {
                 if (val === "custom_selection") {
@@ -102,7 +103,7 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
               <input
                 aria-label={`${app.name} egyedi telepítési helye`}
                 type="text"
-                className="input-field"
+                className="input-field small"
                 placeholder={t('cs.winget.customLocationPlaceholder')}
                 value={appData.location || ''}
                 onChange={(e) => {
