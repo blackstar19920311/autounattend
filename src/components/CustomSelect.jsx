@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-export default function CustomSelect({ value, options, onChange }) {
+export default function CustomSelect({ value, options, onChange, style, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -18,11 +18,12 @@ export default function CustomSelect({ value, options, onChange }) {
   const selectedOption = options.find(o => o.value === value) || options[0];
 
   return (
-    <div className="custom-select-container" ref={containerRef}>
+    <div className="custom-select-container" ref={containerRef} style={style}>
       <button 
         type="button" 
-        className={`custom-select-trigger ${isOpen ? 'open' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
+        className={`custom-select-trigger ${isOpen ? 'open' : ''} ${disabled ? 'disabled' : ''}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
       >
         <span>{selectedOption ? selectedOption.label : ''}</span>
         <ChevronDown size={18} className={`custom-select-icon ${isOpen ? 'open' : ''}`} />

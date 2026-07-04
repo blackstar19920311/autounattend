@@ -5,6 +5,8 @@ import { Code } from 'lucide-react';
 import Card from '../components/Card';
 import Toggle from '../components/Toggle';
 import InputField from '../components/InputField';
+import Checkbox from '../components/Checkbox';
+import CustomSelect from '../components/CustomSelect';
 import { WINGET_APPS } from '../data/wingetAppsList';
 
 function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCustomAppLocationChange, partitioningMode }) {
@@ -72,35 +74,29 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
       <div style={{ display: 'flex', gap: '10px', flex: 1, alignItems: 'center' }}>
         {forceDefaultLocation || !isSelected ? null : (
           <>
-            <select
-              aria-label={`${app.name} telepítési hely`}
-              className="text-input"
+            <CustomSelect
               value={d1Value}
-              onChange={(e) => {
-                if (e.target.value === "custom_selection") {
+              onChange={(val) => {
+                if (val === "custom_selection") {
                   setForceCustom(true);
                   handleWingetCustomAppLocationChange(app.id, "");
                 } else {
                   setForceCustom(false);
-                  handleWingetCustomAppLocationChange(app.id, e.target.value);
+                  handleWingetCustomAppLocationChange(app.id, val);
                 }
               }}
               disabled={!isSelected}
               style={{ 
                 flex: '1 1 320px',
                 minWidth: '200px',
-                maxWidth: '400px',
-                padding: '1px 8px',
-                height: '24px',
-                fontSize: '0.8rem',
-                opacity: isSelected ? 1 : 0.4,
-                cursor: isSelected ? 'pointer' : 'not-allowed'
+                maxWidth: '400px'
               }}
-            >
-              <option value="">{t('cs.winget.defaultLocation')}</option>
-              {hasDefault && <option value={app.defaultLocation}>{t('cs.winget.recommendedLocation')} ({app.defaultLocation})</option>}
-              <option value="custom_selection">{t('cs.winget.customLocation')}</option>
-            </select>
+              options={[
+                { value: "", label: t('cs.winget.defaultLocation') },
+                ...(hasDefault ? [{ value: app.defaultLocation, label: `${t('cs.winget.recommendedLocation')} (${app.defaultLocation})` }] : []),
+                { value: "custom_selection", label: t('cs.winget.customLocation') }
+              ]}
+            />
 
             {d1Value === "custom_selection" && isSelected && (
               <input
