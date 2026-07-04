@@ -210,7 +210,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         id="cs-wingetApps"
       />
       {data.wingetApps !== 'none' && (
-        <div className="radio-group-indented">
+        <div className="radio-group-indented fade-slide-in">
           {config.usePresets && (
             <>
               <label className="radio-label">
@@ -269,7 +269,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         id="cs-office"
       />
       {data.office !== 'none' && (
-        <div className="radio-group-indented">
+        <div className="radio-group-indented fade-slide-in">
           <label className="radio-label">
             <input 
               type="radio" 
@@ -329,7 +329,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
       />
       
       {data.domainJoin && (
-        <div style={{ marginTop: '10px', paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+        <div className="fade-slide-in" style={{ marginTop: '10px', paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '0' }}>
           <InputField
             id="domainName"
             label={t('cs.domain.name')}

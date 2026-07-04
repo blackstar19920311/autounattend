@@ -42,7 +42,7 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
             onChange={(checked) => updatePartitioning({ fullWipe: checked })}
           />
           {partitioning.fullWipe && (
-            <div style={{ padding: '10px 15px', backgroundColor: 'rgba(234, 179, 8, 0.15)', borderLeft: '4px solid #eab308', borderRadius: '4px', marginTop: '10px' }}>
+            <div className="fade-slide-in" style={{ padding: '10px 15px', backgroundColor: 'rgba(234, 179, 8, 0.15)', borderLeft: '4px solid #eab308', borderRadius: '4px', marginTop: '10px' }}>
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#eab308' }}>
                 {t('part.fullWipe.warning')}
               </p>
