@@ -75,6 +75,7 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
         {forceDefaultLocation || !isSelected ? null : (
           <>
             <CustomSelect
+              className="fade-slide-in"
               size="small"
               value={d1Value}
               onChange={(val) => {
