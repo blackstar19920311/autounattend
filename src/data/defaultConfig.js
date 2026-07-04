@@ -2,7 +2,6 @@ export function getDefaultConfig() {
   return {
     // 1. Rendszerinformációk
     usePresets: false,
-    installLanguage: 'hu',
     architecture: 'amd64',
     addEnglishKeyboard: false,
 

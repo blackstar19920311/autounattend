@@ -388,8 +388,8 @@ try{
   Set-WinHomeLocation -GeoId $GeoUS
   Start-Sleep -Seconds 2
   winget source update | Out-Null
-  $args=@("install","-e","--id",$id,"-h","--source","msstore","--accept-package-agreements","--accept-source-agreements")
-  $p=Start-Process -FilePath "winget.exe" -ArgumentList $args -PassThru -WindowStyle Hidden
+  $installArgs=@("install","-e","--id",$id,"-h","--source","msstore","--accept-package-agreements","--accept-source-agreements")
+  $p=Start-Process -FilePath "winget.exe" -ArgumentList $installArgs -PassThru -WindowStyle Hidden
   $p.WaitForExit(1200 * 1000) | Out-Null
   if($p.ExitCode -eq 0){$exitCode=0}else{$exitCode=1}
 }catch{

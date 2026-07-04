@@ -26,7 +26,8 @@ export function validateConfig(config, t) {
   if (config.randomSuffix && !name) {
     errors.computerName = t('val.computerName.prefixReq');
   } else if (name.length > 0) {
-    if (name.length > 8) {
+    const maxLen = config.randomSuffix ? 8 : 15;
+    if (name.length > maxLen) {
       errors.computerName = t('val.computerName.maxLength');
     } else if (/[^a-zA-Z0-9-]/.test(name)) {
       errors.computerName = t('val.computerName.invalidChars');

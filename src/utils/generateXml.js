@@ -140,7 +140,7 @@ export function generateXml(config, uiLanguage = 'hu') {
   const specialize = buildSpecialize(config, componentAttrs);
 
   // --- oobeSystem pass ---
-  const oobe = buildOobeSystem(config, componentAttrs, inputLocale);
+  const oobe = buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage);
 
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
@@ -556,7 +556,7 @@ Set-ItemProperty $mdmKey 'ConfigureTaskbar' $xml -Type String -Force
 // ---------------------------------------------------------------------------
 // oobeSystem pass
 // ---------------------------------------------------------------------------
-function buildOobeSystem(config, componentAttrs, inputLocale) {
+function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
   const lines = [];
   lines.push('  <!-- oobeSystem – Felhasználói fiók, OOBE és testreszabás -->');
   lines.push('  <settings pass="oobeSystem">');
@@ -618,7 +618,7 @@ function buildOobeSystem(config, componentAttrs, inputLocale) {
   }
 
   // FirstLogonCommands
-  const commands = buildFirstLogonCommands(config);
+  const commands = buildFirstLogonCommands(config, uiLanguage);
   if (commands.length > 0) {
     lines.push('');
     lines.push('      <!-- Első bejelentkezéskor futó parancsok -->');
@@ -643,7 +643,7 @@ function buildOobeSystem(config, componentAttrs, inputLocale) {
 // ---------------------------------------------------------------------------
 // FirstLogonCommands összeállítása
 // ---------------------------------------------------------------------------
-function buildFirstLogonCommands(config) {
+function buildFirstLogonCommands(config, uiLanguage) {
   const commands = [];
 
   // --- 1 perces globális várakozás ---
@@ -962,11 +962,7 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       scriptCounter++;
     } else if (config.customScripts.wingetApps === 'versionB') {
       let scriptB = SCRIPTS.wingetAppsB;
-      if (config.partitioning?.mode === 'auto') {
-        scriptB = scriptB.replace(/;Location="D:\\\\[^"]+"/g, '');
-        scriptB = scriptB.replace(/;Override="\/q INSTALLDIR=D:\\\\[^"]+"/g, '');
-        scriptB = scriptB.replace(/\$customDirs=@\([\s\S]*?\}\n\}\n/g, '');
-      } else {
+      if (config.partitioning?.mode !== 'auto') {
         scriptB = scriptB.replace(
           '$apps=@(',
           'if(-not (Test-Path "D:\\Apps\\VLC")){ New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force | Out-Null }\nNew-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null\nNew-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null\n$apps=@('
@@ -1073,15 +1069,15 @@ $apps=@(
 $ok=$true
 $timeoutSec=600
 foreach($a in $apps){
-  $args=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--source",$a.Source)
+  $installArgs=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--source",$a.Source)
   if($a.Location){
-    $args+=("--location",$a.Location)
+    $installArgs+=("--location",$a.Location)
   }
   if($a.Override){
-    $args+=("--override", ('"' + $a.Override + '"'))
+    $installArgs+=("--override", ('"' + $a.Override + '"'))
   }
   $logLine = "Installing $($a.Id)... "
-  $p=Start-Process -FilePath "winget.exe" -ArgumentList $args -PassThru -WindowStyle Hidden
+  $p=Start-Process -FilePath "winget.exe" -ArgumentList $installArgs -PassThru -WindowStyle Hidden
   if(-not $p.WaitForExit($timeoutSec*1000)){
     try{$p.Kill()}catch{}
     $ok=$false
@@ -1121,7 +1117,7 @@ if($ok){
     if (config.customScripts.office === 'versionA') {
       addBase64ScriptToFirstLogon(
         commands,
-        SCRIPTS.officeA.replace('##OFFICE_LANG##', config.installLanguage === 'en' ? 'en-us' : 'hu-hu'),
+        SCRIPTS.officeA.replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Microsoft Office telepítése (A verzió)'
@@ -1132,7 +1128,7 @@ if($ok){
         commands,
         SCRIPTS.officeB
           .replace('##OFFICE_MAK_KEY##', config.customScripts.officeKey || '')
-          .replace('##OFFICE_LANG##', config.installLanguage === 'en' ? 'en-us' : 'hu-hu'),
+          .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Microsoft Office telepítése (B verzió)'

@@ -1,5 +1,5 @@
 
-export const translations = {
+exports.translations = {
   hu: {
     'app.title': 'Windows 11 Autounattend Generátor',
     'app.subtitle': 'Automatizált telepítő (autounattend.xml) készítő',
@@ -202,7 +202,10 @@ export const translations = {
     'sysinfo.arch.arm': 'ARM (arm64)',
     'sysinfo.lang': 'Telepítés nyelve',
     'sysinfo.lang.info': 'A rendszer nyelve automatikusan megegyezik a pendrive-on lévő Windows nyelvével. Ezt a Microsoft oldaláról letöltött ISO fájl, vagy a hivatalos Adathordozó-készítő eszköz (Media Creation Tool) futtatásakor kiválasztott nyelv határozza meg.',
-
+    'sysinfo.lang.hu': 'Magyar',
+    'sysinfo.lang.en': 'Angol',
+    'sysinfo.lang.hu.kb': 'Magyar billentyűzet',
+    'sysinfo.lang.en.kb': 'US billentyűzet',
     'sysinfo.kb': 'Angol (US) billentyűzet hozzáadása',
 
     'cs.title': 'Egyéni Szkriptek (FirstLogon)',
@@ -457,7 +460,10 @@ export const translations = {
     'sysinfo.arch.arm': 'ARM (arm64)',
     'sysinfo.lang': 'Installation Language',
     'sysinfo.lang.info': 'The system language will automatically match the language of Windows on your USB drive. This is determined by the ISO file downloaded from Microsoft, or the language selected when running the official Media Creation Tool.',
-
+    'sysinfo.lang.hu': 'Hungarian',
+    'sysinfo.lang.en': 'English',
+    'sysinfo.lang.hu.kb': 'Hungarian keyboard',
+    'sysinfo.lang.en.kb': 'US keyboard',
     'sysinfo.kb': 'Add English (US) Keyboard',
 
     'cs.title': 'Custom Scripts (FirstLogon)',

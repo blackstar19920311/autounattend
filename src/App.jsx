@@ -33,16 +33,7 @@ import { getDefaultConfig } from './data/defaultConfig'
 export default function App() {
   const { t, language } = useLanguage();
 
-  const [config, setConfig] = useState(() => {
-    const def = getDefaultConfig();
-    def.installLanguage = language;
-    return def;
-  });
-
-  // Sync installLanguage when UI language changes
-  useEffect(() => {
-    setConfig(prev => ({ ...prev, installLanguage: language }));
-  }, [language]);
+  const [config, setConfig] = useState(() => getDefaultConfig());
 
   const [xml, setXml] = useState('');
   const [errors, setErrors] = useState({})
