@@ -178,18 +178,18 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
           gridTemplateRows: config.usePresets ? '1fr' : '0fr',
           transition: 'all 0.4s linear',
           opacity: config.usePresets ? 1 : 0,
-          marginTop: config.usePresets ? '15px' : '0'
+          marginTop: config.usePresets ? '15px' : '0',
+          marginLeft: '-8px',
+          marginRight: '-8px'
         }}>
         <div style={{ overflow: 'hidden' }}>
           <div style={{
             paddingTop: '10px',
             paddingBottom: '10px',
             paddingLeft: '8px',
-            paddingRight: '8px',
-            marginLeft: '-8px',
-            marginRight: '-8px'
+            paddingRight: '8px'
           }}>
-          <>
+          
         <div style={{ marginTop: '20px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
 
@@ -244,19 +244,22 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
 
       {/* Iskolai Al-profilok (Termek) - Animált nyitás/csukás */}
       <div style={{
-        maxHeight: activePreset === 'iskolai' ? '2000px' : '0',
+        display: 'grid',
+        gridTemplateRows: activePreset === 'iskolai' ? '1fr' : '0fr',
+        transition: 'all 0.4s linear',
         opacity: activePreset === 'iskolai' ? 1 : 0,
-        overflow: 'hidden',
-        transition: 'all 0.7s ease-in-out',
         marginTop: activePreset === 'iskolai' ? '20px' : '0',
-        paddingTop: activePreset === 'iskolai' ? '20px' : '0',
-        borderTop: activePreset === 'iskolai' ? '1px solid var(--border)' : '0px solid transparent',
-        paddingLeft: '8px',
-        paddingRight: '8px',
-        paddingBottom: activePreset === 'iskolai' ? '8px' : '0',
         marginLeft: '-8px',
         marginRight: '-8px'
       }}>
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{
+            paddingTop: '20px',
+            borderTop: '1px solid var(--border)',
+            paddingLeft: '8px',
+            paddingRight: '8px',
+            paddingBottom: '8px'
+          }}>
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
@@ -298,10 +301,10 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
             <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{t('presets.sub.media2')}</strong>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('presets.sub.media2.desc')}</span>
           </button>
-
           </div>
         </div>
-        </>
+        </div>
+      </div>
           </div>
         </div>
       </div>
