@@ -1621,3 +1621,92 @@ body, html { margin: 0; padding: 0; height: 100vh; overflow: hidden; }
   transform: translateX(-50%) translateY(0);
 }
 
+/* Custom Select */
+.custom-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  padding: 10px 14px;
+  min-height: 42px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 1rem;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.custom-select-trigger:hover {
+  border-color: silver;
+}
+
+.custom-select-trigger.open {
+  border-color: var(--border-focus);
+  background: var(--bg-input-focus);
+}
+
+.custom-select-icon {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text-tertiary);
+}
+
+.custom-select-icon.open {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scaleY(0.95);
+  transform-origin: top;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  padding: 6px;
+}
+
+.custom-select-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scaleY(1);
+}
+
+.custom-select-option {
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+.custom-select-option:last-child {
+  margin-bottom: 0;
+}
+
+.custom-select-option:hover {
+  background: var(--accent-subtle);
+}
+
+.custom-select-option.selected {
+  background: var(--accent-light);
+  font-weight: 600;
+  color: var(--accent);
+}

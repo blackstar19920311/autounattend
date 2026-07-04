@@ -5,6 +5,7 @@ import Toggle from '../components/Toggle';
 import Checkbox from '../components/Checkbox';
 import InputField from '../components/InputField';
 import SegmentedControl from '../components/SegmentedControl';
+import CustomSelect from '../components/CustomSelect';
 
 /**
  * Termékkulcs automatikus formázása: nagybetűs, kötőjelek 5 karakterenként
@@ -95,24 +96,17 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
           💡 {t('sysinfo.lang.info')}
         </div>
         <div className="input-container">
-          <select
-            className="input-field"
+          <CustomSelect
             value={config.installLanguage}
-            onChange={(e) => setConfig((prev) => ({ ...prev, installLanguage: e.target.value }))}
-            style={{ cursor: 'pointer' }}
-          >
-            {language === 'en' ? (
-              <>
-                <option value="en">{t('sysinfo.lang.en')}</option>
-                <option value="hu">{t('sysinfo.lang.hu')}</option>
-              </>
-            ) : (
-              <>
-                <option value="hu">{t('sysinfo.lang.hu')}</option>
-                <option value="en">{t('sysinfo.lang.en')}</option>
-              </>
-            )}
-          </select>
+            onChange={(val) => setConfig((prev) => ({ ...prev, installLanguage: val }))}
+            options={language === 'en' ? [
+              { value: 'en', label: t('sysinfo.lang.en') },
+              { value: 'hu', label: t('sysinfo.lang.hu') }
+            ] : [
+              { value: 'hu', label: t('sysinfo.lang.hu') },
+              { value: 'en', label: t('sysinfo.lang.en') }
+            ]}
+          />
         </div>
       </div>
 
