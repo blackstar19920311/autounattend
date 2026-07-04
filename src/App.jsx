@@ -19,6 +19,7 @@ import CustomScriptsSection from './sections/CustomScriptsSection'
 import SectionNav from './components/SectionNav'
 import XmlPreview from './components/XmlPreview'
 import UserManual from './components/UserManual'
+import ThemeLanguageSwitcher from './components/ThemeLanguageSwitcher'
 
 // Segédeszközök
 import { generateXml } from './utils/generateXml'
@@ -196,18 +197,19 @@ export default function App() {
             <p>{t('app.subtitle')}</p>
           </div>
         </div>
-        
-        <div style={{
-          marginLeft: 'auto',
-          fontSize: '1rem',
-          backgroundColor: 'var(--accent-subtle)',
-          padding: '4px 12px',
-          borderRadius: '12px',
-          fontWeight: '600',
-          letterSpacing: '0.5px',
-          color: 'var(--accent)'
-        }}>
-          {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'v202606301031'}
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '15px' }}>
+          <ThemeLanguageSwitcher className="mobile-switcher" />
+          <div style={{
+            fontSize: '1rem',
+            backgroundColor: 'var(--accent-subtle)',
+            padding: '4px 12px',
+            borderRadius: '12px',
+            fontWeight: '600',
+            letterSpacing: '0.5px',
+            color: 'var(--accent)'
+          }}>
+            {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'v202606301031'}
+          </div>
         </div>
       </header>
 

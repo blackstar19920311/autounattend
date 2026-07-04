@@ -195,6 +195,22 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.mobile-switcher {
+  display: none !important;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .mobile-switcher {
+    display: flex !important;
+  }
+  .desktop-switcher {
+    display: none !important;
+  }
+}
+
 .lang-switcher {
   display: flex;
   align-items: center;
