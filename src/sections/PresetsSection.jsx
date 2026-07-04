@@ -174,19 +174,22 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
         
        <div 
         style={{ 
-          maxHeight: config.usePresets ? '2000px' : '0',
+          display: 'grid',
+          gridTemplateRows: config.usePresets ? '1fr' : '0fr',
+          transition: 'all 0.4s linear',
           opacity: config.usePresets ? 1 : 0,
-          overflow: 'hidden',
-          transition: 'all 0.7s ease-in-out',
-          paddingTop: config.usePresets ? '10px' : '0',
-          paddingBottom: config.usePresets ? '10px' : '0',
-          marginTop: config.usePresets ? '15px' : '0',
-          paddingLeft: '8px',
-          paddingRight: '8px',
-          marginLeft: '-8px',
-          marginRight: '-8px'
+          marginTop: config.usePresets ? '15px' : '0'
         }}>
-        <>
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{
+            paddingTop: '10px',
+            paddingBottom: '10px',
+            paddingLeft: '8px',
+            paddingRight: '8px',
+            marginLeft: '-8px',
+            marginRight: '-8px'
+          }}>
+          <>
         <div style={{ marginTop: '20px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
 
@@ -299,6 +302,8 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
           </div>
         </div>
         </>
+          </div>
+        </div>
       </div>
       </div>
     </Card>
