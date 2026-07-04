@@ -6,6 +6,7 @@ import Checkbox from '../components/Checkbox';
 import InputField from '../components/InputField';
 import SegmentedControl from '../components/SegmentedControl';
 import CustomSelect from '../components/CustomSelect';
+import AnimatedCollapse from '../components/AnimatedCollapse';
 
 /**
  * Termékkulcs automatikus formázása: nagybetűs, kötőjelek 5 karakterenként
@@ -110,7 +111,7 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
         </div>
       </div>
 
-      {language === 'hu' && (
+      <AnimatedCollapse show={language === 'hu'}>
         <Toggle
           id="addEnglishKeyboard"
           label={t('sysinfo.kb')}
@@ -118,7 +119,7 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
           checked={config.addEnglishKeyboard}
           onChange={(value) => setConfig((prev) => ({ ...prev, addEnglishKeyboard: value }))}
         />
-      )}
+      </AnimatedCollapse>
     </Card>
   );
 }

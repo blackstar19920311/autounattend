@@ -1,8 +1,10 @@
+import React from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Wifi } from 'lucide-react';
 import Card from '../components/Card';
 import SegmentedControl from '../components/SegmentedControl';
 import InputField from '../components/InputField';
+import AnimatedCollapse from '../components/AnimatedCollapse';
 
 export default function WifiSection({ config, setConfig, errors = {} }) {
   const { t } = useLanguage();
@@ -37,7 +39,7 @@ export default function WifiSection({ config, setConfig, errors = {} }) {
         </p>
       </div>
 
-      {config.wifi.mode === 'auto' && (
+      <AnimatedCollapse show={config.wifi.mode === 'auto'}>
         <div style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border)' }}>
           <InputField
             label={t('wifi.ssid')}
@@ -59,7 +61,7 @@ export default function WifiSection({ config, setConfig, errors = {} }) {
             />
           </div>
         </div>
-      )}
+      </AnimatedCollapse>
     </Card>
   );
 }

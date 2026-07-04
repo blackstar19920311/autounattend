@@ -7,6 +7,7 @@ import Toggle from '../components/Toggle';
 import InputField from '../components/InputField';
 import Checkbox from '../components/Checkbox';
 import CustomSelect from '../components/CustomSelect';
+import AnimatedCollapse from '../components/AnimatedCollapse';
 import { WINGET_APPS } from '../data/wingetAppsList';
 
 function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCustomAppLocationChange, partitioningMode }) {
@@ -72,50 +73,47 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
       </div>
       
       <div style={{ display: 'flex', gap: '10px', flex: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-        {forceDefaultLocation || !isSelected ? null : (
-          <>
-            <CustomSelect
-              className="fade-slide-in"
-              size="small"
-              value={d1Value}
-              onChange={(val) => {
-                if (val === "custom_selection") {
-                  setForceCustom(true);
-                  handleWingetCustomAppLocationChange(app.id, "");
-                } else {
-                  setForceCustom(false);
-                  handleWingetCustomAppLocationChange(app.id, val);
-                }
-              }}
-              disabled={!isSelected}
-              style={{ 
-                flex: '1 1 320px',
-                minWidth: '200px',
-                maxWidth: '400px'
-              }}
-              options={[
-                { value: "", label: t('cs.winget.defaultLocation') },
-                ...(hasDefault ? [{ value: app.defaultLocation, label: `${t('cs.winget.recommendedLocation')} (${app.defaultLocation})` }] : []),
-                { value: "custom_selection", label: t('cs.winget.customLocation') }
-              ]}
-            />
+        <AnimatedCollapse 
+          show={!forceDefaultLocation && isSelected}
+          style={{ flex: '1 1 320px', minWidth: '200px', maxWidth: '400px' }}
+        >
+          <CustomSelect
+            size="small"
+            value={d1Value}
+            onChange={(val) => {
+              if (val === "custom_selection") {
+                setForceCustom(true);
+                handleWingetCustomAppLocationChange(app.id, "");
+              } else {
+                setForceCustom(false);
+                handleWingetCustomAppLocationChange(app.id, val);
+              }
+            }}
+            disabled={!isSelected}
+            options={[
+              { value: "", label: t('cs.winget.defaultLocation') },
+              ...(hasDefault ? [{ value: app.defaultLocation, label: `${t('cs.winget.recommendedLocation')} (${app.defaultLocation})` }] : []),
+              { value: "custom_selection", label: t('cs.winget.customLocation') }
+            ]}
+          />
+        </AnimatedCollapse>
 
-            {d1Value === "custom_selection" && isSelected && (
-              <input
-                aria-label={`${app.name} egyedi telepítési helye`}
-                type="text"
-                className="input-field small fade-slide-in"
-                placeholder={t('cs.winget.customLocationPlaceholder')}
-                value={appData.location || ''}
-                onChange={(e) => {
-                  setForceCustom(true);
-                  handleWingetCustomAppLocationChange(app.id, e.target.value);
-                }}
-                style={{ flex: '1 1 200px', minWidth: '150px' }}
-              />
-            )}
-          </>
-        )}
+        <AnimatedCollapse 
+          show={d1Value === "custom_selection" && isSelected}
+          style={{ flex: '1 1 200px', minWidth: '150px' }}
+        >
+          <input
+            aria-label={`${app.name} egyedi telepítési helye`}
+            type="text"
+            className="input-field small"
+            placeholder={t('cs.winget.customLocationPlaceholder')}
+            value={appData.location || ''}
+            onChange={(e) => {
+              setForceCustom(true);
+              handleWingetCustomAppLocationChange(app.id, e.target.value);
+            }}
+          />
+        </AnimatedCollapse>
       </div>
     </div>
   );
@@ -209,8 +207,8 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         onChange={handleToggle('wingetApps', config.usePresets ? 'versionA' : 'custom')}
         id="cs-wingetApps"
       />
-      {data.wingetApps !== 'none' && (
-        <div className="radio-group-indented fade-slide-in">
+      <AnimatedCollapse show={data.wingetApps !== 'none'}>
+        <div className="radio-group-indented">
           {config.usePresets && (
             <>
               <label className="radio-label">
@@ -243,7 +241,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
             </>
           )}
 
-          {(data.wingetApps === 'custom' || !config.usePresets) && (
+          <AnimatedCollapse show={data.wingetApps === 'custom' || !config.usePresets}>
             <div style={{ marginTop: config.usePresets ? '15px' : '0', paddingLeft: config.usePresets ? '24px' : '0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '5px' }}>{t('cs.winget.custom.help')}</p>
               {WINGET_APPS.map(app => (
@@ -257,9 +255,9 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
                 />
               ))}
             </div>
-          )}
+          </AnimatedCollapse>
         </div>
-      )}
+      </AnimatedCollapse>
 
       <Toggle
         label={t('cs.office')}
@@ -268,8 +266,8 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         onChange={handleToggle('office', 'versionB')}
         id="cs-office"
       />
-      {data.office !== 'none' && (
-        <div className="radio-group-indented fade-slide-in">
+      <AnimatedCollapse show={data.office !== 'none'}>
+        <div className="radio-group-indented">
           <label className="radio-label">
             <input 
               type="radio" 
@@ -289,8 +287,8 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
             <span>{t('cs.office.2021')}</span>
           </label>
           
-          {data.office === 'versionB' && (
-            <div style={{ marginTop: '10px', paddingLeft: '28px' }}>
+          <AnimatedCollapse show={data.office === 'versionB'} marginTop="10px">
+            <div style={{ paddingLeft: '28px' }}>
               <InputField
                 id="officeKey"
                 label={t('cs.office.2021.key')}
@@ -308,9 +306,9 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
                 {t('cs.office.2021.key.help')}
               </p>
             </div>
-          )}
+          </AnimatedCollapse>
         </div>
-      )}
+      </AnimatedCollapse>
 
       <Toggle
         label={t('cs.pcManager')}
@@ -328,8 +326,8 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         id="cs-domainJoin"
       />
       
-      {data.domainJoin && (
-        <div className="fade-slide-in" style={{ marginTop: '10px', paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+      <AnimatedCollapse show={!!data.domainJoin} marginTop="10px">
+        <div style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '0' }}>
           <InputField
             id="domainName"
             label={t('cs.domain.name')}
@@ -358,26 +356,28 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
               }
             }))}
           />
-          <InputField
-            id="domainPass"
-            label={t('cs.domain.pass')}
-            type="password"
-            value={data.domainPass || ''}
-            placeholder="••••••••"
-            error={errors.domainPass}
-            onChange={(val) => setConfig(prev => ({
-              ...prev,
-              customScripts: {
-                ...prev.customScripts,
-                domainPass: val
-              }
-            }))}
-          />
+          <div style={{ marginTop: '16px' }}>
+            <InputField
+              id="domainPass"
+              label={t('cs.domain.pass')}
+              type="password"
+              value={data.domainPass || ''}
+              placeholder="••••••••"
+              error={errors.domainPass}
+              onChange={(val) => setConfig(prev => ({
+                ...prev,
+                customScripts: {
+                  ...prev.customScripts,
+                  domainPass: val
+                }
+              }))}
+            />
+          </div>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
             {t('cs.domain.help')}
           </p>
         </div>
-      )}
+      </AnimatedCollapse>
     </Card>
   )
 }
