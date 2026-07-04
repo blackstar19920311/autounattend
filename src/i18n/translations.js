@@ -201,8 +201,9 @@ export const translations = {
     'sysinfo.arch.32': '32-bites (x86)',
     'sysinfo.arch.arm': 'ARM (arm64)',
     'sysinfo.lang': 'Telepítés nyelve',
-    'sysinfo.lang.info': 'A rendszer nyelve automatikusan megegyezik a pendrive-on lévő Windows nyelvével. Ezt a Microsoft oldaláról letöltött ISO fájl, vagy a hivatalos Adathordozó-készítő eszköz (Media Creation Tool) futtatásakor kiválasztott nyelv határozza meg.',
-
+    'sysinfo.lang.info': 'A választott nyelvnek meg kell egyeznie a telepítő pendrive (ISO / Media Creation Tool) nyelvével.',
+    'sysinfo.lang.hu': 'Magyar',
+    'sysinfo.lang.en': 'Angol',
     'sysinfo.kb': 'Angol (US) billentyűzet hozzáadása',
 
     'cs.title': 'Egyéni Szkriptek (FirstLogon)',
@@ -456,8 +457,9 @@ export const translations = {
     'sysinfo.arch.32': '32-bit (x86)',
     'sysinfo.arch.arm': 'ARM (arm64)',
     'sysinfo.lang': 'Installation Language',
-    'sysinfo.lang.info': 'The system language will automatically match the language of Windows on your USB drive. This is determined by the ISO file downloaded from Microsoft, or the language selected when running the official Media Creation Tool.',
-
+    'sysinfo.lang.info': 'The language selected above must match the language of your installation USB (ISO / Media Creation Tool).',
+    'sysinfo.lang.hu': 'Hungarian',
+    'sysinfo.lang.en': 'English',
     'sysinfo.kb': 'Add English (US) Keyboard',
 
     'cs.title': 'Custom Scripts (FirstLogon)',

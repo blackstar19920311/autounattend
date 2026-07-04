@@ -166,8 +166,23 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
   lines.push('  <settings pass="windowsPE">');
 
   // International-Core-WinPE
+  const setupUiLang = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
+  const sysLocale = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
+  const uiLang = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
+  const userLocale = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
+  const uiLangFallback = config.installLanguage === 'en' ? '' : 'en-US';
+
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-International-Core-WinPE')}>`);
+  lines.push(`      <SetupUILanguage>`);
+  lines.push(`        <UILanguage>${setupUiLang}</UILanguage>`);
+  lines.push(`      </SetupUILanguage>`);
   lines.push(`      <InputLocale>${inputLocale}</InputLocale>`);
+  lines.push(`      <SystemLocale>${sysLocale}</SystemLocale>`);
+  lines.push(`      <UILanguage>${uiLang}</UILanguage>`);
+  if (uiLangFallback) {
+    lines.push(`      <UILanguageFallback>${uiLangFallback}</UILanguageFallback>`);
+  }
+  lines.push(`      <UserLocale>${userLocale}</UserLocale>`);
   lines.push('    </component>');
 
   // Microsoft-Windows-Setup
@@ -562,8 +577,15 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
   lines.push('  <settings pass="oobeSystem">');
 
   // International-Core
+  const sysLocale = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
+  const uiLang = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
+  const userLocale = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
+
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-International-Core')}>`);
   lines.push(`      <InputLocale>${inputLocale}</InputLocale>`);
+  lines.push(`      <SystemLocale>${sysLocale}</SystemLocale>`);
+  lines.push(`      <UILanguage>${uiLang}</UILanguage>`);
+  lines.push(`      <UserLocale>${userLocale}</UserLocale>`);
   lines.push('    </component>');
 
   // Shell-Setup
