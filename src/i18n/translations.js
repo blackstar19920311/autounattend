@@ -202,8 +202,8 @@ export const translations = {
     'sysinfo.arch.arm': 'ARM (arm64)',
     'sysinfo.lang': 'Telepítés nyelve',
     'sysinfo.lang.info': 'A kiválasztott nyelvnek meg kell egyeznie a telepítő pendrive-on lévő Windows 11 nyelvével.',
-    'sysinfo.lang.hu': 'Magyar',
-    'sysinfo.lang.en': 'Angol',
+    'sysinfo.lang.hu': 'Magyar (Magyar billentyűzet)',
+    'sysinfo.lang.en': 'Angol (Magyar billentyűzet)',
     'sysinfo.kb': 'Angol (US) billentyűzet hozzáadása',
 
     'cs.title': 'Egyéni Szkriptek (FirstLogon)',
@@ -458,8 +458,8 @@ export const translations = {
     'sysinfo.arch.arm': 'ARM (arm64)',
     'sysinfo.lang': 'Installation Language',
     'sysinfo.lang.info': 'The selected language must match the language of Windows 11 on your installation USB drive.',
-    'sysinfo.lang.hu': 'Hungarian',
-    'sysinfo.lang.en': 'English',
+    'sysinfo.lang.hu': 'Hungarian (US keyboard)',
+    'sysinfo.lang.en': 'English (US keyboard)',
     'sysinfo.kb': 'Add English (US) Keyboard',
 
     'cs.title': 'Custom Scripts (FirstLogon)',
