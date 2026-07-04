@@ -42,7 +42,7 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap', marginBottom: '6px', minHeight: '28px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap', marginBottom: '6px', minHeight: '32px' }}>
       <div style={{ flex: '1 1 260px', minWidth: '200px', maxWidth: '300px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <button
           type="button"
