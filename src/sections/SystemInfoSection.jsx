@@ -91,10 +91,14 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
 
       <div className="form-group">
         <label className="form-label">{t('sysinfo.lang')}</label>
+        <div className="info-box" style={{ marginBottom: '12px', padding: '10px 12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          💡 {t('sysinfo.lang.info')}
+        </div>
         <select
           className="text-input"
           value={config.installLanguage}
           onChange={(e) => setConfig((prev) => ({ ...prev, installLanguage: e.target.value }))}
+          style={{ width: '100%', padding: '10px 12px', minHeight: '42px', fontSize: '1rem', borderRadius: '8px', cursor: 'pointer' }}
         >
           {language === 'en' ? (
             <>
@@ -108,9 +112,6 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
             </>
           )}
         </select>
-        <div className="info-box" style={{ marginTop: '8px', padding: '12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          💡 {t('sysinfo.lang.info')}
-        </div>
       </div>
 
       {language === 'hu' && (
