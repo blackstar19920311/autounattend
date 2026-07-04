@@ -48,6 +48,7 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
                 {t('part.fullWipe.warning')}
               </p>
             </div>
+
           </AnimatedCollapse>
         </div>
       </AnimatedCollapse>
@@ -68,8 +69,9 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
             }}
             placeholder="0"
             id="disk-number"
+            style={{ marginBottom: '8px' }}
           />
-          <p className="toggle-description" style={{ marginTop: -12 }}>
+          <p className="toggle-description" style={{ margin: 0, paddingBottom: '12px' }}>
             {t('part.auto.disk.desc')}
           </p>
         </div>
@@ -161,8 +163,9 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
             type="number"
             error={errors.installPartitionId}
             id="installPartitionId"
+            style={{ marginBottom: '8px' }}
           />
-          <p className="toggle-description" style={{ marginTop: -12 }}>
+          <p className="toggle-description" style={{ margin: 0, paddingBottom: '12px' }}>
             {t('part.custom.installId.desc')}
           </p>
         </div>
