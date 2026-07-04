@@ -198,7 +198,6 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '15px' }}>
-          <ThemeLanguageSwitcher className="mobile-switcher" />
           <div style={{
             fontSize: '1rem',
             backgroundColor: 'var(--accent-subtle)',
@@ -241,6 +240,7 @@ export default function App() {
             </div>
           )}
           <div className="scrollable-sections" onScroll={handleMainScroll}>
+          <ThemeLanguageSwitcher className="mobile-switcher" />
           <UserManual />
           <div id="presets"><PresetsSection config={config} setConfig={updateConfig} resetPresetRef={resetPresetRef} /></div>
           <div id="system-info"><SystemInfoSection config={config} setConfig={updateConfig} errors={errors} /></div>
