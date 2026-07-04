@@ -89,29 +89,31 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
         />
       </div>
 
-      <div className="form-group">
-        <label className="form-label">{t('sysinfo.lang')}</label>
-        <div className="info-box" style={{ marginBottom: '12px', padding: '10px 12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+      <div className="input-wrapper" style={{ marginBottom: '20px' }}>
+        <label className="input-label">{t('sysinfo.lang')}</label>
+        <div className="info-box" style={{ marginBottom: '10px', padding: '10px 12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
           💡 {t('sysinfo.lang.info')}
         </div>
-        <select
-          className="text-input"
-          value={config.installLanguage}
-          onChange={(e) => setConfig((prev) => ({ ...prev, installLanguage: e.target.value }))}
-          style={{ width: '100%', padding: '10px 12px', minHeight: '42px', fontSize: '1rem', borderRadius: '8px', cursor: 'pointer' }}
-        >
-          {language === 'en' ? (
-            <>
-              <option value="en">{t('sysinfo.lang.en')}</option>
-              <option value="hu">{t('sysinfo.lang.hu')}</option>
-            </>
-          ) : (
-            <>
-              <option value="hu">{t('sysinfo.lang.hu')}</option>
-              <option value="en">{t('sysinfo.lang.en')}</option>
-            </>
-          )}
-        </select>
+        <div className="input-container">
+          <select
+            className="input-field"
+            value={config.installLanguage}
+            onChange={(e) => setConfig((prev) => ({ ...prev, installLanguage: e.target.value }))}
+            style={{ cursor: 'pointer' }}
+          >
+            {language === 'en' ? (
+              <>
+                <option value="en">{t('sysinfo.lang.en')}</option>
+                <option value="hu">{t('sysinfo.lang.hu')}</option>
+              </>
+            ) : (
+              <>
+                <option value="hu">{t('sysinfo.lang.hu')}</option>
+                <option value="en">{t('sysinfo.lang.en')}</option>
+              </>
+            )}
+          </select>
+        </div>
       </div>
 
       {language === 'hu' && (
