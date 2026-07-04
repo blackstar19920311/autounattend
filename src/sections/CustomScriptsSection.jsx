@@ -102,14 +102,14 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
               <input
                 aria-label={`${app.name} egyedi telepítési helye`}
                 type="text"
-                className="text-input"
+                className="input-field"
                 placeholder={t('cs.winget.customLocationPlaceholder')}
                 value={appData.location || ''}
                 onChange={(e) => {
                   setForceCustom(true);
                   handleWingetCustomAppLocationChange(app.id, e.target.value);
                 }}
-                style={{ flex: '1 1 200px', minWidth: '150px', padding: '1px 8px', height: '24px', fontSize: '0.8rem' }}
+                style={{ flex: '1 1 200px', minWidth: '150px' }}
               />
             )}
           </>
