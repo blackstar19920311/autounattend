@@ -167,13 +167,7 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
 
   // International-Core-WinPE
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-International-Core-WinPE')}>`);
-  lines.push('      <SetupUILanguage>');
-  lines.push('        <UILanguage>hu-HU</UILanguage>');
-  lines.push('      </SetupUILanguage>');
   lines.push(`      <InputLocale>${inputLocale}</InputLocale>`);
-  lines.push('      <SystemLocale>hu-HU</SystemLocale>');
-  lines.push('      <UILanguage>hu-HU</UILanguage>');
-  lines.push('      <UserLocale>hu-HU</UserLocale>');
   lines.push('    </component>');
 
   // Microsoft-Windows-Setup
@@ -570,9 +564,6 @@ function buildOobeSystem(config, componentAttrs, inputLocale) {
   // International-Core
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-International-Core')}>`);
   lines.push(`      <InputLocale>${inputLocale}</InputLocale>`);
-  lines.push('      <SystemLocale>hu-HU</SystemLocale>');
-  lines.push('      <UILanguage>hu-HU</UILanguage>');
-  lines.push('      <UserLocale>hu-HU</UserLocale>');
   lines.push('    </component>');
 
   // Shell-Setup
