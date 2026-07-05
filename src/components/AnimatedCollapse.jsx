@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function AnimatedCollapse({ 
   show, 
@@ -9,6 +9,23 @@ export default function AnimatedCollapse({
   style = {},
   className = ''
 }) {
+  const [overflow, setOverflow] = useState('hidden');
+
+  useEffect(() => {
+    let timeout;
+    if (show) {
+      // Wait for the open animation to finish, then allow overflow
+      const durationMs = parseFloat(transitionDuration) * 1000 || 400;
+      timeout = setTimeout(() => {
+        setOverflow('visible');
+      }, durationMs);
+    } else {
+      // Immediately hide overflow when collapsing starts
+      setOverflow('hidden');
+    }
+    return () => clearTimeout(timeout);
+  }, [show, transitionDuration]);
+
   return (
     <div 
       className={className}
@@ -22,7 +39,7 @@ export default function AnimatedCollapse({
         ...style
       }}
     >
-      <div style={{ overflow: 'hidden' }}>
+      <div style={{ overflow }}>
         {children}
       </div>
     </div>
