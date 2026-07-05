@@ -207,7 +207,7 @@ export default function App() {
             letterSpacing: '0.5px',
             color: 'var(--accent)'
           }}>
-            {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '20260630-1031'}
+            {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'v20260630-1031'}
           </div>
         </div>
       </header>
