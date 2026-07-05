@@ -9,7 +9,7 @@ import AnimatedCollapse from '../components/AnimatedCollapse';
 export default function PartitionSection({ config, setConfig, errors = {} }) {
   const { t } = useLanguage();
 
-    const { partitioning } = config;
+  const { partitioning } = config;
 
   const updatePartitioning = (updates) => {
     setConfig((prev) => ({
@@ -34,27 +34,9 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
         onChange={(value) => updatePartitioning({ mode: value })}
       />
 
-      <AnimatedCollapse show={partitioning.mode === 'auto' || partitioning.mode === 'autocd'} marginTop="16px">
-        <div style={{ marginBottom: '20px' }}>
-          <Toggle
-            label={t('part.fullWipe')}
-            description={t('part.fullWipe.desc')}
-            checked={partitioning.fullWipe}
-            onChange={(checked) => updatePartitioning({ fullWipe: checked })}
-          />
-          <AnimatedCollapse show={partitioning.fullWipe} marginTop="10px">
-            <div style={{ padding: '10px 15px', backgroundColor: 'rgba(234, 179, 8, 0.15)', borderLeft: '4px solid #eab308', borderRadius: '4px' }}>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: '#eab308' }}>
-                {t('part.fullWipe.warning')}
-              </p>
-            </div>
-
-          </AnimatedCollapse>
-        </div>
-      </AnimatedCollapse>
-
-      <AnimatedCollapse show={partitioning.mode !== 'manual'}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+      {/* Disk Number is always shown except in manual mode. Placed first to avoid vertical jumping when fullWipe toggles. */}
+      <AnimatedCollapse show={partitioning.mode !== 'manual'} marginTop="16px">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginBottom: '16px' }}>
           <InputField
             label={t('part.auto.disk')}
             type="number"
@@ -71,60 +53,79 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
             id="disk-number"
             style={{ marginBottom: '8px' }}
           />
-          <p className="toggle-description" style={{ margin: 0, paddingBottom: '12px' }}>
+          <p className="toggle-description" style={{ margin: 0, paddingBottom: '4px' }}>
             {t('part.auto.disk.desc')}
           </p>
         </div>
       </AnimatedCollapse>
 
-      <AnimatedCollapse show={partitioning.mode === 'auto'}>
-        <div className="partition-preview">
-          <div className="partition-preview-label">{t('part.auto.split.preview')}</div>
-          <div className="partition-bar">
-            <div className="partition-segment partition-efi" title="EFI System Partition (FAT32)">
-              <span className="partition-segment-label">EFI</span>
-              <span className="partition-segment-size">100 MB</span>
+      {/* Full Wipe Toggle and Previews (auto and autocd share this to prevent double-height layout shifts) */}
+      <AnimatedCollapse show={partitioning.mode === 'auto' || partitioning.mode === 'autocd'}>
+        <div style={{ marginBottom: '20px' }}>
+          <Toggle
+            label={t('part.fullWipe')}
+            description={t('part.fullWipe.desc')}
+            checked={partitioning.fullWipe}
+            onChange={(checked) => updatePartitioning({ fullWipe: checked })}
+          />
+          <AnimatedCollapse show={partitioning.fullWipe} marginTop="10px">
+            <div style={{ padding: '10px 15px', backgroundColor: 'rgba(234, 179, 8, 0.15)', borderLeft: '4px solid #eab308', borderRadius: '4px' }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#eab308' }}>
+                {t('part.fullWipe.warning')}
+              </p>
             </div>
-            <div className="partition-segment partition-msr" title="Microsoft Reserved">
-              <span className="partition-segment-label">MSR</span>
-              <span className="partition-segment-size">16 MB</span>
-            </div>
-            <div className="partition-segment partition-windows" title="Windows (C:)">
-              <span className="partition-segment-label">Windows (C:)</span>
-              <span className="partition-segment-size">{t('part.auto.split.rest')}</span>
-            </div>
-          </div>
-          <p className="toggle-description" style={{ marginTop: 4 }}>👉 <strong>{t('part.warning.cleanAll')}</strong> {t('part.warning.auto.layout')}</p>
+          </AnimatedCollapse>
         </div>
-      </AnimatedCollapse>
 
-      <AnimatedCollapse show={partitioning.mode === 'autocd'}>
-        <div className="partition-preview">
-          <div className="partition-preview-label">{t('part.auto.split.preview')}</div>
-          <div className="partition-bar">
-            <div className="partition-segment partition-efi" title="EFI System Partition (FAT32)">
-              <span className="partition-segment-label">EFI</span>
-              <span className="partition-segment-size">300 MB</span>
+        {partitioning.mode === 'auto' && (
+          <div className="partition-preview">
+            <div className="partition-preview-label">{t('part.auto.split.preview')}</div>
+            <div className="partition-bar">
+              <div className="partition-segment partition-efi" title="EFI System Partition (FAT32)">
+                <span className="partition-segment-label">EFI</span>
+                <span className="partition-segment-size">100 MB</span>
+              </div>
+              <div className="partition-segment partition-msr" title="Microsoft Reserved">
+                <span className="partition-segment-label">MSR</span>
+                <span className="partition-segment-size">16 MB</span>
+              </div>
+              <div className="partition-segment partition-windows" title="Windows (C:)">
+                <span className="partition-segment-label">Windows (C:)</span>
+                <span className="partition-segment-size">{t('part.auto.split.rest')}</span>
+              </div>
             </div>
-            <div className="partition-segment partition-msr" title="Microsoft Reserved">
-              <span className="partition-segment-label">MSR</span>
-              <span className="partition-segment-size">16 MB</span>
-            </div>
-            <div className="partition-segment partition-windows" title="Windows (C:)">
-              <span className="partition-segment-label">Windows (C:)</span>
-              <span className="partition-segment-size">150 GB</span>
-            </div>
-            <div className="partition-segment" style={{ backgroundColor: '#10b981', color: 'white', flex: 1, padding: '4px', textAlign: 'center', fontSize: '11px' }} title={t('part.auto.split.dLabel')}>
-              <span className="partition-segment-label">{t('part.auto.split.dLabel')}</span>
-              <span className="partition-segment-size">{t('part.auto.split.rest')}</span>
-            </div>
-            <div className="partition-segment" style={{ backgroundColor: '#6366f1', color: 'white', minWidth: '40px', padding: '4px', textAlign: 'center', fontSize: '11px' }} title="Recovery">
-              <span className="partition-segment-label">Rec</span>
-              <span className="partition-segment-size">1 GB</span>
-            </div>
+            <p className="toggle-description" style={{ marginTop: 4 }}>👉 <strong>{t('part.warning.cleanAll')}</strong> {t('part.warning.auto.layout')}</p>
           </div>
-          <p className="toggle-description" style={{ marginTop: 4 }}>👉 <strong>{t('part.warning.clean')}</strong> {t('part.warning.autoCD.layout')}</p>
-        </div>
+        )}
+
+        {partitioning.mode === 'autocd' && (
+          <div className="partition-preview">
+            <div className="partition-preview-label">{t('part.auto.split.preview')}</div>
+            <div className="partition-bar">
+              <div className="partition-segment partition-efi" title="EFI System Partition (FAT32)">
+                <span className="partition-segment-label">EFI</span>
+                <span className="partition-segment-size">300 MB</span>
+              </div>
+              <div className="partition-segment partition-msr" title="Microsoft Reserved">
+                <span className="partition-segment-label">MSR</span>
+                <span className="partition-segment-size">16 MB</span>
+              </div>
+              <div className="partition-segment partition-windows" title="Windows (C:)">
+                <span className="partition-segment-label">Windows (C:)</span>
+                <span className="partition-segment-size">150 GB</span>
+              </div>
+              <div className="partition-segment" style={{ backgroundColor: '#10b981', color: 'white', flex: 1, padding: '4px', textAlign: 'center', fontSize: '11px' }} title={t('part.auto.split.dLabel')}>
+                <span className="partition-segment-label">{t('part.auto.split.dLabel')}</span>
+                <span className="partition-segment-size">{t('part.auto.split.rest')}</span>
+              </div>
+              <div className="partition-segment" style={{ backgroundColor: '#6366f1', color: 'white', minWidth: '40px', padding: '4px', textAlign: 'center', fontSize: '11px' }} title="Recovery">
+                <span className="partition-segment-label">Rec</span>
+                <span className="partition-segment-size">1 GB</span>
+              </div>
+            </div>
+            <p className="toggle-description" style={{ marginTop: 4 }}>👉 <strong>{t('part.warning.clean')}</strong> {t('part.warning.autoCD.layout')}</p>
+          </div>
+        )}
       </AnimatedCollapse>
 
       <AnimatedCollapse show={partitioning.mode === 'custom'}>
