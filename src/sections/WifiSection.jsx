@@ -25,43 +25,45 @@ export default function WifiSection({ config, setConfig, errors = {} }) {
 
   return (
     <Card title={t('section.wifi')} icon={<Wifi size={20} />} tooltip={t('tt.wifiDesc')}>
-      <div className="form-group">
-        <SegmentedControl
-          label={t('wifi.mode')}
-          options={wifiOptions}
-          value={config.wifi.mode}
-          onChange={(val) => updateWifi({ mode: val })}
-        />
-        <p className="help-text" style={{ marginTop: '0.5rem', marginBottom: '1.5rem', fontSize: '0.9rem', opacity: 0.8 }}>
-          {config.wifi.mode === 'skip' && t('wifi.help.skip')}
-          {config.wifi.mode === 'auto' && t('wifi.help.auto')}
-          {config.wifi.mode === 'manual' && t('wifi.help.manual')}
-        </p>
-      </div>
-
-      <AnimatedCollapse show={config.wifi.mode === 'auto'}>
-        <div style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-          <InputField
-            label={t('wifi.ssid')}
-            id="wifi.ssid"
-            placeholder={t('wifi.ssid.ph')}
-            value={config.wifi.ssid}
-            onChange={(val) => updateWifi({ ssid: val })}
-            error={errors['wifi.ssid']}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="form-group">
+          <SegmentedControl
+            label={t('wifi.mode')}
+            options={wifiOptions}
+            value={config.wifi.mode}
+            onChange={(val) => updateWifi({ mode: val })}
           />
-          <div style={{ marginTop: '1rem' }}>
-            <InputField
-              label={t('wifi.password')}
-              id="wifi.password"
-              type="password"
-              placeholder={t('wifi.password.ph')}
-              value={config.wifi.password}
-              onChange={(val) => updateWifi({ password: val })}
-              error={errors['wifi.password']}
-            />
-          </div>
+          <p className="help-text" style={{ marginTop: '0.5rem', marginBottom: '1.5rem', fontSize: '0.9rem', opacity: 0.8 }}>
+            {config.wifi.mode === 'skip' && t('wifi.help.skip')}
+            {config.wifi.mode === 'auto' && t('wifi.help.auto')}
+            {config.wifi.mode === 'manual' && t('wifi.help.manual')}
+          </p>
         </div>
-      </AnimatedCollapse>
+
+        <AnimatedCollapse show={config.wifi.mode === 'auto'}>
+          <div style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <InputField
+              label={t('wifi.ssid')}
+              id="wifi.ssid"
+              placeholder={t('wifi.ssid.ph')}
+              value={config.wifi.ssid}
+              onChange={(val) => updateWifi({ ssid: val })}
+              error={errors['wifi.ssid']}
+            />
+            <div style={{ marginTop: '1rem' }}>
+              <InputField
+                label={t('wifi.password')}
+                id="wifi.password"
+                type="password"
+                placeholder={t('wifi.password.ph')}
+                value={config.wifi.password}
+                onChange={(val) => updateWifi({ password: val })}
+                error={errors['wifi.password']}
+              />
+            </div>
+          </div>
+        </AnimatedCollapse>
+      </div>
     </Card>
   );
 }
