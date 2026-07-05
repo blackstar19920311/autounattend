@@ -98,12 +98,14 @@ export default function PersonalizationSection({ config, setConfig }) {
       <h3 className="subsection">{t('pers.startMenu')}</h3>
       <Toggle
         label={t('pers.startMenu.hideRecent')}
+        description={t('pers.startMenu.hideRecent.desc')}
         checked={config.hideRecentApps}
         onChange={handleToggle('hideRecentApps')}
         id="hideRecentApps"
       />
       <Toggle
         label={t('pers.startMenu.hideMostUsed')}
+        description={t('pers.startMenu.hideMostUsed.desc')}
         checked={config.hideMostUsedApps}
         onChange={handleToggle('hideMostUsedApps')}
         id="hideMostUsedApps"
