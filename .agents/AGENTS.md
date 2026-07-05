@@ -1,3 +1,2 @@
-
 ## GitHub Deploy Rule
-If the user types the exact word 'GITHUB' (in all caps), you must execute the following sequence without asking: delete the local 'dist' folder, run 'npm run build' to recompile, then navigate to 'dist', delete its '.git' folder, re-initialize git, and force push the contents to the user's GitHub repository 'origin main' to overwrite the existing files.
+If the user types the exact word 'GITHUB' (in all caps) or asks to push to GitHub, you must execute the following sequence without asking: run `git add .`, then `git commit -m "Auto-sync"` (or a more descriptive message based on the recent changes), and finally `git push origin main` to synchronize the local source code with the GitHub repository. Do NOT build the project or push the `dist` folder.
