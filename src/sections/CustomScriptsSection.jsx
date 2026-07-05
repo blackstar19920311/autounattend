@@ -254,65 +254,115 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
                     handleWingetCustomAppLocationChange={handleWingetCustomAppLocationChange}
                     partitioningMode={config.partitioning?.mode}
                   />
-                ))}
-              </div>
-            </AnimatedCollapse>
-          </div>
-        </AnimatedCollapse>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <Toggle
-          label={t('cs.office')}
-          description={t('cs.office.desc')}
-          checked={data.office !== 'none'}
-          onChange={handleToggle('office', 'versionB')}
-          id="cs-office"
-        />
-        <AnimatedCollapse show={data.office !== 'none'} marginTop="18px">
-          <div className="radio-group-indented">
-            <label className="radio-label">
-              <input 
-                type="radio" 
-                name="office" 
-                checked={data.office === 'versionA'} 
-                onChange={handleRadio('office', 'versionA')}
-              />
-              <span>{t('cs.office.365')}</span>
-            </label>
-            <label className="radio-label">
-              <input 
-                type="radio" 
-                name="office" 
-                checked={data.office === 'versionB'} 
-                onChange={handleRadio('office', 'versionB')}
-              />
-              <span>{t('cs.office.2021')}</span>
-            </label>
-            
-            <AnimatedCollapse show={data.office === 'versionB'} marginTop="10px">
-              <div style={{ paddingLeft: '28px' }}>
-                <InputField
-                  id="officeKey"
-                  label={t('cs.office.2021.key')}
-                  value={data.officeKey || ''}
-                  placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-                  onChange={(val) => setConfig(prev => ({
-                    ...prev,
-                    customScripts: {
-                      ...prev.customScripts,
-                      officeKey: val
-                    }
-                  }))}
+      <Toggle
+        label={t('cs.winget')}
+        description={t('cs.winget.desc')}
+        checked={data.wingetApps !== 'none'}
+        onChange={handleToggle('wingetApps', config.usePresets ? 'versionA' : 'custom')}
+        id="cs-wingetApps"
+      />
+      <AnimatedCollapse show={data.wingetApps !== 'none'} marginTop="18px">
+        <div className="radio-group-indented">
+          {config.usePresets && (
+            <>
+              <label className="radio-label">
+                <input 
+                  type="radio" 
+                  name="wingetApps" 
+                  checked={data.wingetApps === 'versionA'} 
+                  onChange={handleRadio('wingetApps', 'versionA')}
                 />
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  {t('cs.office.2021.key.help')}
-                </p>
-              </div>
-            </AnimatedCollapse>
-          </div>
-        </AnimatedCollapse>
-      </div>
+                <span>{t('cs.winget.home')}</span>
+              </label>
+              <label className="radio-label">
+                <input 
+                  type="radio" 
+                  name="wingetApps" 
+                  checked={data.wingetApps === 'versionB'} 
+                  onChange={handleRadio('wingetApps', 'versionB')}
+                />
+                <span>{t('cs.winget.school')}</span>
+              </label>
+              <label className="radio-label">
+                <input 
+                  type="radio" 
+                  name="wingetApps" 
+                  checked={data.wingetApps === 'custom'} 
+                  onChange={handleRadio('wingetApps', 'custom')}
+                />
+                <span>{t('cs.winget.custom')}</span>
+              </label>
+            </>
+          )}
+
+          <AnimatedCollapse show={data.wingetApps === 'custom' || !config.usePresets}>
+            <div style={{ marginTop: config.usePresets ? '15px' : '0', paddingLeft: config.usePresets ? '24px' : '0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '5px' }}>{t('cs.winget.custom.help')}</p>
+              {WINGET_APPS.map(app => (
+                <CustomAppRow
+                  key={app.id}
+                  app={app}
+                  data={data}
+                  handleWingetCustomAppToggle={handleWingetCustomAppToggle}
+                  handleWingetCustomAppLocationChange={handleWingetCustomAppLocationChange}
+                  partitioningMode={config.partitioning?.mode}
+                />
+              ))}
+            </div>
+          </AnimatedCollapse>
+        </div>
+      </AnimatedCollapse>
+
+      <Toggle
+        label={t('cs.office')}
+        description={t('cs.office.desc')}
+        checked={data.office !== 'none'}
+        onChange={handleToggle('office', 'versionB')}
+        id="cs-office"
+      />
+      <AnimatedCollapse show={data.office !== 'none'} marginTop="18px">
+        <div className="radio-group-indented">
+          <label className="radio-label">
+            <input 
+              type="radio" 
+              name="office" 
+              checked={data.office === 'versionA'} 
+              onChange={handleRadio('office', 'versionA')}
+            />
+            <span>{t('cs.office.365')}</span>
+          </label>
+          <label className="radio-label">
+            <input 
+              type="radio" 
+              name="office" 
+              checked={data.office === 'versionB'} 
+              onChange={handleRadio('office', 'versionB')}
+            />
+            <span>{t('cs.office.2021')}</span>
+          </label>
+          
+          <AnimatedCollapse show={data.office === 'versionB'} marginTop="10px">
+            <div style={{ paddingLeft: '28px' }}>
+              <InputField
+                id="officeKey"
+                label={t('cs.office.2021.key')}
+                value={data.officeKey || ''}
+                placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                onChange={(val) => setConfig(prev => ({
+                  ...prev,
+                  customScripts: {
+                    ...prev.customScripts,
+                    officeKey: val
+                  }
+                }))}
+              />
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                {t('cs.office.2021.key.help')}
+              </p>
+            </div>
+          </AnimatedCollapse>
+        </div>
+      </AnimatedCollapse>
 
       <Toggle
         label={t('cs.pcManager')}
@@ -322,68 +372,66 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         id="cs-pcManager"
       />
 
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <Toggle
-          label={t('cs.domain.title')}
-          description={t('cs.domain.desc')}
-          checked={!!data.domainJoin}
-          onChange={handleBooleanToggle('domainJoin')}
-          id="cs-domainJoin"
-        />
-        
-        <AnimatedCollapse show={!!data.domainJoin} marginTop="18px">
-          <div style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+      <Toggle
+        label={t('cs.domain.title')}
+        description={t('cs.domain.desc')}
+        checked={!!data.domainJoin}
+        onChange={handleBooleanToggle('domainJoin')}
+        id="cs-domainJoin"
+      />
+      
+      <AnimatedCollapse show={!!data.domainJoin} marginTop="18px">
+        <div style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+          <InputField
+            id="domainName"
+            label={t('cs.domain.name')}
+            value={data.domainName || ''}
+            placeholder={t('cs.domain.namePlaceholder')}
+            error={errors.domainName}
+            onChange={(val) => setConfig(prev => ({
+              ...prev,
+              customScripts: {
+                ...prev.customScripts,
+                domainName: val
+              }
+            }))}
+          />
+          <InputField
+            id="domainUser"
+            label={t('cs.domain.user')}
+            value={data.domainUser || ''}
+            placeholder={t('cs.domain.userPlaceholder')}
+            error={errors.domainUser}
+            onChange={(val) => setConfig(prev => ({
+              ...prev,
+              customScripts: {
+                ...prev.customScripts,
+                domainUser: val
+              }
+            }))}
+          />
+          <div style={{ marginTop: '16px' }}>
             <InputField
-              id="domainName"
-              label={t('cs.domain.name')}
-              value={data.domainName || ''}
-              placeholder={t('cs.domain.namePlaceholder')}
-              error={errors.domainName}
+              id="domainPass"
+              label={t('cs.domain.pass')}
+              type="password"
+              value={data.domainPass || ''}
+              placeholder="••••••••"
+              error={errors.domainPass}
               onChange={(val) => setConfig(prev => ({
                 ...prev,
                 customScripts: {
                   ...prev.customScripts,
-                  domainName: val
+                  domainPass: val
                 }
               }))}
             />
-            <InputField
-              id="domainUser"
-              label={t('cs.domain.user')}
-              value={data.domainUser || ''}
-              placeholder={t('cs.domain.userPlaceholder')}
-              error={errors.domainUser}
-              onChange={(val) => setConfig(prev => ({
-                ...prev,
-                customScripts: {
-                  ...prev.customScripts,
-                  domainUser: val
-                }
-              }))}
-            />
-            <div style={{ marginTop: '16px' }}>
-              <InputField
-                id="domainPass"
-                label={t('cs.domain.pass')}
-                type="password"
-                value={data.domainPass || ''}
-                placeholder="••••••••"
-                error={errors.domainPass}
-                onChange={(val) => setConfig(prev => ({
-                  ...prev,
-                  customScripts: {
-                    ...prev.customScripts,
-                    domainPass: val
-                  }
-                }))}
-              />
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              {t('cs.domain.help')}
-            </p>
           </div>
-        </AnimatedCollapse>
-      </div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            {t('cs.domain.help')}
+          </p>
+        </div>
+      </AnimatedCollapse>
     </Card>
   )
 }

@@ -466,7 +466,10 @@ body {
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+}
+.card-body > * + *,
+.collapse-inner > * + * {
+  margin-top: 18px;
 }
 .subsection {
   display: flex;

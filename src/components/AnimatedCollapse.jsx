@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 export default function AnimatedCollapse({ 
   show, 
   children, 
-  marginTop = '0px', 
-  marginBottom = '0px',
+  marginTop,
+  marginBottom,
   transitionDuration = '0.4s',
   style = {},
   className = ''
@@ -32,14 +32,14 @@ export default function AnimatedCollapse({
       style={{
         display: 'grid',
         gridTemplateRows: show ? '1fr' : '0fr',
-        transition: `all ${transitionDuration} linear`,
+        transition: `all ${transitionDuration} ease-in-out`,
         opacity: show ? 1 : 0,
-        marginTop: show ? marginTop : '0px',
-        marginBottom: show ? marginBottom : '0px',
+        marginTop: show ? marginTop : 0,
+        marginBottom: show ? marginBottom : 0,
         ...style
       }}
     >
-      <div style={{ overflow, minHeight: 0 }}>
+      <div className="collapse-inner" style={{ overflow, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {children}
       </div>
     </div>

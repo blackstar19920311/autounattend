@@ -91,37 +91,35 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
         />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div className="input-wrapper" style={{ marginBottom: '20px' }}>
-          <label className="input-label">{t('sysinfo.lang')}</label>
-          <div className="info-box" style={{ marginBottom: '10px', padding: '10px 12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            💡 {t('sysinfo.lang.info')}
-          </div>
-          <div className="input-container">
-            <CustomSelect
-              value={config.installLanguage}
-              onChange={(val) => setConfig((prev) => ({ ...prev, installLanguage: val }))}
-              options={language === 'en' ? [
-                { value: 'en', label: t('sysinfo.lang.en') },
-                { value: 'hu', label: t('sysinfo.lang.hu') }
-              ] : [
-                { value: 'hu', label: t('sysinfo.lang.hu') },
-                { value: 'en', label: t('sysinfo.lang.en') }
-              ]}
-            />
-          </div>
+      <div className="input-wrapper" style={{ marginBottom: '0' }}>
+        <label className="input-label">{t('sysinfo.lang')}</label>
+        <div className="info-box" style={{ marginBottom: '10px', padding: '10px 12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          💡 {t('sysinfo.lang.info')}
         </div>
-
-        <AnimatedCollapse show={language === 'hu'}>
-          <Toggle
-            id="addEnglishKeyboard"
-            label={t('sysinfo.kb')}
-            description={t('sysinfo.kb.desc')}
-            checked={config.addEnglishKeyboard}
-            onChange={(value) => setConfig((prev) => ({ ...prev, addEnglishKeyboard: value }))}
+        <div className="input-container">
+          <CustomSelect
+            value={config.installLanguage}
+            onChange={(val) => setConfig((prev) => ({ ...prev, installLanguage: val }))}
+            options={language === 'en' ? [
+              { value: 'en', label: t('sysinfo.lang.en') },
+              { value: 'hu', label: t('sysinfo.lang.hu') }
+            ] : [
+              { value: 'hu', label: t('sysinfo.lang.hu') },
+              { value: 'en', label: t('sysinfo.lang.en') }
+            ]}
           />
-        </AnimatedCollapse>
+        </div>
       </div>
+
+      <AnimatedCollapse show={language === 'hu'}>
+        <Toggle
+          id="addEnglishKeyboard"
+          label={t('sysinfo.kb')}
+          description={t('sysinfo.kb.desc')}
+          checked={config.addEnglishKeyboard}
+          onChange={(value) => setConfig((prev) => ({ ...prev, addEnglishKeyboard: value }))}
+        />
+      </AnimatedCollapse>
     </Card>
   );
 }
