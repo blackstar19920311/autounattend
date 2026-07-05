@@ -36,7 +36,7 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
 
       {/* Disk Number is always shown except in manual mode. Placed first to avoid vertical jumping when fullWipe toggles. */}
       <AnimatedCollapse show={partitioning.mode !== 'manual'} marginTop="16px">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginBottom: '20px' }}>
           <InputField
             label={t('part.auto.disk')}
             type="number"
@@ -130,7 +130,7 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
 
       <AnimatedCollapse show={partitioning.mode === 'custom'}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label" htmlFor="customDiskpartScript">{t('part.custom.script')}</label>
             <textarea
               id="customDiskpartScript"
@@ -144,7 +144,7 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
             {errors.customDiskpartScript && (
               <p className="input-error">{errors.customDiskpartScript}</p>
             )}
-            <p className="toggle-description">
+            <p className="toggle-description" style={{ margin: 0 }}>
               {t('part.custom.script.desc')}
             </p>
           </div>

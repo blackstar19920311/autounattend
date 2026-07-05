@@ -8,7 +8,7 @@ import React, { useState, useId } from 'react'
 export default function InputField({ 
   label, placeholder, value, onChange, type = 'text', 
   error, suffix, required, disabled, id, maxLength,
-  onSuffixClick, suffixIcon
+  onSuffixClick, suffixIcon, style, className
 }) {
   const { t } = useLanguage();
 
@@ -21,7 +21,7 @@ export default function InputField({
   const errorId = error ? `${effectiveId}-error` : undefined;
 
   return (
-    <div className={`input-wrapper ${error ? 'input-wrapper--error' : ''}`}>
+    <div className={`input-wrapper ${error ? 'input-wrapper--error' : ''} ${className || ''}`} style={style}>
       {label && (
         <label htmlFor={effectiveId} className="input-label">
           {label}
