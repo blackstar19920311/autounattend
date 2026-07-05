@@ -80,6 +80,13 @@ export default function PersonalizationSection({ config, setConfig }) {
         id="hideTaskbarIcons"
       />
       <Toggle
+        label={t('pers.taskbar.showAllTrayIcons')}
+        description={t('pers.taskbar.showAllTrayIcons.desc')}
+        checked={config.showAllTrayIcons}
+        onChange={handleToggle('showAllTrayIcons')}
+        id="showAllTrayIcons"
+      />
+      <Toggle
         label={t('pers.transparency')}
         description={t('pers.transparency.desc')}
         checked={config.disableTransparency}

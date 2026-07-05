@@ -801,8 +801,16 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     });
   }
 
+  // --- Minden tálcaikon megjelenítése ---
+  if (config.showAllTrayIcons) {
+    commands.push({
+      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f',
+      description: 'Minden tálcaikon megjelenítése az értesítési területen',
+    });
+  }
+
   // --- Explorer újraindítása, hogy a tálca beállítások azonnal érvénybe lépjenek ---
-  if (config.hideTaskbarIcons || (config.searchBoxMode && config.searchBoxMode !== 'full')) {
+  if (config.hideTaskbarIcons || (config.searchBoxMode && config.searchBoxMode !== 'full') || config.showAllTrayIcons) {
     commands.push({
       command: 'cmd /c taskkill /f /im explorer.exe & start explorer.exe',
       description: 'Windows Intéző újraindítása a tálca frissítéséhez',
