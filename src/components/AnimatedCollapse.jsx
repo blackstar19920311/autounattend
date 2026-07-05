@@ -39,7 +39,7 @@ export default function AnimatedCollapse({
         ...style
       }}
     >
-      <div style={{ overflow }}>
+      <div style={{ overflow, minHeight: 0 }}>
         {children}
       </div>
     </div>
