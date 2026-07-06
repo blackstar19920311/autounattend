@@ -805,7 +805,11 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
   if (config.showAllTrayIcons) {
     commands.push({
       command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f',
-      description: 'Minden tálcaikon megjelenítése az értesítési területen',
+      description: 'Minden tálcaikon megjelenítése (Windows 10)',
+    });
+    commands.push({
+      command: 'cmd /c reg add "HKCU\\Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\TrayNotify" /v SystemTrayChevronVisibility /t REG_DWORD /d 0 /f',
+      description: 'Minden tálcaikon megjelenítése / Nyíl elrejtése (Windows 11)',
     });
   }
 
