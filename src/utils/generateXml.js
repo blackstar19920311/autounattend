@@ -808,8 +808,8 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       description: 'Minden tálcaikon megjelenítése (Windows 10)',
     });
     commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\TrayNotify" /v SystemTrayChevronVisibility /t REG_DWORD /d 0 /f',
-      description: 'Minden tálcaikon megjelenítése / Nyíl elrejtése (Windows 11)',
+      command: 'powershell.exe -ExecutionPolicy Bypass -Command "Get-ChildItem \'HKCU:\\Control Panel\\NotifyIconSettings\' -ErrorAction SilentlyContinue | ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name IsPromoted -Value 1 -ErrorAction SilentlyContinue }"',
+      description: 'Minden tálcaikon megjelenítése (Windows 11)',
     });
   }
 
