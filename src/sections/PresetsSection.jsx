@@ -58,6 +58,7 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
       base.disableMouseAcceleration = true;
       base.searchBoxMode = 'hidden';
       base.hideTaskbarIcons = true;
+      base.showAllTrayIcons = true;
       base.disableTransparency = true;
       base.hideRecentApps = true;
       base.hideMostUsedApps = true;
