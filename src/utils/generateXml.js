@@ -821,6 +821,7 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       '</Task>',
       "'@",
       "Register-ScheduledTask -TaskName 'ShowAllTrayIcons' -Xml $taskXml -Force | Out-Null",
+      "Start-ScheduledTask -TaskName 'ShowAllTrayIcons' | Out-Null"
     ].join('\r\n');
 
     addBase64ScriptToFirstLogon(
