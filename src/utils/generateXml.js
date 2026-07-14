@@ -823,10 +823,13 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       "Register-ScheduledTask -TaskName 'ShowAllTrayIcons' -Xml $taskXml -Force | Out-Null",
     ].join('\r\n');
 
-    commands.push({
-      command: 'powershell.exe -ExecutionPolicy Bypass -NoProfile -EncodedCommand ' + encodePowerShellBase64(trayTaskScript),
-      description: 'Ütemezett feladat létrehozása a tálca ikonok megjelenítéséhez (Windows 11)',
-    });
+    addBase64ScriptToFirstLogon(
+      commands,
+      trayTaskScript,
+      'C:\\Windows\\Temp\\tray_task.b64',
+      'C:\\Windows\\Temp\\tray_task.ps1',
+      'Ütemezett feladat létrehozása a tálca ikonok megjelenítéséhez (Windows 11)'
+    );
   }
 
   // --- Explorer újraindítása, hogy a tálca beállítások azonnal érvénybe lépjenek ---
