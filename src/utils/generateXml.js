@@ -807,9 +807,25 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f',
       description: 'Minden tálcaikon megjelenítése (Windows 10)',
     });
+
+    // Windows 11: Scheduled Task – percenként promote-olja az összes tray ikont (Schneegans módszer)
+    const trayTaskScript = [
+      "Set-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -Value 1 -Type 'DWord' -ErrorAction SilentlyContinue",
+      "$taskXml = @'",
+      '<?xml version="1.0" encoding="UTF-16"?>',
+      '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">',
+      '<Triggers><LogonTrigger><Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><Enabled>true</Enabled></LogonTrigger></Triggers>',
+      '<Principals><Principal id="Author"><GroupId>S-1-5-32-545</GroupId><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>',
+      '<Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><AllowHardTerminate>true</AllowHardTerminate><StartWhenAvailable>false</StartWhenAvailable><RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable><IdleSettings><StopOnIdleEnd>true</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings><AllowStartOnDemand>true</AllowStartOnDemand><Enabled>true</Enabled><Hidden>false</Hidden><RunOnlyIfIdle>false</RunOnlyIfIdle><WakeToRun>false</WakeToRun><ExecutionTimeLimit>PT72H</ExecutionTimeLimit><Priority>7</Priority></Settings>',
+      "<Actions Context=\"Author\"><Exec><Command>%windir%\\System32\\conhost.exe</Command><Arguments>--headless %windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -WindowStyle Hidden -NoProfile -NonInteractive -Command \"Set-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -Value 1 -Type 'DWord';\"</Arguments></Exec></Actions>",
+      '</Task>',
+      "'@",
+      "Register-ScheduledTask -TaskName 'ShowAllTrayIcons' -Xml $taskXml -Force | Out-Null",
+    ].join('\r\n');
+
     commands.push({
-      command: 'powershell.exe -ExecutionPolicy Bypass -Command "Get-ChildItem \'HKCU:\\Control Panel\\NotifyIconSettings\' -ErrorAction SilentlyContinue | ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name IsPromoted -Value 1 -ErrorAction SilentlyContinue }"',
-      description: 'Minden tálcaikon megjelenítése (Windows 11)',
+      command: 'powershell.exe -ExecutionPolicy Bypass -NoProfile -EncodedCommand ' + encodePowerShellBase64(trayTaskScript),
+      description: 'Ütemezett feladat létrehozása a tálca ikonok megjelenítéséhez (Windows 11)',
     });
   }
 
