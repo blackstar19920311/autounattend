@@ -1,5 +1,5 @@
-import { SCRIPTS } from './customScripts';
-import { WINGET_APPS } from '../data/wingetAppsList';
+import { SCRIPTS } from './customScripts.js';
+import { WINGET_APPS } from '../data/wingetAppsList.js';
 
 /**
  * Windows 11 autounattend.xml generátor.
@@ -660,21 +660,18 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
     lines.push('      </AutoLogon>');
   }
 
-  // FirstLogonCommands
-  const commands = buildFirstLogonCommands(config, uiLanguage);
-  if (commands.length > 0) {
+  // FirstLogonCommands – Schneegans-féle master script módszer
+  // A specialize fázisban kiírt FirstLogon.ps1 szkriptet egyetlen paranccsal futtatjuk.
+  const masterScript = buildFirstLogonScript(config, uiLanguage);
+  if (masterScript) {
     lines.push('');
-    lines.push('      <!-- Első bejelentkezéskor futó parancsok -->');
+    lines.push('      <!-- Első bejelentkezéskor futó egyetlen master szkript (nincs ablakvillogás) -->');
     lines.push('      <FirstLogonCommands>');
-    commands.forEach((cmd, index) => {
-      lines.push('        <SynchronousCommand wcm:action="add">');
-      lines.push(`          <Order>${index + 1}</Order>`);
-      lines.push(`          <CommandLine>${escapeXml(cmd.command)}</CommandLine>`);
-      if (cmd.description) {
-        lines.push(`          <Description>${escapeXml(cmd.description)}</Description>`);
-      }
-      lines.push('        </SynchronousCommand>');
-    });
+    lines.push('        <SynchronousCommand wcm:action="add">');
+    lines.push('          <Order>1</Order>');
+    lines.push('          <CommandLine>powershell.exe -WindowStyle "Hidden" -ExecutionPolicy "Unrestricted" -NoProfile -File "C:\\Windows\\Setup\\Scripts\\FirstLogon.ps1"</CommandLine>');
+    lines.push('          <Description>Master FirstLogon szkript futtatása (Schneegans módszer)</Description>');
+    lines.push('        </SynchronousCommand>');
     lines.push('      </FirstLogonCommands>');
   }
 
