@@ -455,6 +455,16 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
     order = orderRef.val;
   }
 
+  // FirstLogon master script kimentése
+  const masterScript = buildFirstLogonScript(config, uiLanguage);
+  if (masterScript) {
+    runSyncCmds.push('');
+    runSyncCmds.push('        <!-- Első bejelentkezéskori master szkript kimentése -->');
+    const orderRef = { val: order };
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, masterScript, 'C:\\Windows\\Temp\\FirstLogon.b64', 'C:\\Windows\\Temp\\FirstLogon.ps1', false);
+    order = orderRef.val;
+  }
+
   // Hardware bypass
   if (config.bypassHardware) {
     runSyncCmds.push('');
@@ -669,7 +679,7 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
     lines.push('      <FirstLogonCommands>');
     lines.push('        <SynchronousCommand wcm:action="add">');
     lines.push('          <Order>1</Order>');
-    lines.push('          <CommandLine>powershell.exe -WindowStyle "Hidden" -ExecutionPolicy "Unrestricted" -NoProfile -File "C:\\Windows\\Setup\\Scripts\\FirstLogon.ps1"</CommandLine>');
+    lines.push('          <CommandLine>powershell.exe -WindowStyle "Hidden" -ExecutionPolicy "Unrestricted" -NoProfile -File "C:\\Windows\\Temp\\FirstLogon.ps1"</CommandLine>');
     lines.push('          <Description>Master FirstLogon szkript futtatása (Schneegans módszer)</Description>');
     lines.push('        </SynchronousCommand>');
     lines.push('      </FirstLogonCommands>');
