@@ -456,6 +456,7 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
   }
 
   // FirstLogon master script kimentése
+  const uiLanguage = config.language || 'en-US';
   const masterScript = buildFirstLogonScript(config, uiLanguage);
   if (masterScript) {
     runSyncCmds.push('');
