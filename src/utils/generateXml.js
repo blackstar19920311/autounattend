@@ -60,6 +60,14 @@ function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64
   runSyncCmds.push(`          <Path>certutil.exe -decode -f ${tempB64Path} ${destPs1Path}</Path>`);
   runSyncCmds.push('        </RunSynchronousCommand>');
 
+  // Jogosultság beállítása: a specialize SYSTEM-ként fut, de a FirstLogon
+  // a felhasználó kontextusában. C:\Windows\Temp fájlokra a user nem fér hozzá
+  // alapértelmezetten, ezért explicit olvasási jogot kell adni.
+  runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+  runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+  runSyncCmds.push(`          <Path>icacls ${destPs1Path} /grant *S-1-1-0:(R)</Path>`);
+  runSyncCmds.push('        </RunSynchronousCommand>');
+
   if (runScript) {
     runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
     runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
