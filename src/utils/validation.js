@@ -23,7 +23,9 @@ export function validateConfig(config, t) {
 
   // 2. Számítógépnév
   const name = (config.computerName || '').trim();
-  if (config.randomSuffix && !name) {
+  if (config.computerName !== undefined && config.computerName !== null && config.computerName.trim() === '' && config.computerName.length > 0) {
+    errors.computerName = t('val.computerName.invalidChars');
+  } else if (config.randomSuffix && !name) {
     errors.computerName = t('val.computerName.prefixReq');
   } else if (name.length > 0) {
     const maxLen = config.randomSuffix ? 8 : 15;
@@ -51,8 +53,14 @@ export function validateConfig(config, t) {
       errors.customDiskpartScript = t('val.part.scriptReq');
     }
     const partId = String(config.partitioning.installPartitionId).trim();
-    if (partId === '' || isNaN(partId) || Number(partId) < 1) {
+    if (partId === '' || partId === 'undefined' || isNaN(partId) || Number(partId) < 1) {
       errors.installPartitionId = t('val.part.idReq');
+    }
+  }
+  if (config.partitioning && config.partitioning.enabled) {
+    const diskId = String(config.partitioning.diskNumber).trim();
+    if (diskId === '' || diskId === 'undefined' || isNaN(diskId) || Number(diskId) < 0) {
+      errors.diskNumber = t('val.part.diskReq') || 'Lemezszám megadása kötelező';
     }
   }
 

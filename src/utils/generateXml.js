@@ -230,7 +230,7 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
     } else if (config.partitioning.mode === 'autocd') {
       const cleanCmd = config.partitioning.fullWipe ? 'CLEAN ALL' : 'CLEAN';
       const formatQuick = 'QUICK ';
-      script = `SELECT DISK=${diskId}\n${cleanCmd}\nCONVERT GPT\nCREATE PARTITION EFI SIZE=300\nFORMAT ${formatQuick}FS=FAT32 LABEL="System"\nCREATE PARTITION MSR SIZE=16\nCREATE PARTITION PRIMARY SIZE=153600\nFORMAT ${formatQuick}FS=NTFS LABEL="Windows"\nCREATE PARTITION PRIMARY\nSHRINK MINIMUM=1000\nFORMAT ${formatQuick}FS=NTFS LABEL="Adatok"\nCREATE PARTITION PRIMARY\nFORMAT ${formatQuick}FS=NTFS LABEL="Recovery"\nSET ID="de94bba4-06d1-4d40-a16a-bfd50179d6ac"\nGPT ATTRIBUTES=0x8000000000000001`;
+      script = `SELECT DISK=${diskId}\n${cleanCmd}\nCONVERT GPT\nCREATE PARTITION EFI SIZE=300\nFORMAT ${formatQuick}FS=FAT32 LABEL="System"\nCREATE PARTITION MSR SIZE=16\nCREATE PARTITION PRIMARY SIZE=102400\nFORMAT ${formatQuick}FS=NTFS LABEL="Windows"\nCREATE PARTITION PRIMARY\nSHRINK MINIMUM=1000\nASSIGN LETTER=D\nFORMAT ${formatQuick}FS=NTFS LABEL="Adatok"\nCREATE PARTITION PRIMARY\nFORMAT ${formatQuick}FS=NTFS LABEL="Recovery"\nSET ID="de94bba4-06d1-4d40-a16a-bfd50179d6ac"\nGPT ATTRIBUTES=0x8000000000000001`;
       installPartition = 3;
     } else if (config.partitioning.mode === 'custom') {
       script = (config.partitioning.customDiskpartScript || '').trim();
@@ -340,9 +340,9 @@ function buildSpecialize(config, componentAttrs) {
     order = orderRef.val;
   }
 
-  // --- Hálózat megkerülése (OOBE) ---
+  // --- Hálózat megkerülése (OOBE) és WiFi Soft-Lock kényszerítés ---
   // A specialize fázisban adjuk hozzá, mert csak itt íródik be az igazi OS registryjébe
-  if (config.bypassNetwork) {
+  if (config.bypassNetwork || config.wifi?.mode === 'auto') {
     runSyncCmds.push('');
     runSyncCmds.push('        <!-- Hálózati követelmény megkerülése (OOBE) -->');
     runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
@@ -481,12 +481,12 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
   const uiLang = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
   const userLocale = config.installLanguage === 'en' ? 'en-US' : 'hu-HU';
 
-  lines.push(`    <component ${componentAttrs('Microsoft-Windows-International-Core')}>`);
-  lines.push(`      <InputLocale>${inputLocale}</InputLocale>`);
-  lines.push(`      <SystemLocale>${sysLocale}</SystemLocale>`);
-  lines.push(`      <UILanguage>${uiLang}</UILanguage>`);
-  lines.push(`      <UserLocale>${userLocale}</UserLocale>`);
-  lines.push('    </component>');
+  lines.push(`    <component ${componentAttrs('Microsoft-Windows-International-Core')}>
+      <InputLocale>${inputLocale}</InputLocale>
+      <SystemLocale>${sysLocale}</SystemLocale>
+      <UILanguage>${uiLang}</UILanguage>
+      <UserLocale>${userLocale}</UserLocale>
+    </component>`);
 
   // Shell-Setup
   lines.push('');
@@ -495,15 +495,10 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
 
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Shell-Setup')}>`);
   lines.push('      <OOBE>');
-  if (config.autoAcceptEula) {
-    lines.push('        <HideEULAPage>true</HideEULAPage>');
-  }
-  if (config.bypassNetwork) {
-    lines.push('        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>');
-  }
-  if (config.bypassNetwork || config.wifi?.mode === 'auto') {
-    lines.push('        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>');
-  }
+  lines.push(`        <HideEULAPage>${config.autoAcceptEula ? 'true' : 'false'}</HideEULAPage>`);
+  lines.push(`        <HideOnlineAccountScreens>${config.bypassNetwork ? 'true' : 'false'}</HideOnlineAccountScreens>`);
+  lines.push(`        <HideWirelessSetupInOOBE>${(config.bypassNetwork || config.wifi?.mode === 'auto') ? 'true' : 'false'}</HideWirelessSetupInOOBE>`);
+  lines.push('        <HideLocalAccountScreen>true</HideLocalAccountScreen>');
   lines.push('        <ProtectYourPC>3</ProtectYourPC>');
   lines.push('      </OOBE>');
 
@@ -513,6 +508,12 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
     lines.push(`          <Value>${escapeXml(config.password || '')}</Value>`);
     lines.push('          <PlainText>true</PlainText>');
     lines.push('        </AdministratorPassword>');
+    lines.push('        <LocalAccounts>');
+    lines.push('          <LocalAccount wcm:action="modify">');
+    lines.push('            <Name>Administrator</Name>');
+    lines.push('            <Active>true</Active>');
+    lines.push('          </LocalAccount>');
+    lines.push('        </LocalAccounts>');
   } else {
     lines.push('        <LocalAccounts>');
     lines.push('          <LocalAccount wcm:action="add">');
@@ -528,7 +529,7 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
   lines.push('      </UserAccounts>');
 
   // AutoLogon
-  if (config.autoLogin && !isBuiltInAdmin && username !== '') {
+  if (config.autoLogin && username !== '') {
     lines.push('');
     lines.push('      <AutoLogon>');
     lines.push('        <Enabled>true</Enabled>');
@@ -579,9 +580,11 @@ function buildFirstLogonCommands(config, uiLanguage) {
     });
   }
 
-  if (config.username) {
+  if (config.username || config.username === '') {
+    const safeUser = (config.username || 'Admin').trim().replace(/'/g, "''");
+    const psCmd = `Set-LocalUser -Name '${safeUser}' -PasswordNeverExpires $true`;
     commands.push({
-      command: `powershell.exe -Command "Set-LocalUser -Name '${config.username.trim().replace(/'/g, "''")}' -PasswordNeverExpires $true"`,
+      command: `powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${encodePowerShellBase64(psCmd)}`,
       description: 'Jelszó lejáratának letiltása',
     });
   }
@@ -593,8 +596,8 @@ function buildFirstLogonCommands(config, uiLanguage) {
       const password = config.wifi.password;
       const utf8Encode = new TextEncoder();
       const hexSsid = Array.from(utf8Encode.encode(ssid)).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join('');
-      const safeSsid = escapeXml(ssid);
-      const safePassword = escapeXml(password);
+      const safeSsid = escapeXml(ssid).replace(/['@]/g, "");
+      const safePassword = escapeXml(password).replace(/['@]/g, "");
       
       const wifiScript = `
 $xml = @'
@@ -858,13 +861,13 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     // 2. Winget Apps
     if (config.customScripts.wingetApps === 'versionA') {
       let scriptA = SCRIPTS.wingetAppsA;
-      if (config.partitioning?.enabled === false || config.partitioning?.mode !== 'auto') {
+      if (config.partitioning?.enabled === false || config.partitioning?.mode !== 'autocd') {
         scriptA = scriptA.replace(
-          '@{Id="Ghisler.TotalCommander";Source="winget"}',
-          '@{Id="Ghisler.TotalCommander";Source="winget";Override="/A D:\\Apps\\TotalCommander"}'
-        ).replace(
           '$apps=@(',
-          'if(-not (Test-Path "D:\\Apps\\TotalCommander")){ New-Item -ItemType Directory -Path "D:\\Apps\\TotalCommander" -Force | Out-Null }\n$apps=@('
+          '$drv = if(Test-Path "D:\\"){"D"}else{"C"}\nif(-not (Test-Path "$drv:\\Apps\\TotalCommander")){ New-Item -ItemType Directory -Path "$drv:\\Apps\\TotalCommander" -Force | Out-Null }\n$apps=@('
+        ).replace(
+          '@{Id="Ghisler.TotalCommander";Source="winget"}',
+          '@{Id="Ghisler.TotalCommander";Source="winget";Override="/A $drv:\\Apps\\TotalCommander"}'
         );
       }
       addBase64ScriptToFirstLogon(
@@ -877,10 +880,10 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       scriptCounter++;
     } else if (config.customScripts.wingetApps === 'versionB') {
       let scriptB = SCRIPTS.wingetAppsB;
-      if (config.partitioning?.enabled === false || config.partitioning?.mode !== 'auto') {
+      if (config.partitioning?.enabled === false || config.partitioning?.mode !== 'autocd') {
         scriptB = scriptB.replace(
           '$apps=@(',
-          'if(-not (Test-Path "D:\\Apps\\VLC")){ New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force | Out-Null }\nNew-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null\nNew-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null\n$apps=@('
+          '$drv = if(Test-Path "D:\\"){"D"}else{"C"}\nif(-not (Test-Path "$drv:\\Apps\\VLC")){ New-Item -ItemType Directory -Path "$drv:\\Apps\\VLC" -Force | Out-Null }\nNew-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "$drv:\\Apps\\VLC" -Force | Out-Null\nNew-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "$drv:\\Apps\\VLC" -Force | Out-Null\n$apps=@('
         );
       }
       addBase64ScriptToFirstLogon(
@@ -1031,20 +1034,22 @@ if($ok){
 
     // 3. Office
     if (config.customScripts.office === 'versionA') {
+      const officeLang = config.installLanguage === 'en' ? 'en-us' : 'hu-hu';
       addBase64ScriptToFirstLogon(
         commands,
-        SCRIPTS.officeA.replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
+        SCRIPTS.officeA.replace('##OFFICE_LANG##', officeLang),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Microsoft Office telepítése (A verzió)'
       );
       scriptCounter++;
     } else if (config.customScripts.office === 'versionB') {
+      const officeLang = config.installLanguage === 'en' ? 'en-us' : 'hu-hu';
       addBase64ScriptToFirstLogon(
         commands,
         SCRIPTS.officeB
           .replace('##OFFICE_MAK_KEY##', config.customScripts.officeKey || '')
-          .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
+          .replace('##OFFICE_LANG##', officeLang),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Microsoft Office telepítése (B verzió)'

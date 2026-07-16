@@ -107,10 +107,33 @@ export default function App() {
     else showStatus('success', t('app.status.copy.success'))
   }, [showStatus, t])
 
-  const handleDownload = useCallback((status) => {
-    if (status === 'error') showStatus('error', t('app.status.download.error'))
-    else showStatus('success', t('app.status.download.success'))
-  }, [showStatus, t])
+  const handleDownload = useCallback(() => {
+    const validation = validateConfig(config, t)
+    if (!validation.isValid) {
+      setErrors(validation.errors)
+      showStatus('error', t('app.status.error.validation'))
+      return
+    }
+    try {
+      const generatedXml = generateXml(config, language)
+      setXml(generatedXml)
+      setErrors({})
+      
+      const blob = new Blob(['\uFEFF', generatedXml], { type: 'application/xml;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'autounattend.xml'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 100)
+      showStatus('success', t('app.status.download.success'))
+    } catch (err) {
+      console.error('Download error:', err)
+      showStatus('error', t('app.status.download.error'))
+    }
+  }, [config, language, showStatus, t])
 
   /* --- Szekció navigációs kattintás --- */
   const handleSectionClick = useCallback((sectionId) => {
