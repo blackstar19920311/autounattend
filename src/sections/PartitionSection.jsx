@@ -135,11 +135,8 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
               </div>
             </div>
             <p className="toggle-description" style={{ marginTop: 4 }}>
-              {partitioning.mode === 'auto' ? (
-                <>👉 <strong>{t('part.warning.cleanAll')}</strong> {t('part.warning.auto.layout')}</>
-              ) : (
-                <>👉 <strong>{t('part.warning.clean')}</strong> {t('part.warning.autoCD.layout')}</>
-              )}
+              👉 <strong>{partitioning.fullWipe ? t('part.warning.cleanAll') : t('part.warning.clean')}</strong>{' '}
+              {partitioning.mode === 'auto' ? t('part.warning.auto.layout') : t('part.warning.autoCD.layout')}
             </p>
           </div>
         )}
