@@ -60,10 +60,12 @@ function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64
   runSyncCmds.push(`          <Path>certutil.exe -decode -f ${tempB64Path} ${destPs1Path}</Path>`);
   runSyncCmds.push('        </RunSynchronousCommand>');
 
-  runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-  runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
-  runSyncCmds.push(`          <Path>powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}</Path>`);
-  runSyncCmds.push('        </RunSynchronousCommand>');
+  if (runScript) {
+    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+    runSyncCmds.push(`          <Path>powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}</Path>`);
+    runSyncCmds.push('        </RunSynchronousCommand>');
+  }
 }
 
 /**
