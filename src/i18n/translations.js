@@ -1,6 +1,8 @@
-
 export const translations = {
   hu: {
+    'input.regenerate': 'Új jelszó generálása',
+    'input.hidePassword': 'Jelszó elrejtése',
+    'input.showPassword': 'Jelszó megjelenítése',
     'app.title': 'Windows 11 Autounattend Generátor',
     'app.subtitle': 'Automatizált telepítő (autounattend.xml) készítő',
     'manual.title': 'Használati Útmutató (Kattints a kinyitáshoz)',
@@ -22,6 +24,7 @@ export const translations = {
     'val.username.req': 'Felhasználónév megadása kötelező!',
     'val.username.max': 'A felhasználónév nem lehet hosszabb 20 karakternél.',
     'val.username.invalidChars': 'A felhasználónév tiltott karaktereket tartalmaz.',
+    'val.username.admin': 'A beépített Rendszergazda fiók használata jelenleg nem támogatott, adj meg másik nevet.',
     'val.computerName.prefixReq': 'Adj meg egy gépnevet a véletlenszerű utótag előtt.',
     'val.computerName.maxLength': 'A gépnév maximum 8 karakter lehet (az utótaggal együtt max 15).',
     'val.computerName.invalidChars': 'A gépnév csak betűket, számokat és kötőjelet tartalmazhat.',
@@ -194,6 +197,7 @@ export const translations = {
     'wifi.help.skip': 'Nem állít be Wi-Fi hálózatot. Ha kábellel csatlakozol, az továbbra is működik.',
     'wifi.help.auto': 'A telepítő automatikusan csatlakozik a megadott Wi-Fi hálózathoz.',
     'wifi.help.manual': 'Az első bejelentkezéskor felugrik egy ablak, ahol manuálisan választhatsz Wi-Fi hálózatot.',
+    'wifi.help.manual.warning': '⚠️ Figyelem: A Wi-Fi hálózatok listája csak a telepítés legvégén, az Asztal megjelenésekor fog felugrani!',
     'wifi.ssid': 'Hálózat neve (SSID)',
     'wifi.ssid.ph': 'Pl. Otthoni_WiFi',
     'wifi.password': 'Jelszó',
@@ -260,6 +264,9 @@ export const translations = {
 
   },
   en: {
+    'input.regenerate': 'Generate new password',
+    'input.hidePassword': 'Hide password',
+    'input.showPassword': 'Show password',
     'app.title': 'Windows 11 Autounattend Generator',
     'app.subtitle': 'Automated installer (autounattend.xml) creator',
     'manual.title': 'User Manual (Click to expand)',
@@ -281,7 +288,8 @@ export const translations = {
 
     'val.username.req': 'Username is required!',
     'val.username.max': 'Username cannot be longer than 20 characters.',
-    'val.username.invalidChars': 'Username contains invalid characters.',
+    'val.username.invalidChars': 'Username cannot contain the following characters: / \\ [ ] : | < > + = ; , ? * "',
+    'val.username.admin': 'Using the built-in Administrator account is not supported, please provide a different name.',
     'val.computerName.prefixReq': 'Provide a computer name prefix before the random suffix.',
     'val.computerName.maxLength': 'Computer name can be max 8 characters (max 15 with suffix).',
     'val.computerName.invalidChars': 'Computer name can only contain letters, numbers, and hyphens.',
@@ -454,6 +462,7 @@ export const translations = {
     'wifi.help.skip': 'Does not configure a Wi-Fi network. If connected via cable, it will still work.',
     'wifi.help.auto': 'Setup will automatically connect to the specified Wi-Fi network.',
     'wifi.help.manual': 'A popup will appear during first login to manually select a Wi-Fi network.',
+    'wifi.help.manual.warning': '⚠️ Note: The Wi-Fi network list will only appear at the very end of the installation, when the Desktop loads!',
     'wifi.ssid': 'Network Name (SSID)',
     'wifi.ssid.ph': 'E.g. Home_WiFi',
     'wifi.password': 'Password',

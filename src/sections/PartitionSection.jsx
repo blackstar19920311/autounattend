@@ -31,7 +31,7 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
         label={t('part.mode')}
         options={partitionModeOptions}
         value={partitioning.mode}
-        onChange={(value) => updatePartitioning({ mode: value })}
+        onChange={(value) => updatePartitioning({ mode: value, enabled: value !== 'manual' })}
       />
 
       {/* Disk Number is always shown except in manual mode. Placed first to avoid vertical jumping when fullWipe toggles. */}

@@ -58,7 +58,13 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
           <Checkbox
             label={t('user.randomSuffix')}
             checked={config.randomSuffix}
-            onChange={(value) => setConfig((prev) => ({ ...prev, randomSuffix: value }))}
+            onChange={(value) => setConfig((prev) => {
+              const updates = { randomSuffix: value };
+              if (value && prev.computerName.length > 8) {
+                updates.computerName = prev.computerName.substring(0, 8);
+              }
+              return { ...prev, ...updates };
+            })}
             id="random-suffix"
           />
         </div>

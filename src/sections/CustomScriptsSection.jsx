@@ -5,7 +5,6 @@ import { Code } from 'lucide-react';
 import Card from '../components/Card';
 import Toggle from '../components/Toggle';
 import InputField from '../components/InputField';
-import Checkbox from '../components/Checkbox';
 import CustomSelect from '../components/CustomSelect';
 import AnimatedCollapse from '../components/AnimatedCollapse';
 import { WINGET_APPS } from '../data/wingetAppsList';
@@ -296,6 +295,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
                   id="officeKey"
                   label={t('cs.office.2021.key')}
                   value={data.officeKey || ''}
+                  error={errors.officeKey}
                   placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
                   onChange={(val) => setConfig(prev => ({
                     ...prev,

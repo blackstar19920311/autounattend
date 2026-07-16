@@ -24,9 +24,9 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
   const applyPreset = (presetName, isInitial = false) => {
     setActivePreset(presetName);
     setActiveSubPreset(null);
-    setConfig(() => {
+    setConfig((prev) => {
       // MINDIG tiszta alapból indulunk – így sosem marad bent "régi" érték
-      const base = getDefaultConfig();
+      const base = { ...getDefaultConfig(), installLanguage: prev.installLanguage };
       base.usePresets = true; // IMPORTANT: Keep the presets toggle active!
 
       // --- Közös beállítások MINDEN presetnél ---
