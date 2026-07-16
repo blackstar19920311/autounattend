@@ -1275,9 +1275,8 @@ body {
   gap: 2px;
   padding: 4px 10px;
   min-width: 56px;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: filter var(--transition);
   position: relative;
-  overflow: hidden;
 }
 .partition-segment:hover {
   filter: brightness(1.08);

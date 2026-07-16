@@ -14,18 +14,16 @@ export function validateConfig(config, t) {
 
   // 1. Felhasználónév - kötelező
   if (!config.username || config.username.trim() === '') {
-    errors.username = config.autoLogin ? t('val.autoLogin.usernameReq') : t('val.username.req');
+    errors.username = t('val.username.req');
   } else if (config.username.length > 20) {
     errors.username = t('val.username.max');
-  } else if (!/^[a-zA-Z0-9\s\-_áéíóöőúüűÁÉÍÓÖŐÚÜŰ.]+$/.test(config.username)) {
+  } else if (/[\/\\\[\]:|<>+=;,?*"]/.test(config.username)) {
     errors.username = t('val.username.invalidChars');
   }
 
   // 2. Számítógépnév
   const name = (config.computerName || '').trim();
-  if (config.computerName !== undefined && config.computerName !== null && config.computerName.trim() === '' && config.computerName.length > 0) {
-    errors.computerName = t('val.computerName.invalidChars');
-  } else if (config.randomSuffix && !name) {
+  if (config.randomSuffix && !name) {
     errors.computerName = t('val.computerName.prefixReq');
   } else if (name.length > 0) {
     const maxLen = config.randomSuffix ? 8 : 15;
@@ -45,22 +43,17 @@ export function validateConfig(config, t) {
   }
 
   // 4. Automatikus bejelentkezés
-  // 4. Automatikus bejelentkezés (kezeltük az 1. lépésben)
+  if (config.autoLogin && (!config.username || config.username.trim() === '')) {
+    errors.username = errors.username || t('val.autoLogin.usernameReq');
+  }
 
   // 5. Particionálás
   if (config.partitioning && config.partitioning.enabled && config.partitioning.mode === 'custom') {
     if (!config.partitioning.customDiskpartScript || config.partitioning.customDiskpartScript.trim() === '') {
       errors.customDiskpartScript = t('val.part.scriptReq');
     }
-    const partId = String(config.partitioning.installPartitionId).trim();
-    if (partId === '' || partId === 'undefined' || isNaN(partId) || Number(partId) < 1) {
+    if (!config.partitioning.installPartitionId || config.partitioning.installPartitionId < 1) {
       errors.installPartitionId = t('val.part.idReq');
-    }
-  }
-  if (config.partitioning && config.partitioning.enabled) {
-    const diskId = String(config.partitioning.diskNumber).trim();
-    if (diskId === '' || diskId === 'undefined' || isNaN(diskId) || Number(diskId) < 0) {
-      errors.diskNumber = t('val.part.diskReq') || 'Lemezszám megadása kötelező';
     }
   }
 

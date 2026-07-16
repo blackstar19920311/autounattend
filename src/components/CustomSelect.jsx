@@ -35,18 +35,10 @@ export default function CustomSelect({ value, options, onChange, style, disabled
         {options.map(option => (
           <div 
             key={option.value}
-            tabIndex={isOpen ? 0 : -1}
             className={`custom-select-option ${option.value === value ? 'selected' : ''}`}
             onClick={() => {
               onChange(option.value);
               setIsOpen(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onChange(option.value);
-                setIsOpen(false);
-              }
             }}
           >
             {option.label}

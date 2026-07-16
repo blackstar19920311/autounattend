@@ -73,8 +73,7 @@ export default function App() {
       setErrors(validation.errors)
       showStatus('error', t('app.status.error.validation'))
       const firstErrorField = Object.keys(validation.errors)[0]
-      const elId = firstErrorField.replace('.', '_')
-      const el = document.getElementById(elId) || document.getElementById(firstErrorField)
+      const el = document.getElementById(firstErrorField)
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
@@ -87,11 +86,11 @@ export default function App() {
       console.error('XML generálási hiba:', err)
       showStatus('error', t('app.status.error.generation'))
     }
-  }, [config, showStatus, t, language])
+  }, [config, showStatus, t])
 
   /* --- Beállítások visszaállítása --- */
   const handleReset = useCallback(() => {
-    setConfig({ ...getDefaultConfig(), installLanguage: language })
+    setConfig(getDefaultConfig())
     setXml('')
     setErrors({})
     setActiveSection('presets')
@@ -100,40 +99,17 @@ export default function App() {
     // Preset gombok resetelése a PresetsSection-ben
     if (resetPresetRef.current) resetPresetRef.current()
     showStatus('warning', t('app.status.warning.reset'))
-  }, [showStatus, t, language])
+  }, [showStatus, t])
 
   const handleCopy = useCallback((status) => {
     if (status === 'error') showStatus('error', t('app.status.copy.error'))
     else showStatus('success', t('app.status.copy.success'))
   }, [showStatus, t])
 
-  const handleDownload = useCallback(() => {
-    const validation = validateConfig(config, t)
-    if (!validation.isValid) {
-      setErrors(validation.errors)
-      showStatus('error', t('app.status.error.validation'))
-      return
-    }
-    try {
-      const generatedXml = generateXml(config, language)
-      setXml(generatedXml)
-      setErrors({})
-      
-      const blob = new Blob(['\uFEFF', generatedXml], { type: 'application/xml;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'autounattend.xml'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(url), 100)
-      showStatus('success', t('app.status.download.success'))
-    } catch (err) {
-      console.error('Download error:', err)
-      showStatus('error', t('app.status.download.error'))
-    }
-  }, [config, language, showStatus, t])
+  const handleDownload = useCallback((status) => {
+    if (status === 'error') showStatus('error', t('app.status.download.error'))
+    else showStatus('success', t('app.status.download.success'))
+  }, [showStatus, t])
 
   /* --- Szekció navigációs kattintás --- */
   const handleSectionClick = useCallback((sectionId) => {

@@ -37,14 +37,9 @@ $customDirs=@(
   "D:\\Apps\\K-LiteCodecPack"
 )
 foreach($dir in $customDirs){
-  try {
-    $root = [System.IO.Path]::GetPathRoot($dir)
-    if(Test-Path $root) {
-      if(-not (Test-Path $dir)){
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
-      }
-    }
-  } catch {}
+  if(-not (Test-Path $dir)){
+    New-Item -ItemType Directory -Path $dir | Out-Null
+  }
 }
 $apps=@(
   @{Id="qBittorrent.qBittorrent";Source="winget";Location="D:\\Apps\\qBittorrent"},
@@ -54,8 +49,7 @@ $apps=@(
   @{Id="EpicGames.EpicGamesLauncher";Source="winget";Override="/q INSTALLDIR=D:\\Apps\\EpicGames"},
   @{Id="Discord.Discord";Source="winget"},
   @{Id="Microsoft.VCRedist.2015+.x64";Source="winget"},
-  @{Id="Microsoft.VCRedist.2015+.x86";Source="winget"},
-  @{Id="Ghisler.TotalCommander";Source="winget"}
+  @{Id="Microsoft.VCRedist.2015+.x86";Source="winget"}
 )
 $ok=$true
 $timeoutSec=600
@@ -194,7 +188,7 @@ try {
   Wait-ForWinget
 
   winget install -e --id Microsoft.OfficeDeploymentTool --source winget --silent --accept-package-agreements --accept-source-agreements
-  if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 3010) { throw "Az Office Deployment Tool telepitese nem sikerult." }
+  if ($LASTEXITCODE -ne 0) { throw "Az Office Deployment Tool telepitese nem sikerult." }
 
   $odtSetup = $null
   $searchRoots = @()
@@ -360,7 +354,7 @@ try {
 "@ | Out-File -FilePath $xmlPath -Encoding utf8 -Force
 
     $p = Start-Process -FilePath $odtSetup -ArgumentList "/configure \`"$xmlPath\`"" -Wait -PassThru
-    if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) {
+    if ($p.ExitCode -ne 0) {
         throw "ODT telepites sikertelen (ExitCode: $($p.ExitCode))."
     }
 

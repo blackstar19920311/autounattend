@@ -71,11 +71,25 @@ export default function XmlPreview({ xml, onCopy, onDownload }) {
   }, [xml, onCopy])
 
   /**
-   * XML letöltése fájlként. (A letöltés végrehajtását a szülő komponens kezeli a friss adatokért)
+   * XML letöltése fájlként.
+   * Blob-ot hoz létre, majd egy rejtett <a> elemen keresztül indítja a letöltést.
    */
   const handleDownload = useCallback(() => {
-    onDownload?.()
-  }, [onDownload])
+    try {
+      const blob = new Blob([xml], { type: 'application/xml' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'autounattend.xml'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      onDownload?.('success')
+    } catch {
+      onDownload?.('error')
+    }
+  }, [xml, onDownload])
 
   return (
     <aside className="xml-preview">

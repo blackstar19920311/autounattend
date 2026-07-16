@@ -1,6 +1,7 @@
 import { useLanguage } from '../i18n/LanguageContext';
 import { User } from 'lucide-react';
 import Card from '../components/Card';
+import Checkbox from '../components/Checkbox';
 import InputField from '../components/InputField';
 import Toggle from '../components/Toggle';
 
@@ -21,11 +22,7 @@ export default function UserAccountSection({ config, setConfig, errors = {} }) {
       <InputField
         label={t('user.username')}
         value={config.username}
-        onChange={(value) => setConfig((prev) => {
-          const updates = { username: value };
-          if (value.trim() === '') updates.autoLogin = false;
-          return { ...prev, ...updates };
-        })}
+        onChange={(value) => setConfig((prev) => ({ ...prev, username: value }))}
         required
         placeholder={t('user.username.ph')}
         error={errors.username}

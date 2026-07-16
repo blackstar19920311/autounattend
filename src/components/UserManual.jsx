@@ -11,13 +11,6 @@ export default function UserManual() {
       
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsOpen(!isOpen);
-          }
-        }}
         style={{ 
           padding: '16px', 
           fontWeight: 'bold', 

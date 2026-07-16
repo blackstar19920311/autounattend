@@ -35,14 +35,7 @@ export default function WifiSection({ config, setConfig, errors = {} }) {
         <p className="help-text" style={{ marginTop: '0.5rem', marginBottom: '0', fontSize: '0.9rem', opacity: 0.8 }}>
           {config.wifi.mode === 'skip' && t('wifi.help.skip')}
           {config.wifi.mode === 'auto' && t('wifi.help.auto')}
-          {config.wifi.mode === 'manual' && (
-            <>
-              {t('wifi.help.manual')}
-              <div style={{ marginTop: '0.5rem', color: '#ffb300', fontWeight: 'bold' }}>
-                {t('wifi.help.manual.warning')}
-              </div>
-            </>
-          )}
+          {config.wifi.mode === 'manual' && t('wifi.help.manual')}
         </p>
       </div>
 
@@ -50,7 +43,7 @@ export default function WifiSection({ config, setConfig, errors = {} }) {
         <div style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border)' }}>
           <InputField
             label={t('wifi.ssid')}
-            id="wifi_ssid"
+            id="wifi.ssid"
             placeholder={t('wifi.ssid.ph')}
             value={config.wifi.ssid}
             onChange={(val) => updateWifi({ ssid: val })}
@@ -59,7 +52,7 @@ export default function WifiSection({ config, setConfig, errors = {} }) {
           <div style={{ marginTop: '1rem' }}>
             <InputField
               label={t('wifi.password')}
-              id="wifi_password"
+              id="wifi.password"
               type="password"
               placeholder={t('wifi.password.ph')}
               value={config.wifi.password}

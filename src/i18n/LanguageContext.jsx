@@ -20,7 +20,7 @@ export function LanguageProvider({ children }) {
 
   const t = useCallback((key) => {
     const dict = translations[language] || translations['hu'];
-    return dict[key] || translations['hu'][key] || key;
+    return dict[key] || key;
   }, [language]);
 
   const toggleLanguage = useCallback(() => {
