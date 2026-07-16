@@ -108,9 +108,9 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
                   color: 'white', 
                   flex: partitioning.mode === 'autocd' ? '1 1 auto' : '0 0 0px', 
                   padding: partitioning.mode === 'autocd' ? '4px 10px' : '0px',
-                  opacity: partitioning.mode === 'autocd' ? 1 : 0,
                   minWidth: partitioning.mode === 'autocd' ? '56px' : '0px',
-                  border: 'none'
+                  border: 'none',
+                  overflow: 'hidden'
                 }} 
                 title={t('part.auto.split.dLabel')}
               >
@@ -124,9 +124,9 @@ export default function PartitionSection({ config, setConfig, errors = {} }) {
                   color: 'white', 
                   flex: partitioning.mode === 'autocd' ? '0 0 40px' : '0 0 0px', 
                   padding: partitioning.mode === 'autocd' ? '4px' : '0px',
-                  opacity: partitioning.mode === 'autocd' ? 1 : 0,
                   minWidth: partitioning.mode === 'autocd' ? '40px' : '0px',
-                  border: 'none'
+                  border: 'none',
+                  overflow: 'hidden'
                 }} 
                 title="Recovery"
               >
