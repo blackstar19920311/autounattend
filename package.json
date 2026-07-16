@@ -10,9 +10,6 @@
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "acorn": "^8.17.0",
-    "esprima": "^4.0.1",
-    "fast-xml-parser": "^5.10.0",
     "lucide-react": "^1.17.0",
     "prismjs": "^1.30.0",
     "react": "^19.1.0",
