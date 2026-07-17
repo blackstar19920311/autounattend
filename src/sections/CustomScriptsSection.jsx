@@ -365,7 +365,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
               <InputField
                 id="domainPass"
                 label={t('cs.domain.pass')}
-                type="password"
+                type="text"
                 value={data.domainPass || ''}
                 placeholder="••••••••"
                 error={errors.domainPass}
