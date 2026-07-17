@@ -12,7 +12,7 @@ export default function InputField({
 }) {
   const { t } = useLanguage();
 
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(true)
   const isPassword = type === 'password'
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type
 

@@ -31,7 +31,7 @@ export default function UserAccountSection({ config, setConfig, errors = {} }) {
 
       <InputField
         label={t('user.password')}
-        type="text"
+        type="password"
         value={config.password}
         onChange={(value) => setConfig((prev) => ({ ...prev, password: value }))}
         placeholder={t('user.password.ph')}

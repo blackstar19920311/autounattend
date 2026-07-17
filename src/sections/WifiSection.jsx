@@ -53,7 +53,7 @@ export default function WifiSection({ config, setConfig, errors = {} }) {
             <InputField
               label={t('wifi.password')}
               id="wifi.password"
-              type="text"
+              type="password"
               placeholder={t('wifi.password.ph')}
               value={config.wifi.password}
               onChange={(val) => updateWifi({ password: val })}
