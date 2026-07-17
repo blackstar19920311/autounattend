@@ -31,11 +31,11 @@ function encodePowerShellBase64(script) {
     charCodes.push(code & 0xff);
     charCodes.push((code >> 8) & 0xff);
   }
-  let binary = '';
+  const binaryArr = [];
   for (let i = 0; i < charCodes.length; i++) {
-    binary += String.fromCharCode(charCodes[i]);
+    binaryArr.push(String.fromCharCode(charCodes[i]));
   }
-  return btoa(binary);
+  return btoa(binaryArr.join(''));
 }
 
 /**
@@ -205,7 +205,7 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
 
   // --- Particionálás ---
   if (config.partitioning && config.partitioning.enabled) {
-    const diskId = config.partitioning.diskNumber || 0;
+    const diskId = parseInt(config.partitioning.diskNumber || 0, 10);
 
     if (config.partitioning.mode === 'auto') {
       if (config.partitioning.fullWipe) {
@@ -229,7 +229,7 @@ FORMAT ${formatQuick}FS=NTFS LABEL="Windows"`;
         let order = 1;
         for (let i = 0; i < scriptLines.length; i++) {
           const redirect = i === 0 ? '>' : '>>';
-          const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i]}`;
+          const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i].replace(/[&|<>^]/g, '^$&')}`;
           lines.push('        <RunSynchronousCommand wcm:action="add">');
           lines.push(`          <Order>${order++}</Order>`);
           lines.push(`          <Path>${escapeXml(cmd)}</Path>`);
@@ -337,7 +337,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
       let order = 1;
       for (let i = 0; i < scriptLines.length; i++) {
         const redirect = i === 0 ? '>' : '>>';
-        const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i]}`;
+        const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i].replace(/[&|<>^]/g, '^$&')}`;
         lines.push('        <RunSynchronousCommand wcm:action="add">');
         lines.push(`          <Order>${order++}</Order>`);
         lines.push(`          <Path>${escapeXml(cmd)}</Path>`);
@@ -375,7 +375,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
         for (let i = 0; i < scriptLines.length; i++) {
           const redirect = i === 0 ? '>' : '>>';
           // Itt nincsenek zárójelek, ezért a cmd /c probléma nélkül kezeli az idézőjeleket
-          const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i]}`;
+          const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i].replace(/[&|<>^]/g, '^$&')}`;
           lines.push('        <RunSynchronousCommand wcm:action="add">');
           lines.push(`          <Order>${order++}</Order>`);
           lines.push(`          <Path>${escapeXml(cmd)}</Path>`);
@@ -390,7 +390,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
         lines.push('      </RunSynchronous>');
       }
 
-      const installPartition = config.partitioning.installPartitionId || 3;
+      const installPartition = parseInt(config.partitioning.installPartitionId || 3, 10);
       lines.push('');
       lines.push('      <ImageInstall>');
       lines.push('        <OSImage>');
@@ -702,8 +702,9 @@ function buildFirstLogonCommands(config, uiLanguage) {
 
   if (config.username) {
     // --- Jelszó lejáratának letiltása ---
+    const psCmd = `Set-LocalUser -Name '${config.username.trim().replace(/'/g, "''")}' -PasswordNeverExpires $true`;
     commands.push({
-      command: `powershell.exe -Command "Set-LocalUser -Name '${config.username.trim().replace(/'/g, "''")}' -PasswordNeverExpires $true"`,
+      command: `powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${encodePowerShellBase64(psCmd)}`,
       description: 'Jelszó lejáratának letiltása',
     });
   }
@@ -1000,7 +1001,7 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
           '@{Id="Ghisler.TotalCommander";Source="winget";Override="/A D:\\Apps\\TotalCommander"}'
         ).replace(
           '$apps=@(',
-          'if(-not (Test-Path "D:\\Apps\\TotalCommander")){ New-Item -ItemType Directory -Path "D:\\Apps\\TotalCommander" -Force | Out-Null }\n$apps=@('
+          'if(-not (Test-Path "D:\\Apps\\TotalCommander")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\TotalCommander" -Force -ErrorAction Stop | Out-Null } catch {} }\n$apps=@('
         );
       }
       addBase64ScriptToFirstLogon(
@@ -1016,7 +1017,7 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       if (config.partitioning?.mode !== 'auto') {
         scriptB = scriptB.replace(
           '$apps=@(',
-          'if(-not (Test-Path "D:\\Apps\\VLC")){ New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force | Out-Null }\nNew-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null\nNew-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null\n$apps=@('
+          'if(-not (Test-Path "D:\\Apps\\VLC")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force -ErrorAction Stop | Out-Null } catch {} }\nNew-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nNew-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\n$apps=@('
         );
       }
       addBase64ScriptToFirstLogon(
@@ -1069,11 +1070,11 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       let vlcHook = '';
       if (config.partitioning?.mode !== 'auto' && hasVlc) {
         vlcHook = `
-if(-not (Test-Path "D:\\Apps\\VLC")){ New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force | Out-Null }
-New-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force | Out-Null
-Set-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null
-New-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force | Out-Null
-Set-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force | Out-Null
+if(-not (Test-Path "D:\\Apps\\VLC")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force -ErrorAction Stop | Out-Null } catch {} }
+New-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null
+Set-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null
+New-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null
+Set-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null
 `;
       }
 
@@ -1109,7 +1110,7 @@ $customDirs=@(
 )
 foreach($dir in $customDirs){
   if(-not (Test-Path $dir)){
-    New-Item -ItemType Directory -Path $dir | Out-Null
+    try { New-Item -ItemType Directory -Path $dir -ErrorAction Stop | Out-Null } catch {}
   }
 }
 ${vlcHook}
@@ -1178,7 +1179,7 @@ if($ok){
       addBase64ScriptToFirstLogon(
         commands,
         SCRIPTS.officeB
-          .replace('##OFFICE_MAK_KEY##', config.customScripts.officeKey || '')
+          .replace('##OFFICE_MAK_KEY##', (config.customScripts.officeKey || '').replace(/'/g, "''"))
           .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,

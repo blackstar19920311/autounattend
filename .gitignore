@@ -13,3 +13,4 @@ dist/
 
 # Biztonsági mentések
 *.zip
+*.xml

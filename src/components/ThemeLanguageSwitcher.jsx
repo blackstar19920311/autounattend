@@ -32,18 +32,21 @@ export default function ThemeLanguageSwitcher({ className = '' }) {
   const { language, setLanguage } = useLanguage();
   
   const [isDark, setIsDark] = useState(() => {
-    return localStorage.getItem('theme') === 'dark' || 
-      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    try {
+      const theme = localStorage.getItem('theme');
+      if (theme) return theme === 'dark';
+    } catch (e) {}
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
       root.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
+      try { localStorage.setItem('theme', 'dark'); } catch (e) {}
     } else {
       root.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'light');
+      try { localStorage.setItem('theme', 'light'); } catch (e) {}
     }
     
     const handleThemeChange = (e) => {

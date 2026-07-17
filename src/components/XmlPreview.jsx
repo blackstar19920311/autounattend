@@ -78,13 +78,16 @@ export default function XmlPreview({ xml, onCopy, onDownload }) {
     try {
       const blob = new Blob([xml], { type: 'application/xml' })
       const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'autounattend.xml'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      try {
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'autounattend.xml'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } finally {
+        URL.revokeObjectURL(url)
+      }
       onDownload?.('success')
     } catch {
       onDownload?.('error')

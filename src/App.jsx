@@ -86,11 +86,11 @@ export default function App() {
       console.error('XML generálási hiba:', err)
       showStatus('error', t('app.status.error.generation'))
     }
-  }, [config, showStatus, t])
+  }, [config, showStatus, t, language])
 
   /* --- Beállítások visszaállítása --- */
   const handleReset = useCallback(() => {
-    setConfig(getDefaultConfig())
+    setConfig({ ...getDefaultConfig(), installLanguage: language })
     setXml('')
     setErrors({})
     setActiveSection('presets')
@@ -99,7 +99,7 @@ export default function App() {
     // Preset gombok resetelése a PresetsSection-ben
     if (resetPresetRef.current) resetPresetRef.current()
     showStatus('warning', t('app.status.warning.reset'))
-  }, [showStatus, t])
+  }, [showStatus, t, language])
 
   const handleCopy = useCallback((status) => {
     if (status === 'error') showStatus('error', t('app.status.copy.error'))

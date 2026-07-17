@@ -48,12 +48,17 @@ export function validateConfig(config, t) {
   }
 
   // 5. Particionálás
-  if (config.partitioning && config.partitioning.enabled && config.partitioning.mode === 'custom') {
-    if (!config.partitioning.customDiskpartScript || config.partitioning.customDiskpartScript.trim() === '') {
-      errors.customDiskpartScript = t('val.part.scriptReq');
+  if (config.partitioning && config.partitioning.enabled) {
+    if ((config.partitioning.mode === 'auto' || config.partitioning.mode === 'autocd') && (config.partitioning.diskNumber === '' || config.partitioning.diskNumber == null)) {
+      errors.diskNumber = t('val.part.diskReq');
     }
-    if (!config.partitioning.installPartitionId || config.partitioning.installPartitionId < 1) {
-      errors.installPartitionId = t('val.part.idReq');
+    if (config.partitioning.mode === 'custom') {
+      if (!config.partitioning.customDiskpartScript || config.partitioning.customDiskpartScript.trim() === '') {
+        errors.customDiskpartScript = t('val.part.scriptReq');
+      }
+      if (!config.partitioning.installPartitionId || config.partitioning.installPartitionId < 1) {
+        errors.installPartitionId = t('val.part.idReq');
+      }
     }
   }
 
