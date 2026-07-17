@@ -203,6 +203,25 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
   lines.push(`        <AcceptEula>${config.autoAcceptEula ? 'true' : 'false'}</AcceptEula>`);
   lines.push('      </UserData>');
 
+  const runSyncCmds = [];
+  let order = 1;
+
+  // --- Hardverkövetelmények megkerülése (winPE fázisban kell!) ---
+  if (config.bypassHardware) {
+    runSyncCmds.push('');
+    runSyncCmds.push('        <!-- Hardverkövetelmények megkerülése -->');
+    const bypassChecks = [
+      'BypassTPMCheck', 'BypassSecureBootCheck', 'BypassRAMCheck',
+      'BypassStorageCheck', 'BypassCPUCheck',
+    ];
+    for (const key of bypassChecks) {
+      runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+      runSyncCmds.push(`          <Order>${order++}</Order>`);
+      runSyncCmds.push(`          <Path>reg add HKLM\\SYSTEM\\Setup\\LabConfig /v ${key} /t REG_DWORD /d 1 /f</Path>`);
+      runSyncCmds.push('        </RunSynchronousCommand>');
+    }
+  }
+
   // --- Particionálás ---
   if (config.partitioning && config.partitioning.enabled) {
     const diskId = parseInt(config.partitioning.diskNumber || 0, 10);
@@ -222,26 +241,23 @@ FORMAT ${formatQuick}FS=NTFS LABEL="Windows"`;
 
         const scriptLines = script.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-        lines.push('');
-        lines.push('      <!-- Csak C meghajtó (auto) DISKPART parancsok végrehajtása (Teljes formázás) -->');
-        lines.push('      <RunSynchronous>');
+        runSyncCmds.push('');
+        runSyncCmds.push('        <!-- Csak C meghajtó (auto) DISKPART parancsok végrehajtása (Teljes formázás) -->');
         
-        let order = 1;
         for (let i = 0; i < scriptLines.length; i++) {
           const redirect = i === 0 ? '>' : '>>';
           const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i].replace(/[&|<>^]/g, '^$&')}`;
-          lines.push('        <RunSynchronousCommand wcm:action="add">');
-          lines.push(`          <Order>${order++}</Order>`);
-          lines.push(`          <Path>${escapeXml(cmd)}</Path>`);
-          lines.push('        </RunSynchronousCommand>');
+          runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+          runSyncCmds.push(`          <Order>${order++}</Order>`);
+          runSyncCmds.push(`          <Path>${escapeXml(cmd)}</Path>`);
+          runSyncCmds.push('        </RunSynchronousCommand>');
         }
         
-        lines.push('        <RunSynchronousCommand wcm:action="add">');
-        lines.push(`          <Order>${order++}</Order>`);
-        lines.push('          <Description>DISKPART szkript futtatása (Csak C:)</Description>');
-        lines.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
-        lines.push('        </RunSynchronousCommand>');
-        lines.push('      </RunSynchronous>');
+        runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+        runSyncCmds.push(`          <Order>${order++}</Order>`);
+        runSyncCmds.push('          <Description>DISKPART szkript futtatása (Csak C:)</Description>');
+        runSyncCmds.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
+        runSyncCmds.push('        </RunSynchronousCommand>');
 
         lines.push('');
         lines.push('      <ImageInstall>');
@@ -330,26 +346,23 @@ GPT ATTRIBUTES=0x8000000000000001`;
 
       const scriptLines = script.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-      lines.push('');
-      lines.push('      <!-- C és D meghajtó (autocd) DISKPART parancsok végrehajtása -->');
-      lines.push('      <RunSynchronous>');
+      runSyncCmds.push('');
+      runSyncCmds.push('        <!-- C és D meghajtó (autocd) DISKPART parancsok végrehajtása -->');
       
-      let order = 1;
       for (let i = 0; i < scriptLines.length; i++) {
         const redirect = i === 0 ? '>' : '>>';
         const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i].replace(/[&|<>^]/g, '^$&')}`;
-        lines.push('        <RunSynchronousCommand wcm:action="add">');
-        lines.push(`          <Order>${order++}</Order>`);
-        lines.push(`          <Path>${escapeXml(cmd)}</Path>`);
-        lines.push('        </RunSynchronousCommand>');
+        runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+        runSyncCmds.push(`          <Order>${order++}</Order>`);
+        runSyncCmds.push(`          <Path>${escapeXml(cmd)}</Path>`);
+        runSyncCmds.push('        </RunSynchronousCommand>');
       }
       
-      lines.push('        <RunSynchronousCommand wcm:action="add">');
-      lines.push(`          <Order>${order++}</Order>`);
-      lines.push('          <Description>DISKPART szkript futtatása (C: és D:)</Description>');
-      lines.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
-      lines.push('        </RunSynchronousCommand>');
-      lines.push('      </RunSynchronous>');
+      runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+      runSyncCmds.push(`          <Order>${order++}</Order>`);
+      runSyncCmds.push('          <Description>DISKPART szkript futtatása (C: és D:)</Description>');
+      runSyncCmds.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
+      runSyncCmds.push('        </RunSynchronousCommand>');
 
       lines.push('');
       lines.push('      <ImageInstall>');
@@ -367,27 +380,24 @@ GPT ATTRIBUTES=0x8000000000000001`;
       if (script) {
         const scriptLines = script.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-        lines.push('');
-        lines.push('      <!-- Egyéni DISKPART parancsok végrehajtása -->');
-        lines.push('      <RunSynchronous>');
+        runSyncCmds.push('');
+        runSyncCmds.push('        <!-- Egyéni DISKPART parancsok végrehajtása -->');
         
-        let order = 1;
         for (let i = 0; i < scriptLines.length; i++) {
           const redirect = i === 0 ? '>' : '>>';
           // Itt nincsenek zárójelek, ezért a cmd /c probléma nélkül kezeli az idézőjeleket
           const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i].replace(/[&|<>^]/g, '^$&')}`;
-          lines.push('        <RunSynchronousCommand wcm:action="add">');
-          lines.push(`          <Order>${order++}</Order>`);
-          lines.push(`          <Path>${escapeXml(cmd)}</Path>`);
-          lines.push('        </RunSynchronousCommand>');
+          runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+          runSyncCmds.push(`          <Order>${order++}</Order>`);
+          runSyncCmds.push(`          <Path>${escapeXml(cmd)}</Path>`);
+          runSyncCmds.push('        </RunSynchronousCommand>');
         }
         
-        lines.push('        <RunSynchronousCommand wcm:action="add">');
-        lines.push(`          <Order>${order++}</Order>`);
-        lines.push('          <Description>DISKPART szkript futtatása</Description>');
-        lines.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
-        lines.push('        </RunSynchronousCommand>');
-        lines.push('      </RunSynchronous>');
+        runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+        runSyncCmds.push(`          <Order>${order++}</Order>`);
+        runSyncCmds.push('          <Description>DISKPART szkript futtatása</Description>');
+        runSyncCmds.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
+        runSyncCmds.push('        </RunSynchronousCommand>');
       }
 
       const installPartition = parseInt(config.partitioning.installPartitionId || 3, 10);
@@ -401,6 +411,13 @@ GPT ATTRIBUTES=0x8000000000000001`;
       lines.push('        </OSImage>');
       lines.push('      </ImageInstall>');
     }
+  }
+
+  if (runSyncCmds.length > 0) {
+    lines.push('');
+    lines.push('      <RunSynchronous>');
+    lines.push(...runSyncCmds);
+    lines.push('      </RunSynchronous>');
   }
 
   lines.push('    </component>');
@@ -455,22 +472,6 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
     order = orderRef.val;
   }
 
-  // Hardware bypass
-  if (config.bypassHardware) {
-    runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Hardverkövetelmények megkerülése -->');
-    const bypassChecks = [
-      'BypassTPMCheck', 'BypassSecureBootCheck', 'BypassRAMCheck',
-      'BypassStorageCheck', 'BypassCPUCheck',
-    ];
-    for (const key of bypassChecks) {
-      runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-      runSyncCmds.push(`          <Order>${order}</Order>`);
-      runSyncCmds.push(`          <Path>reg add HKLM\\SYSTEM\\Setup\\LabConfig /v ${key} /t REG_DWORD /d 1 /f</Path>`);
-      runSyncCmds.push('        </RunSynchronousCommand>');
-      order++;
-    }
-  }
 
   // --- Start menü takarítás (ConfigureStartPins registry GPO + MDM) ---
   if (config.cleanStartPins) {
