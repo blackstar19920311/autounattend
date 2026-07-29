@@ -68,6 +68,9 @@ function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64
 
 /**
  * Szétbont egy Base64 kódolt szkriptet FirstLogonCommands formátumban.
+ * A szkriptet Base64-be kódolja, darabokra bontja, majd certutil-lal dekódolja.
+ * NEM futtatja a szkriptet közvetlenül – a RunAll.ps1 "Karmester" fogja meghívni.
+ * @returns {string} A dekódolt .ps1 fájl elérési útja (a Karmester gyűjti össze).
  */
 function addBase64ScriptToFirstLogon(commands, scriptContent, tempB64Path, destPs1Path, description) {
   const wrappedScript = `$ShortLog = "C:\\InstallSummary.log"
@@ -88,7 +91,6 @@ ${scriptContent}
     Add-Content -Path $ShortLog -Value "[$((Get-Date).ToString('HH:mm:ss'))] HIBÁS: $ScriptName" -Encoding utf8
     Add-Content -Path $FullLog -Value "" -Encoding utf8
     Add-Content -Path $FullLog -Value "[HIBA] $($_.Exception.Message)" -Encoding utf8
-    exit 1
 }`;
 
   const base64 = encodePowerShellBase64(wrappedScript);
@@ -108,10 +110,8 @@ ${scriptContent}
     description: `${description} (dekódolás)`
   });
 
-  commands.push({
-    command: `powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}`,
-    description: `${description} (futtatás)`
-  });
+  // A futtatást NEM itt végezzük – a RunAll.ps1 Karmester fogja sorban meghívni
+  return destPs1Path;
 }
 
 /**
@@ -689,6 +689,7 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
 // ---------------------------------------------------------------------------
 function buildFirstLogonCommands(config, uiLanguage) {
   const commands = [];
+  const scriptPaths = []; // Karmester: összegyűjti az összes .ps1 elérési utat
 
   // --- 1 perces globális várakozás ---
   // A felhasználó kérésére az összes FirstLogon szkript előtt várunk 1 percet (60 másodperc).
@@ -761,13 +762,13 @@ $xml | Out-File -FilePath "$env:TEMP\\wifi_profile.xml" -Encoding utf8
 netsh wlan add profile filename="$env:TEMP\\wifi_profile.xml"
 netsh wlan connect name='${ssid.replace(/'/g, "''")}'
 `;
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         wifiScript.trim(),
         'C:\\Windows\\Temp\\wifi.b64',
         'C:\\Windows\\Temp\\wifi.ps1',
         `Automatikus csatlakozás a(z) ${ssid} Wi-Fi hálózathoz`
-      );
+      ));
     } else if (config.wifi.mode === 'manual') {
       commands.push({
         command: `cmd /c start ms-availablenetworks:`,
@@ -1005,13 +1006,13 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
           'if(-not (Test-Path "D:\\Apps\\TotalCommander")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\TotalCommander" -Force -ErrorAction Stop | Out-Null } catch {} }\n$apps=@('
         );
       }
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         scriptA,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Winget Appok telepítése (A verzió)'
-      );
+      ));
       scriptCounter++;
     } else if (config.customScripts.wingetApps === 'versionB') {
       let scriptB = SCRIPTS.wingetAppsB;
@@ -1021,13 +1022,13 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
           'if(-not (Test-Path "D:\\Apps\\VLC")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force -ErrorAction Stop | Out-Null } catch {} }\nNew-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nNew-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\n$apps=@('
         );
       }
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         scriptB,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Winget Appok telepítése (B verzió)'
-      );
+      ));
       scriptCounter++;
     } else if (config.customScripts.wingetApps === 'custom' && Array.isArray(config.customScripts.wingetCustomApps) && config.customScripts.wingetCustomApps.length > 0) {
       const selectedApps = config.customScripts.wingetCustomApps;
@@ -1156,28 +1157,28 @@ if($ok){
   throw "Winget telepítési hiba!"
 }`;
 
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         wingetScript,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Winget Appok telepítése'
-      );
+      ));
       scriptCounter++;
     }
 
     // 3. Office
     if (config.customScripts.office === 'versionA') {
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         SCRIPTS.officeA.replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Microsoft Office telepítése (A verzió)'
-      );
+      ));
       scriptCounter++;
     } else if (config.customScripts.office === 'versionB') {
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         SCRIPTS.officeB
           .replace('##OFFICE_MAK_KEY##', (config.customScripts.officeKey || '').replace(/'/g, "''"))
@@ -1185,25 +1186,25 @@ if($ok){
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Microsoft Office telepítése (B verzió)'
-      );
+      ));
       scriptCounter++;
     }
 
     // 4. PC Manager
     if (config.customScripts.pcManager) {
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         SCRIPTS.pcManager,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: PC Manager telepítése'
-      );
+      ));
       scriptCounter++;
     }
 
     // 5. Domain Join
     if (config.customScripts.domainJoin) {
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         SCRIPTS.domainJoin
           .replace('##DOMAIN_NAME##', (config.customScripts.domainName || '').replace(/'/g, "''"))
@@ -1212,19 +1213,19 @@ if($ok){
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Active Directory Tartományba léptetés'
-      );
+      ));
       scriptCounter++;
     }
 
     // Windows Update (Utolsóként a takarítás előtt)
     if (config.customScripts.windowsUpdate) {
-      addBase64ScriptToFirstLogon(
+      scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         SCRIPTS.windowsUpdate,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Windows Update interaktív keresés'
-      );
+      ));
       scriptCounter++;
     }
   }
@@ -1234,13 +1235,43 @@ if($ok){
 Remove-Item -Path C:\\Windows\\Temp\\* -Recurse -Force -ErrorAction SilentlyContinue
   `.trim();
 
-  addBase64ScriptToFirstLogon(
+  const cleanupPath = addBase64ScriptToFirstLogon(
     commands,
     cleanupScript,
     'C:\\Windows\\Temp\\cleanup.b64',
     'C:\\Windows\\Temp\\cleanup.ps1',
     'Végső takarítás (Ideiglenes fájlok és szkriptek törlése)'
   );
+  scriptPaths.push(cleanupPath);
+
+  // --- RunAll.ps1 Karmester (Orchestrator) generálása ---
+  // Egyetlen PowerShell ablak nyílik meg, ami sorban meghívja az összes előkészített szkriptet.
+  if (scriptPaths.length > 0) {
+    const runAllLines = scriptPaths.map(p => `& "${p}"`).join('\n');
+    const runAllB64 = encodePowerShellBase64(runAllLines);
+    const runAllChunkSize = 200;
+    const runAllB64Path = 'C:\\Windows\\Temp\\RunAll.b64';
+    const runAllPs1Path = 'C:\\Windows\\Temp\\RunAll.ps1';
+
+    for (let i = 0; i < runAllB64.length; i += runAllChunkSize) {
+      const chunk = runAllB64.substring(i, i + runAllChunkSize);
+      const redir = i === 0 ? '>' : '>>';
+      commands.push({
+        command: `cmd.exe /c ${redir}${runAllB64Path} echo ${chunk}`,
+        description: `Karmester szkript (adatok írása ${i + 1}. rész)`
+      });
+    }
+
+    commands.push({
+      command: `certutil.exe -decode -f ${runAllB64Path} ${runAllPs1Path}`,
+      description: 'Karmester szkript (dekódolás)'
+    });
+
+    commands.push({
+      command: `powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${runAllPs1Path}`,
+      description: 'Karmester: Összes szkript futtatása egyetlen ablakban'
+    });
+  }
 
   return commands;
 }
