@@ -297,13 +297,25 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
                   label={t('cs.office.2021.key')}
                   value={data.officeKey || ''}
                   placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-                  onChange={(val) => setConfig(prev => ({
-                    ...prev,
-                    customScripts: {
-                      ...prev.customScripts,
-                      officeKey: val
+                  maxLength={29}
+                  onChange={(val) => {
+                    let formatted = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                    const chunks = [];
+                    for (let i = 0; i < formatted.length; i += 5) {
+                      chunks.push(formatted.substring(i, i + 5));
                     }
-                  }))}
+                    formatted = chunks.join('-');
+                    if (formatted.length > 29) {
+                      formatted = formatted.substring(0, 29);
+                    }
+                    setConfig(prev => ({
+                      ...prev,
+                      customScripts: {
+                        ...prev.customScripts,
+                        officeKey: formatted
+                      }
+                    }));
+                  }}
                 />
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                   {t('cs.office.2021.key.help')}
