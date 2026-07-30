@@ -480,10 +480,6 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
     const layoutScript = `
 $json = '{"pinnedList":[{"packagedAppId":"windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"}]}'
 
-$mdmKey = 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start'
-New-Item $mdmKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $mdmKey 'ConfigureStartPins' $json -Type String -Force
-
 $gpoKey = 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer'
 New-Item $gpoKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
 Set-ItemProperty $gpoKey 'ConfigureStartPins' $json -Type String -Force
@@ -548,9 +544,9 @@ $xml = '<?xml version="1.0" encoding="utf-8"?>
   </CustomTaskbarLayoutCollection>
 </LayoutModificationTemplate>'
 
-$mdmKey = 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start'
-New-Item $mdmKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $mdmKey 'ConfigureTaskbar' $xml -Type String -Force
+$shellPath = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
+New-Item -Path $shellPath -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF8 -Force
 `;
     const orderRef = { val: order };
     addBase64ScriptToSyncCmds(runSyncCmds, orderRef, taskbarPolicyScript.trim(), 'C:\\Windows\\Temp\\tbpolicy.b64', 'C:\\Windows\\Temp\\tbpolicy.ps1');
