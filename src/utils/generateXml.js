@@ -622,6 +622,64 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     order = orderRef.val;
   }
 
+  // --- Bloatware eltávolítása a Windows lemezképből (Specialize fázis) ---
+  const bloatwarePackages = {
+    todo: 'Microsoft.Todos',
+    experiencesApp: 'MicrosoftWindows.CrossDevice',
+    stickyNotes: 'Microsoft.MicrosoftStickyNotes',
+    quickAssist: 'MicrosoftCorporationII.QuickAssist',
+    weather: 'Microsoft.BingWeather',
+    camera: 'Microsoft.WindowsCamera',
+    bingNews: 'Microsoft.BingNews Microsoft.BingSearch',
+    clipchamp: 'Clipchamp.Clipchamp',
+    clock: 'Microsoft.WindowsAlarms',
+    outlook: 'Microsoft.OutlookForWindows',
+    powerAutomate: 'Microsoft.PowerAutomateDesktop',
+    solitaire: 'Microsoft.MicrosoftSolitaireCollection',
+    terminal: 'Microsoft.WindowsTerminal',
+    feedbackHub: 'Microsoft.WindowsFeedbackHub',
+  };
+
+  const bloatwareNames = {
+    todo: 'Microsoft To Do',
+    experiencesApp: 'Cross Device',
+    stickyNotes: 'Sticky Notes',
+    quickAssist: 'Quick Assist',
+    weather: 'Időjárás',
+    camera: 'Kamera',
+    bingNews: 'Bing Hírek',
+    clipchamp: 'Clipchamp',
+    clock: 'Óra és ébresztők',
+    outlook: 'Új Outlook',
+    powerAutomate: 'Power Automate',
+    solitaire: 'Solitaire Collection',
+    terminal: 'Windows Terminal',
+    feedbackHub: 'Visszajelzési központ',
+  };
+
+  let bloatScript = [];
+  if (config.bloatware) {
+    bloatScript.push('$ErrorActionPreference = "SilentlyContinue"');
+    bloatScript.push('Write-Host "Removing Bloatware..."');
+    for (const [key, packageName] of Object.entries(bloatwarePackages)) {
+      if (config.bloatware[key]) {
+        const packages = packageName.split(' ');
+        for (const pkg of packages) {
+          bloatScript.push(`Write-Host "Removing ${bloatwareNames[key]} (${pkg})..."`);
+          bloatScript.push(`Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like '*${pkg}*'} | Remove-AppxProvisionedPackage -Online -AllUsers`);
+        }
+      }
+    }
+  }
+
+  if (bloatScript.length > 2) {
+    runSyncCmds.push('');
+    runSyncCmds.push('        <!-- Bloatware eltávolítása a Windows lemezképből -->');
+    const orderRef = { val: order };
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, bloatScript.join('\r\n'), 'C:\\Windows\\Temp\\bloatware.b64', 'C:\\Windows\\Temp\\bloatware.ps1');
+    order = orderRef.val;
+  }
+
   lines.push('');
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Deployment')}>`);
   if (runSyncCmds.length > 0) {
@@ -862,55 +920,6 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
   // Alvás letiltása és teljesítmény energiaséma kikerült innen, most a specialize fázisban van
 
   // Egérgyorsulás kikapcsolása kikerült innen, most a specialize fázisban van (Default User)
-
-  // --- Bloatware eltávolítása ---
-  const bloatwarePackages = {
-    todo: 'Microsoft.Todos',
-    experiencesApp: 'MicrosoftWindows.CrossDevice',
-    stickyNotes: 'Microsoft.MicrosoftStickyNotes',
-    quickAssist: 'MicrosoftCorporationII.QuickAssist',
-    weather: 'Microsoft.BingWeather',
-    camera: 'Microsoft.WindowsCamera',
-    bingNews: 'Microsoft.BingNews Microsoft.BingSearch',
-    clipchamp: 'Clipchamp.Clipchamp',
-    clock: 'Microsoft.WindowsAlarms',
-    outlook: 'Microsoft.OutlookForWindows',
-    powerAutomate: 'Microsoft.PowerAutomateDesktop',
-    solitaire: 'Microsoft.MicrosoftSolitaireCollection',
-    terminal: 'Microsoft.WindowsTerminal',
-    feedbackHub: 'Microsoft.WindowsFeedbackHub',
-  };
-
-  const bloatwareNames = {
-    todo: 'Microsoft To Do',
-    experiencesApp: 'Cross Device (Eszközök között)',
-    stickyNotes: 'Sticky Notes (Öntapadó jegyzetek)',
-    quickAssist: 'Quick Assist (Távsegítség)',
-    weather: 'Időjárás',
-    camera: 'Kamera',
-    bingNews: 'Bing Hírek',
-    clipchamp: 'Clipchamp',
-    clock: 'Óra és ébresztők',
-    outlook: 'Új Outlook',
-    powerAutomate: 'Power Automate',
-    solitaire: 'Solitaire Collection',
-    terminal: 'Windows Terminal',
-    feedbackHub: 'Visszajelzési központ',
-  };
-
-  if (config.bloatware) {
-    for (const [key, packageName] of Object.entries(bloatwarePackages)) {
-      if (config.bloatware[key]) {
-        const packages = packageName.split(' ');
-        for (const pkg of packages) {
-          commands.push({
-            command: `cmd /c powershell -Command "Get-AppxPackage -AllUsers *${pkg}* | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue; Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like '*${pkg}*'} | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue"`,
-            description: `${bloatwareNames[key]} (${pkg}) eltávolítása`,
-          });
-        }
-      }
-    }
-  }
 
   // --- 8. Egyéni Szkriptek (FirstLogon) ---
   if (config.customScripts) {
