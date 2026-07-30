@@ -8,7 +8,6 @@ import SegmentedControl from '../components/SegmentedControl';
 export default function PersonalizationSection({ config, setConfig }) {
   const { t } = useLanguage();
 
-  
   const searchBoxOptions = [
     { label: t('pers.taskbar.searchBox.full'), value: 'full' },
     { label: t('pers.taskbar.searchBox.iconLabel'), value: 'iconLabel' },
@@ -131,6 +130,7 @@ export default function PersonalizationSection({ config, setConfig }) {
         onChange={handleToggle('disableWebSearch')}
         id="disableWebSearch"
       />
+      {/* Ez a kapcsoló eddig SOHA nem volt beolvasva a generátorban. */}
       <Toggle
         label={t('pers.startMenu.cleanPins')}
         description={t('pers.startMenu.cleanPins.desc')}
@@ -138,6 +138,32 @@ export default function PersonalizationSection({ config, setConfig }) {
         onChange={handleToggle('cleanStartPins')}
         id="cleanStartPins"
       />
+
+      {/* 4.4 Fájlkezelő – a generátor olvasta ezeket a kulcsokat, de nem volt hozzá UI
+          és a defaultConfig sem definiálta őket, tehát mindig undefined volt. */}
+      <h3 className="subsection">{t('pers.explorer')}</h3>
+      <Toggle
+        label={t('pers.explorer.fileExtensions')}
+        description={t('pers.explorer.fileExtensions.desc')}
+        checked={!!config.showFileExtensions}
+        onChange={handleToggle('showFileExtensions')}
+        id="showFileExtensions"
+      />
+      <Toggle
+        label={t('pers.explorer.hiddenFiles')}
+        description={t('pers.explorer.hiddenFiles.desc')}
+        checked={!!config.showHiddenFiles}
+        onChange={handleToggle('showHiddenFiles')}
+        id="showHiddenFiles"
+      />
+      <Toggle
+        label={t('pers.explorer.thisPC')}
+        description={t('pers.explorer.thisPC.desc')}
+        checked={!!config.explorerToThisPC}
+        onChange={handleToggle('explorerToThisPC')}
+        id="explorerToThisPC"
+      />
+
       <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
         <Toggle
           id="disableNewsAndInterests"

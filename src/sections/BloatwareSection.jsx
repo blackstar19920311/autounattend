@@ -1,7 +1,8 @@
 import { useLanguage } from '../i18n/LanguageContext';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Info } from 'lucide-react';
 import Card from '../components/Card';
 import Checkbox from '../components/Checkbox';
+import Toggle from '../components/Toggle';
 
 export default function BloatwareSection({ config, setConfig }) {
   const { t } = useLanguage();
@@ -53,8 +54,12 @@ export default function BloatwareSection({ config, setConfig }) {
   return (
     <Card title={t('bloat.title')} icon={<Trash2 size={20} />} tooltip={t('tt.bloatwareDesc')}>
       <div className="btn-group">
-        <button type="button" className="btn-secondary" onClick={selectAll}>{t('bloat.selectAll')}</button>
-        <button type="button" className="btn-secondary" onClick={deselectAll}>{t('bloat.deselectAll')}</button>
+        <button type="button" className="btn-secondary" onClick={selectAll}>
+          {t('bloat.selectAll')}
+        </button>
+        <button type="button" className="btn-secondary" onClick={deselectAll}>
+          {t('bloat.deselectAll')}
+        </button>
       </div>
       <div className="checkbox-group">
         {bloatwareItems.map(({ key, label }) => (
@@ -66,6 +71,25 @@ export default function BloatwareSection({ config, setConfig }) {
             id={`bloat-${key}`}
           />
         ))}
+      </div>
+
+      <p
+        className="toggle-description"
+        style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginTop: '10px' }}
+      >
+        <Info size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+        {t('bloat.bingSearchNote')}
+      </p>
+
+      {/* Ehhez a Schneegans removeCapabilities szkript eddig halott kód volt. */}
+      <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <Toggle
+          id="removeLegacyCapabilities"
+          label={t('bloat.legacyCapabilities')}
+          description={t('bloat.legacyCapabilities.desc')}
+          checked={!!config.removeLegacyCapabilities}
+          onChange={(value) => setConfig((prev) => ({ ...prev, removeLegacyCapabilities: value }))}
+        />
       </div>
     </Card>
   );

@@ -7,32 +7,32 @@ import InputField from '../components/InputField';
 import SegmentedControl from '../components/SegmentedControl';
 import CustomSelect from '../components/CustomSelect';
 import AnimatedCollapse from '../components/AnimatedCollapse';
+import { formatProductKey, PRODUCT_KEY_MAX_LENGTH } from '../utils/formatters';
 
-/**
- * Termékkulcs automatikus formázása: nagybetűs, kötőjelek 5 karakterenként
- */
-function formatProductKey(raw) {
-  const cleaned = raw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 25);
-  const parts = [];
-  for (let i = 0; i < cleaned.length; i += 5) {
-    parts.push(cleaned.slice(i, i + 5));
-  }
-  return parts.join('-');
-}
+// Gyakori időzónák. Korábban a generátor FIXEN közép-európai időzónát égetett be.
+const TIME_ZONES = [
+  'Central Europe Standard Time',
+  'Central European Standard Time',
+  'W. Europe Standard Time',
+  'GMT Standard Time',
+  'Romance Standard Time',
+  'E. Europe Standard Time',
+  'FLE Standard Time',
+  'UTC',
+  'Eastern Standard Time',
+  'Central Standard Time',
+  'Pacific Standard Time',
+];
 
 export default function SystemInfoSection({ config, setConfig, errors = {} }) {
   const { t, language } = useLanguage();
 
-  
   const handleProductKeyChange = (value) => {
-    const formatted = formatProductKey(value);
-    setConfig((prev) => ({ ...prev, productKey: formatted }));
+    setConfig((prev) => ({ ...prev, productKey: formatProductKey(value) }));
   };
 
   const prefix = config.computerName || 'PC';
-  const previewName = config.randomSuffix
-    ? `${prefix}-AB12`
-    : prefix;
+  const previewName = config.randomSuffix ? `${prefix}-AB12` : prefix;
 
   const handleArchChange = (value) => {
     setConfig((prev) => ({ ...prev, architecture: value }));
@@ -64,9 +64,7 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
         </div>
         <p className="toggle-description" style={{ marginTop: -4 }}>
           💡 {t('user.preview')}: <strong>{previewName}</strong>
-          {config.randomSuffix && (
-            <span> {t('user.suffix.desc')}</span>
-          )}
+          {config.randomSuffix && <span> {t('user.suffix.desc')}</span>}
         </p>
       </div>
 
@@ -75,10 +73,14 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
         value={config.productKey}
         onChange={handleProductKeyChange}
         placeholder={t('user.productKey.ph')}
-        maxLength={29}
+        maxLength={PRODUCT_KEY_MAX_LENGTH}
         error={errors.productKey}
         id="productKey"
       />
+      <p className="toggle-description" style={{ marginTop: -4 }}>
+        💡 {t('sysinfo.productKey.emptyHint')}
+      </p>
+
       <div className="form-group">
         <SegmentedControl
           label={t('sysinfo.arch')}
@@ -86,29 +88,56 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
           onChange={handleArchChange}
           options={[
             { value: 'amd64', label: '64-bit (amd64)' },
-            { value: 'arm64', label: 'ARM (arm64)' }
+            { value: 'arm64', label: 'ARM (arm64)' },
           ]}
         />
       </div>
 
       <div className="input-wrapper" style={{ marginBottom: '0' }}>
         <label className="input-label">{t('sysinfo.lang')}</label>
-        <div className="info-box" style={{ marginBottom: '10px', padding: '10px 12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+        <div
+          className="info-box"
+          style={{
+            marginBottom: '10px',
+            padding: '10px 12px',
+            background: 'var(--bg-card)',
+            borderRadius: '6px',
+            border: '1px solid var(--border)',
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+          }}
+        >
           💡 {t('sysinfo.lang.info')}
         </div>
         <div className="input-container">
           <CustomSelect
             value={config.installLanguage}
             onChange={(val) => setConfig((prev) => ({ ...prev, installLanguage: val }))}
-            options={language === 'en' ? [
-              { value: 'en', label: t('sysinfo.lang.en') },
-              { value: 'hu', label: t('sysinfo.lang.hu') }
-            ] : [
-              { value: 'hu', label: t('sysinfo.lang.hu') },
-              { value: 'en', label: t('sysinfo.lang.en') }
-            ]}
+            options={
+              language === 'en'
+                ? [
+                    { value: 'en', label: t('sysinfo.lang.en') },
+                    { value: 'hu', label: t('sysinfo.lang.hu') },
+                  ]
+                : [
+                    { value: 'hu', label: t('sysinfo.lang.hu') },
+                    { value: 'en', label: t('sysinfo.lang.en') },
+                  ]
+            }
           />
         </div>
+      </div>
+
+      <div className="input-wrapper" style={{ marginTop: '16px', marginBottom: '0' }}>
+        <label className="input-label">{t('sysinfo.timeZone')}</label>
+        <div className="input-container">
+          <CustomSelect
+            value={config.timeZone || 'Central Europe Standard Time'}
+            onChange={(val) => setConfig((prev) => ({ ...prev, timeZone: val }))}
+            options={TIME_ZONES.map((tz) => ({ value: tz, label: tz }))}
+          />
+        </div>
+        <p className="toggle-description">{t('sysinfo.timeZone.desc')}</p>
       </div>
 
       <AnimatedCollapse show={language === 'hu'}>

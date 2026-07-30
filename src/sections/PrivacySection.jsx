@@ -1,12 +1,12 @@
 import { useLanguage } from '../i18n/LanguageContext';
-import { EyeOff } from 'lucide-react';
+import { EyeOff, AlertTriangle } from 'lucide-react';
 import Card from '../components/Card';
 import Toggle from '../components/Toggle';
+import AnimatedCollapse from '../components/AnimatedCollapse';
 
 export default function PrivacySection({ config, setConfig }) {
   const { t } = useLanguage();
 
-  
   const handleToggle = (field) => (value) => {
     setConfig((prev) => ({ ...prev, [field]: value }));
   };
@@ -34,6 +34,25 @@ export default function PrivacySection({ config, setConfig }) {
         onChange={handleToggle('disableUAC')}
         id="disableUAC"
       />
+      {/* Az UAC kikapcsolása Win11-en megbénítja a Store/UWP appokat és a
+          Beállításokat – eddig semmi nem szólt erről a felhasználónak. */}
+      <AnimatedCollapse show={!!config.disableUAC} marginTop="10px">
+        <div
+          style={{
+            padding: '10px 15px',
+            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+            borderLeft: '4px solid #ef4444',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '8px',
+          }}
+        >
+          <AlertTriangle size={16} style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }} />
+          <p style={{ margin: 0, fontSize: '0.85rem', color: '#ef4444' }}>{t('privacy.uac.warning')}</p>
+        </div>
+      </AnimatedCollapse>
+
       <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
         <Toggle
           id="disableConsumerFeatures"
