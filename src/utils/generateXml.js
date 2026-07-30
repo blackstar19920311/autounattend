@@ -559,6 +559,32 @@ Set-ItemProperty $mdmKey 'ConfigureTaskbar' $xml -Type String -Force
 
   // Windows 11 Tálcaikonok Scheduled Task eltávolítva, áthelyezve Active Setupba
 
+  // --- Windows 11 25H2 globális GPO-k (Specialize fázis) ---
+  let gpoScript = '';
+  if (config.hideRecentApps) {
+    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v HideRecentlyAddedApps /t REG_DWORD /d 1 /f\n';
+  }
+  if (config.hideMostUsedApps) {
+    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v ShowOrHideMostUsedApps /t REG_DWORD /d 2 /f\n';
+  }
+  if (config.hideRecommendedFiles) {
+    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v HideRecentJumplists /t REG_DWORD /d 1 /f\n';
+  }
+  if (config.hideTipsAndSuggestions) {
+    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f\n';
+  }
+  if (config.disableWebSearch) {
+    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 1 /f\n';
+  }
+
+  if (gpoScript.length > 0) {
+    runSyncCmds.push('');
+    runSyncCmds.push('        <!-- Windows 11 25H2 globális GPO-k -->');
+    const orderRef = { val: order };
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, gpoScript.trim(), 'C:\\Windows\\Temp\\gpos.b64', 'C:\\Windows\\Temp\\gpos.ps1');
+    order = orderRef.val;
+  }
+
   lines.push('');
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Deployment')}>`);
   if (runSyncCmds.length > 0) {
@@ -811,27 +837,6 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
   }
 
-  // --- Start menü: legutóbbi alkalmazások elrejtése ---
-  if (config.hideRecentApps) {
-    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
-  }
-
-  // --- Start menü: leggyakrabban használt alkalmazások elrejtése ---
-  if (config.hideMostUsedApps) {
-    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
-  }
-
-  // --- Start menü: ajánlott fájlok elrejtése ---
-  if (config.hideRecommendedFiles) {
-    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
-  }
-
-  // --- Tippek és javaslatok kikapcsolása ---
-  if (config.hideTipsAndSuggestions) {
-    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f');
-    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f');
-    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 0 /f');
-  }
 
   // --- Webes keresés letiltása ---
   if (config.disableWebSearch) {
