@@ -473,37 +473,7 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
   }
 
 
-  // --- Start menü takarítás (ConfigureStartPins registry GPO + MDM) ---
-  if (config.cleanStartPins) {
-    runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Start menü kitűzött elemeinek törlése (csak Gépház) -->');
-    const layoutScript = `
-$json = '{"pinnedList":[{"packagedAppId":"windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"}]}'
 
-$gpoKey = 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer'
-New-Item $gpoKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $gpoKey 'ConfigureStartPins' $json -Type String -Force
-`;
-    const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, layoutScript.trim(), 'C:\\Windows\\Temp\\layout.b64', 'C:\\Windows\\Temp\\layout.ps1');
-    order = orderRef.val;
-  }
-
-  // --- Egérgyorsulás kikapcsolása (Default User profil módosítása) ---
-  if (config.disableMouseAcceleration) {
-    runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Egérgyorsítás kikapcsolása az alapértelmezett profilban -->');
-    const mouseScript = `
-reg load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f
-reg unload "HKU\\DefaultUser"
-`;
-    const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, mouseScript.trim(), 'C:\\Windows\\Temp\\mouse.b64', 'C:\\Windows\\Temp\\mouse.ps1');
-    order = orderRef.val;
-  }
 
   // --- Alvás letiltása és Maximális teljesítmény energiaséma (Specialize fázis) ---
   if (config.disableSleep) {
@@ -527,10 +497,8 @@ powercfg /change monitor-timeout-dc 0
   // --- Tálca ikonok (HKLM Házirendek a Specialize fázisban) ---
   if (config.hideTaskbarIcons) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Tálca Widgets és Chat kikapcsolása (HKLM Házirendek) -->');
+    runSyncCmds.push('        <!-- Tálca rögzítések tiltása (HKLM Házirend) -->');
     let taskbarPolicyScript = `
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Chat" /v ChatIcon /t REG_DWORD /d 3 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v NoPinningStoreToTaskbar /t REG_DWORD /d 1 /f
 
 $xml = '<?xml version="1.0" encoding="utf-8"?>
@@ -553,39 +521,28 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     order = orderRef.val;
   }
 
-  // --- Vizuális beállítások a Default User profilba (HKU) ---
-  const duScript = [];
-  duScript.push('@echo off');
-  duScript.push('echo Loading Default User registry hive...');
-  duScript.push('reg load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"');
-
-  if (config.showAllTrayIcons) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f');
-  if (config.hideTaskbarIcons) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
-  if (config.hideRecentApps) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
-  if (config.hideMostUsedApps) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
-  if (config.hideRecommendedFiles) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
-  if (config.hideTipsAndSuggestions) {
-    duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f');
-    duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f');
-    duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 0 /f');
-  }
-  if (config.disableWebSearch) duScript.push('reg add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
-
-  duScript.push('echo Unloading Default User registry hive...');
-  duScript.push('reg unload "HKU\\DefaultUser"');
-
-  if (duScript.length > 4) {
-    runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Alapértelmezett felhasználó (Default User) profiljának módosítása -->');
-    const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, duScript.join('\r\n'), 'C:\\Windows\\Temp\\defaultuser.b64', 'C:\\Windows\\Temp\\defaultuser.cmd');
-    order = orderRef.val;
-  }
-
   // --- Windows 11 Tálcaikonok és Vizuális beállítások (Logon Scheduled Task) ---
   let vtScript = [];
   vtScript.push('$flag = "HKCU:\\Software\\AutoUnattend\\VisualTweaksApplied"');
   vtScript.push('if (Test-Path $flag) { exit }');
+
+  if (config.disableMouseAcceleration) {
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Control Panel\\Mouse" -Name "MouseSpeed" -Value "0" -Type String -Force -ErrorAction SilentlyContinue');
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Control Panel\\Mouse" -Name "MouseThreshold1" -Value "0" -Type String -Force -ErrorAction SilentlyContinue');
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Control Panel\\Mouse" -Name "MouseThreshold2" -Value "0" -Type String -Force -ErrorAction SilentlyContinue');
+  }
+
+  if (config.hideRecentApps) {
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" -Name "ShowRecentList" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+  }
+  if (config.hideMostUsedApps) {
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" -Name "ShowFrequentList" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+  }
+
+  if (config.disableEdgeFirstRun) {
+    vtScript.push('New-Item -Path "HKCU:\\Software\\Policies\\Microsoft\\Edge" -Force -ErrorAction SilentlyContinue | Out-Null');
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Policies\\Microsoft\\Edge" -Name "HideFirstRunExperience" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue');
+  }
 
   if (config.desktopIcons) {
     const iconMap = {
@@ -612,6 +569,8 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
 
   if (config.hideTaskbarIcons) {
     vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" -Name "ShowTaskViewButton" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" -Name "TaskbarDa" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" -Name "TaskbarMn" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
   }
   if (config.disableTransparency) {
     vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" -Name "EnableTransparency" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
@@ -946,13 +905,6 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     commands.push({
       command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f',
       description: 'UAC (Felhasználói fiókok felügyelete) kikapcsolása',
-    });
-  }
-
-  if (config.disableEdgeFirstRun) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t REG_DWORD /d 1 /f',
-      description: 'Edge első indítási képernyők letiltása',
     });
   }
 
