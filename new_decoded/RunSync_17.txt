@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:call :print ^"Setting device setup region to Hungary (GeoID 109^)^"&echo:reg.exe LOAD HKLM\mount W:\Windows\System32\config\SOFTWARE)
+

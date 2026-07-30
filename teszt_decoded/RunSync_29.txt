@@ -1,0 +1,2 @@
+﻿certutil.exe -decode -f C:\Windows\Temp\power.b64 C:\Windows\Temp\power.ps1
+

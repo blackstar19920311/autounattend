@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:if not defined IMAGE_FILE call :fail ^"Could not locate install.wim, install.esd or install.swm.^"&echo:if not defined XML_FILE call :fail ^"Could not locate autounattend.xml.^"&echo:set ^"OS_VERSION=11^")
+

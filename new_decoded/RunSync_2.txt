@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:if exist ^%^%d:\sources\install.wim set ^"IMAGE_FILE=^%^%d:\sources\install.wim^"&echo:if exist ^%^%d:\sources\install.esd set ^"IMAGE_FILE=^%^%d:\sources\install.esd^")
+

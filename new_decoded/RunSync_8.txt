@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:for /R ^%PEDRIVERS_FOLDER^% ^%^%f IN (*.inf^) do drvload.exe ^"^%^%f^"&echo:^)&echo:^>X:\diskpart.txt (&echo:echo:SELECT DISK=0&echo:echo:CLEAN ALL&echo:echo:CONVERT GPT&echo:echo:CREATE PARTITION EFI SIZE=300)
+

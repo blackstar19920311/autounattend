@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:if exist ^%^%d:\sources\install.swm set ^"IMAGE_FILE=^%^%d:\sources\install.swm^" ^& set ^"SWM_PARAM=/SWMFile:^%^%d:\sources\install*.swm^"&echo:if exist ^%^%d:\autounattend.xml set ^"XML_FILE=^%^%d:\autounattend.xml^")
+

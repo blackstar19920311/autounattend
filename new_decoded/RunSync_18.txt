@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:reg.exe ADD ^"HKLM\mount\Microsoft\Windows\CurrentVersion\Control Panel\DeviceRegion^" /v DeviceRegion /t REG_DWORD /d 109 /f&echo:reg.exe UNLOAD HKLM\mount&echo:call :print ^"Computer will now reboot^")
+

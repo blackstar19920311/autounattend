@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:if exist ^%^%d:\$OEM$ set ^"OEM_FOLDER=^%^%d:\$OEM$^"&echo:if exist ^%^%d:\$WinPEDriver$ set ^"PEDRIVERS_FOLDER=^%^%d:\$WinPEDriver$^"&echo:^))
+

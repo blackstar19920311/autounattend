@@ -1,0 +1,8 @@
+﻿Path: C:\Windows\Setup\Scripts\unattend-07.ps1
+
+--- DECODED ---
+RAW: $Path = "C:\Windows\Setup"
+
+if (Test-Path $Path) {
+    Remove-Item $Path -Recurse -Force -ErrorAction SilentlyContinue
+}

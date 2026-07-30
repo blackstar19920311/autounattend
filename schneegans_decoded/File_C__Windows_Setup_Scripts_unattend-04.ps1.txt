@@ -1,0 +1,72 @@
+﻿Path: C:\Windows\Setup\Scripts\unattend-04.ps1
+
+--- DECODED ---
+RAW: $ErrorActionPreference="Stop"
+$ProgressPreference="SilentlyContinue"
+function Show-PopupAsync($text,$title=""){
+  $t=$text.Replace("'","''")
+  $ti=$title.Replace("'","''")
+  $cmd="Add-Type -AssemblyName PresentationFramework;[System.Windows.MessageBox]::Show('$t','$ti')|Out-Null"
+  $enc=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+  Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $enc" | Out-Null
+}
+if(-not (Get-Command winget.exe -ErrorAction SilentlyContinue)){
+  Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+  Start-Sleep -Seconds 5
+}
+if(-not (Get-Command winget.exe -ErrorAction SilentlyContinue)){
+  Show-PopupAsync "Az Appok telepítése során hiba lépett fel!" "Telepítés"
+  exit 1
+}
+winget source reset --force | Out-Null
+winget source update | Out-Null
+$customDirs=@(
+  "D:\Apps\qBittorrent",
+  "D:\Games\Steam",
+  "D:\Apps\EpicGames",
+  "D:\Apps\K-LiteCodecPack"
+)
+foreach($dir in $customDirs){
+  if(-not (Test-Path $dir)){
+    New-Item -ItemType Directory -Path $dir | Out-Null
+  }
+}
+$apps=@(
+  @{Id="qBittorrent.qBittorrent";Source="winget";Location="D:\Apps\qBittorrent"},
+  @{Id="Google.Chrome";Source="winget"},
+  @{Id="CodecGuide.K-LiteCodecPack.Standard";Source="winget";Location="D:\Apps\K-LiteCodecPack"},
+  @{Id="Valve.Steam";Source="winget";Location="D:\Games\Steam"},
+  @{Id="EpicGames.EpicGamesLauncher";Source="winget";Override="INSTALLDIR=D:\Apps\EpicGames"},
+  @{Id="Discord.Discord";Source="winget"},
+  @{Id="Microsoft.VCRedist.2015+.x64";Source="winget"},
+  @{Id="Microsoft.VCRedist.2015+.x86";Source="winget"},
+  @{Id="9WZDNCRD29V9";Source="msstore"}
+)
+$ok=$true
+$timeoutSec=1200
+foreach($a in $apps){
+  $args=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--source",$a.Source)
+  if($a.Location){
+    $args+=("--location",$a.Location)
+  }
+  if($a.Override){
+    $args+=("--override",$a.Override)
+  }
+  $p=Start-Process -FilePath "winget.exe" -ArgumentList $args -PassThru -WindowStyle Hidden
+  if(-not $p.WaitForExit($timeoutSec*1000)){
+    try{$p.Kill()}catch{}
+    $ok=$false
+    break
+  }
+  if($p.ExitCode -ne 0){
+    $ok=$false
+    break
+  }
+}
+if($ok){
+  Show-PopupAsync "Az Appok telepítése sikeresen megtörtént!" "Telepítés"
+  exit 0
+}else{
+  Show-PopupAsync "Az Appok telepítése során hiba lépett fel!" "Telepítés"
+  exit 1
+}

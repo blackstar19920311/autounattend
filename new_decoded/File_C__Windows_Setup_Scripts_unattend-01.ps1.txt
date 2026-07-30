@@ -1,0 +1,15 @@
+﻿Path: C:\Windows\Setup\Scripts\unattend-01.ps1
+
+--- DECODED ---
+RAW: $guidOutput = powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
+
+if ($guidOutput -match '([0-9a-fA-F-]{36})') {
+    $newGuid = $matches[1]
+    powercfg /setactive $newGuid
+
+    powercfg /change monitor-timeout-ac 0
+    powercfg /change standby-timeout-ac 0
+}
+else {
+    Write-Warning "Nem sikerult letrehozni az uj energiasemat."
+}

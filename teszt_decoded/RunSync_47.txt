@@ -1,0 +1,2 @@
+﻿certutil.exe -decode -f C:\Windows\Temp\tbpolicy.b64 C:\Windows\Temp\tbpolicy.ps1
+

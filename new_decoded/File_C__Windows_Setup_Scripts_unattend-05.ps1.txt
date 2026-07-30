@@ -1,0 +1,79 @@
+﻿Path: C:\Windows\Setup\Scripts\unattend-05.ps1
+
+--- DECODED ---
+RAW: $ErrorActionPreference="Stop"
+$ProgressPreference = 'SilentlyContinue'
+
+function Show-PopupAsync($text,$title=""){
+  $t=$text.Replace("'","''")
+  $ti=$title.Replace("'","''")
+  $cmd="Add-Type -AssemblyName PresentationFramework;[System.Windows.MessageBox]::Show('$t','$ti')|Out-Null"
+  $enc=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+  Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $enc" | Out-Null
+}
+
+function Wait-ForWinget {
+  $maxAttempts = 60
+  $attempt = 0
+  while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
+    try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
+    Start-Sleep -Seconds 5
+    $attempt++
+  }
+  if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) { throw "A winget nem lett elerheto." }
+}
+
+try {
+  Wait-ForWinget
+
+  winget install -e --id Microsoft.OfficeDeploymentTool --source winget --silent --accept-package-agreements --accept-source-agreements
+  if ($LASTEXITCODE -ne 0) { throw "Az Office Deployment Tool telepitese nem sikerult." }
+
+  $odtSetup = $null
+  $searchRoots = @()
+  if ($env:ProgramFiles) { $searchRoots += $env:ProgramFiles }
+  if (${env:ProgramFiles(x86)}) { $searchRoots += ${env:ProgramFiles(x86)} }
+  if ($env:LocalAppData) { $searchRoots += $env:LocalAppData }
+
+  foreach ($root in $searchRoots) {
+    if (Test-Path -LiteralPath $root) {
+      $found = Get-ChildItem -Path $root -Filter "setup.exe" -Recurse -ErrorAction SilentlyContinue |
+        Where-Object {
+          $_.FullName -match 'Office Deployment Tool' -or
+          $_.FullName -match 'OfficeDeploymentTool' -or
+          $_.FullName -match 'Microsoft\.OfficeDeploymentTool'
+        } | Select-Object -First 1
+      if ($found) { $odtSetup = $found.FullName; break }
+    }
+  }
+
+  if (-not $odtSetup) { throw "Nem talalom az ODT setup.exe fajlt." }
+
+  $odtFolder = Join-Path $env:TEMP "ODT-HUHU-Teams"
+  New-Item -ItemType Directory -Path $odtFolder -Force | Out-Null
+  $xmlPath = Join-Path $odtFolder "configuration.xml"
+
+@'
+<Configuration>
+  <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
+    <Product ID="O365ProPlusRetail">
+      <Language ID="hu-hu" />
+    </Product>
+  </Add>
+  <RemoveMSI />
+  <Display Level="None" AcceptEULA="TRUE" />
+  <Updates Enabled="TRUE" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+</Configuration>
+'@ | Out-File -FilePath $xmlPath -Encoding utf8 -Force
+
+  $p = Start-Process -FilePath $odtSetup -ArgumentList "/configure `"$xmlPath`"" -Wait -PassThru
+  if ($p.ExitCode -ne 0) { throw "ODT telepites sikertelen (ExitCode: $($p.ExitCode))." }
+
+  Show-PopupAsync "Az Office telepítése sikeresen megtörtént!" "Telepítés"
+  exit 0
+}
+catch {
+  Show-PopupAsync "Az Office telepítése során hiba lépett fel!" "Telepítés"
+  exit 1
+}

@@ -1,0 +1,7 @@
+﻿Path: C:\Windows\Setup\Scripts\unattend-02.ps1
+
+--- DECODED ---
+RAW: Start-Sleep -Seconds 300
+Start-Process "ms-settings:windowsupdate"
+Start-Sleep -Seconds 30
+Start-Process -FilePath "usoclient.exe" -ArgumentList "StartInteractiveScan" -NoNewWindow

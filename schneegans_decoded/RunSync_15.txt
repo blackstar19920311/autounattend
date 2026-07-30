@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:call :print ^"Copying answer file to target disk^"&echo:mkdir W:\Windows\Panther&echo:copy ^%XML_FILE^% W:\Windows\Panther\unattend.xml&echo:if defined PEDRIVERS_FOLDER ()
+

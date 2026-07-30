@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:call :print ^"Applying Windows image to target disk^"&echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% ^%IMG_PARAM^% /ApplyDir:W:\ /CheckIntegrity /Verify ^|^| call :fail ^"dism.exe encountered an error.^")
+

@@ -1,0 +1,2 @@
+﻿powershell.exe -WindowStyle "Hidden" -ExecutionPolicy "Unrestricted" -NoProfile -File "C:\Windows\Setup\Scripts\Specialize.ps1"
+

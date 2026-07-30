@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:wpeutil.exe reboot&echo:goto :eof&echo::fail&echo:echo:&echo:echo:Fatal error: ^%~1&echo:echo:&echo:pause&echo:exit 1&echo::print&echo:echo:&echo:echo:*** ^%~1 ***&echo:echo:&echo:goto :eof)
+

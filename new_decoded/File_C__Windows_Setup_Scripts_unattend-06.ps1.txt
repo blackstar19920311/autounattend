@@ -1,0 +1,39 @@
+﻿Path: C:\Windows\Setup\Scripts\unattend-06.ps1
+
+--- DECODED ---
+RAW: $ErrorActionPreference="Stop"
+$ProgressPreference="SilentlyContinue"
+function Show-PopupAsync($text,$title=""){
+  $t=$text.Replace("'","''")
+  $ti=$title.Replace("'","''")
+  $cmd="Add-Type -AssemblyName PresentationFramework;[System.Windows.MessageBox]::Show('$t','$ti')|Out-Null"
+  $enc=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+  Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $enc" | Out-Null
+}
+$GeoUS=244
+$GeoHU=109
+$id="9PM860492SZD"
+$exitCode=1
+try{
+  Set-WinHomeLocation -GeoId $GeoUS
+  Start-Sleep -Seconds 2
+  winget source update | Out-Null
+  $args=@("install","-e","--id",$id,"-h","--source","msstore","--accept-package-agreements","--accept-source-agreements")
+  $p=Start-Process -FilePath "winget.exe" -ArgumentList $args -PassThru -WindowStyle Hidden
+  $p.WaitForExit() | Out-Null
+  if($p.ExitCode -eq 0){$exitCode=0}else{$exitCode=1}
+}catch{
+  $exitCode=1
+}finally{
+  for($i=0;$i -lt 5;$i++){
+    try{
+      Set-WinHomeLocation -GeoId $GeoHU
+      Start-Sleep -Milliseconds 500
+      if((Get-WinHomeLocation).HomeLocation -eq $GeoHU){break}
+    }catch{
+      Start-Sleep -Seconds 1
+    }
+  }
+  if($exitCode -eq 0){Show-PopupAsync "A PC Manager telepítése sikeresen megtörtént!" "Telepítés"}else{Show-PopupAsync "A PC Manager telepítése során hiba lépett fel!" "Telepítés"}
+}
+exit $exitCode

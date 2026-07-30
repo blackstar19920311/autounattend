@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:echo:ASSIGN LETTER=W&echo:echo:CREATE PARTITION PRIMARY&echo:echo:SHRINK MINIMUM=1000&echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Adat^^^"&echo:echo:ASSIGN LETTER=D&echo:echo:CREATE PARTITION PRIMARY)
+

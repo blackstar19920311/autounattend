@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:for /f ^"tokens=3 delims=.^" ^%^%v in ('ver'^) do (&echo:if ^%^%v LSS 20000 set ^"OS_VERSION=10^"&echo:^)&echo:if defined PEDRIVERS_FOLDER (&echo:call :print ^"Loading drivers from $WinPEDriver$ folder^")
+

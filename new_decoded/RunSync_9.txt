@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:echo:FORMAT QUICK FS=FAT32 LABEL=^^^"System^^^"&echo:echo:ASSIGN LETTER=S&echo:echo:CREATE PARTITION MSR SIZE=16&echo:echo:CREATE PARTITION PRIMARY SIZE=153600&echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Windows^^^")
+

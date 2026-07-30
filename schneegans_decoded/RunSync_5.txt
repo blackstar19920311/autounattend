@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:for /f ^"tokens=3^" ^%^%t in ('reg.exe query HKLM\System\Setup /v UnattendFile 2^^^>nul'^) do ( if exist ^%^%t set ^"XML_FILE=^%^%t^" ^))
+

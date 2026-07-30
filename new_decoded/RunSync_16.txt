@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:call :print ^"Adding drivers from $WinPEDriver$ folder to new installation^"&echo:dism.exe /Add-Driver /Image:W:\ /Driver:^"^%PEDRIVERS_FOLDER^%^" /Recurse&echo:^))
+

@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:call :print ^"diskpart will now partition and format your disk^"&echo:diskpart.exe /s X:\diskpart.txt ^|^| call :fail ^"diskpart.exe encountered an error.^"&echo:set ^"IMG_PARAM=/Name:^"Windows 11 Pro^"^")
+

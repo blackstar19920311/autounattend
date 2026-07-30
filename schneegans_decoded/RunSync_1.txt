@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:@echo off&echo:call :print ^"Setting keyboard layout for PE session^"&echo:wpeutil.exe SetKeyboardLayout 040e:0000040e&echo:for ^%^%d in (C D E F G H I J K L M N O P Q T U V X Y Z^) do ()
+

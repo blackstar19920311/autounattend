@@ -1,0 +1,78 @@
+﻿Path: C:\Windows\Setup\Scripts\Specialize.ps1
+
+--- DECODED ---
+RAW: $scripts = @(
+	{
+		& 'C:\Windows\Setup\Scripts\GetComputerName.ps1' > 'C:\Windows\Setup\Scripts\ComputerName.txt';
+		Start-Process -FilePath ( Get-Process -Id $PID ).Path -ArgumentList '-ExecutionPolicy "Unrestricted" -NoProfile -File "C:\Windows\Setup\Scripts\SetComputerName.ps1"' -WindowStyle 'Hidden';
+		Start-Sleep -Seconds 10;
+	};
+	{
+		Remove-Item -LiteralPath 'Registry::HKLM\Software\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\DevHomeUpdate' -Force -ErrorAction 'SilentlyContinue';
+	};
+	{
+		Remove-Item -LiteralPath 'Registry::HKLM\Software\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\OutlookUpdate' -Force -ErrorAction 'SilentlyContinue';
+	};
+	{
+		& 'C:\Windows\Setup\Scripts\RemovePackages.ps1';
+	};
+	{
+		& 'C:\Windows\Setup\Scripts\RemoveCapabilities.ps1';
+	};
+	{
+		& 'C:\Windows\Setup\Scripts\RemoveFeatures.ps1';
+	};
+	{
+		net.exe accounts /maxpwage:UNLIMITED;
+	};
+	{
+		reg.exe add "HKLM\Software\Policies\Microsoft\Windows\CloudContent" /v "DisableCloudOptimizedContent" /t REG_DWORD /d 1 /f;
+		[System.Diagnostics.EventLog]::CreateEventSource( 'UnattendGenerator', 'Application' );
+	};
+	{
+		Register-ScheduledTask -TaskName 'UnlockStartLayout' -Xml $( Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\UnlockStartLayout.xml' -Raw );
+	};
+	{
+		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA /t REG_DWORD /d 0 /f
+	};
+	{
+		reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+	};
+	{
+		reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f;
+	};
+	{
+		reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f;
+	};
+	{
+		reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\BitLocker" /v "PreventDeviceEncryption" /t REG_DWORD /d 1 /f;
+	};
+	{
+		reg.exe add "HKLM\Software\Policies\Microsoft\Edge" /v HideFirstRunExperience /t REG_DWORD /d 1 /f;
+	};
+	{
+		& 'C:\Windows\Setup\Scripts\SetStartPins.ps1';
+	};
+	{
+		reg.exe add "HKU\.DEFAULT\Control Panel\Accessibility\StickyKeys" /v Flags /t REG_SZ /d 10 /f;
+	};
+	{
+		& 'C:\Windows\Setup\Scripts\unattend-01.ps1';
+	};
+);
+
+& {
+  [float] $complete = 0;
+  [float] $increment = 100 / $scripts.Count;
+  foreach( $script in $scripts ) {
+    Write-Progress -Id 0 -Activity 'Running scripts to customize your Windows installation. Do not close this window.' -PercentComplete $complete;
+    '*** Will now execute command «{0}».' -f $(
+      $script.ToString().Trim() -replace '\s+', ' ' -replace '^(.{99})(.+)$', '$1…';
+    );
+    $start = [datetime]::Now;
+    & $script;
+    '*** Finished executing command after {0:0} ms.' -f [datetime]::Now.Subtract( $start ).TotalMilliseconds;
+    "`r`n" * 3;
+    $complete += $increment;
+  }
+} *>&1 | Out-String -Width 1KB -Stream >> "C:\Windows\Setup\Scripts\Specialize.log";

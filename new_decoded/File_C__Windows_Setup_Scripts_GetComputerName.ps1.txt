@@ -1,0 +1,7 @@
+﻿Path: C:\Windows\Setup\Scripts\GetComputerName.ps1
+
+--- DECODED ---
+RAW: return ('ITPC-{0}{1:D4}' -f (
+    -join (1..2 | ForEach-Object { [char](Get-Random -Minimum 65 -Maximum 91) }),  # két nagybetű (A-Z)
+    (Get-Random -Minimum 0 -Maximum 10000)                                         # 0000..9999, mindig 4 számjegy
+))

@@ -1,0 +1,2 @@
+﻿cmd.exe /c >>X:\pe.cmd (echo:call :print ^"Making system partition bootable^"&echo:bcdboot.exe W:\Windows /s S: ^|^| call :fail ^"bcdboot.exe encountered an error.^"&echo:bcdedit.exe /set {fwbootmgr} bootsequence {bootmgr})
+

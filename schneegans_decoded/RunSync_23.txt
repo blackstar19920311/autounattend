@@ -1,0 +1,2 @@
+﻿reg.exe load "HKU\DefaultUser" "C:\Users\Default\NTUSER.DAT"
+
