@@ -14,3 +14,9 @@ dist/
 # Biztonsági mentések
 *.zip
 *.xml
+
+# Debug segédletek: kicsomagolt unattend darabok.
+# Ezek generált artefaktumok, nem tartoznak a verziókezelőbe.
+/new_decoded/
+/schneegans_decoded/
+/teszt_decoded/
