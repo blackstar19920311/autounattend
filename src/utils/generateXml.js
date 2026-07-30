@@ -506,7 +506,7 @@ $xml = '<?xml version="1.0" encoding="utf-8"?>
   <CustomTaskbarLayoutCollection PinListPlacement="Replace">
     <defaultlayout:TaskbarLayout xmlns:defaultlayout="http://schemas.microsoft.com/Start/2014/FullDefaultLayout">
       <taskbar:TaskbarPinList>
-        <taskbar:DesktopApp DesktopApplicationLinkPath="%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\System Tools\\File Explorer.lnk" />
+        <taskbar:DesktopApp DesktopApplicationID="Microsoft.Windows.Explorer" />
       </taskbar:TaskbarPinList>
     </defaultlayout:TaskbarLayout>
   </CustomTaskbarLayoutCollection>
