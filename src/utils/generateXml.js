@@ -524,7 +524,14 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
   // --- Windows 11 Tálcaikonok és Vizuális beállítások (Logon Scheduled Task) ---
   let vtScript = [];
   vtScript.push('$flag = "HKCU:\\Software\\AutoUnattend\\VisualTweaksApplied"');
-  vtScript.push('if (Test-Path $flag) { exit }');
+  vtScript.push('$alreadyApplied = Test-Path $flag');
+
+  if (config.showAllTrayIcons) {
+    vtScript.push("Set-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -Value 1 -Type 'DWord' -ErrorAction SilentlyContinue");
+  }
+
+  vtScript.push('if (-not $alreadyApplied) {');
+  let initialLength = vtScript.length;
 
   if (config.disableMouseAcceleration) {
     vtScript.push('Set-ItemProperty -Path "HKCU:\\Control Panel\\Mouse" -Name "MouseSpeed" -Value "0" -Type String -Force -ErrorAction SilentlyContinue');
@@ -584,11 +591,8 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "SubscribedContent-338393Enabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
   }
 
-  if (config.showAllTrayIcons) {
-    vtScript.push("Set-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -Value 1 -Type 'DWord' -ErrorAction SilentlyContinue");
-  }
 
-  if (vtScript.length > 2) {
+  if (vtScript.length > initialLength) {
     vtScript.push('New-Item -Path "HKCU:\\Software\\AutoUnattend" -Force -ErrorAction SilentlyContinue | Out-Null');
     vtScript.push('New-ItemProperty -Path "HKCU:\\Software\\AutoUnattend" -Name "VisualTweaksApplied" -Value 1 -PropertyType DWord -Force -ErrorAction SilentlyContinue | Out-Null');
     
@@ -602,7 +606,10 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     vtScript.push('\'@');
     vtScript.push('Add-Type $code');
     vtScript.push('[Win32]::SendMessageTimeout([IntPtr]0xffff, 0x001A, [UIntPtr]0, "TraySettings", 2, 5000, [ref][UIntPtr]::Zero) | Out-Null');
+  }
+  vtScript.push('}'); // Zárjuk le a "csak egyszer futó" blokkot!
 
+  if (vtScript.length > initialLength + 1 || config.showAllTrayIcons) {
     const vtTaskXml = `
 $taskXml = @'
 <?xml version="1.0" encoding="UTF-16"?>
@@ -672,7 +679,7 @@ Register-ScheduledTask -TaskName 'VisualTweaksTask' -Xml $taskXml -Force | Out-N
         const packages = packageName.split(' ');
         for (const pkg of packages) {
           bloatScript.push(`Write-Host "Removing ${bloatwareNames[key]} (${pkg})..."`);
-          bloatScript.push(`Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like '*${pkg}*'} | Remove-AppxProvisionedPackage -Online -AllUsers`);
+          bloatScript.push(`Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like '*${pkg}*'} | Remove-AppxProvisionedPackage -Online`);
         }
       }
     }
