@@ -5,54 +5,79 @@ import { Code } from 'lucide-react';
 import Card from '../components/Card';
 import Toggle from '../components/Toggle';
 import InputField from '../components/InputField';
-import Checkbox from '../components/Checkbox';
 import CustomSelect from '../components/CustomSelect';
 import AnimatedCollapse from '../components/AnimatedCollapse';
 import { WINGET_APPS } from '../data/wingetAppsList';
+import { formatProductKey, PRODUCT_KEY_MAX_LENGTH } from '../utils/formatters';
 
-function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCustomAppLocationChange, partitioningMode }) {
+function CustomAppRow({
+  app,
+  data,
+  handleWingetCustomAppToggle,
+  handleWingetCustomAppLocationChange,
+  partitioningMode,
+}) {
   const { t } = useLanguage();
-    const isSelected = (data.wingetCustomApps || []).some(a => a.id === app.id);
-  const appData = (data.wingetCustomApps || []).find(a => a.id === app.id) || {};
+  const isSelected = (data.wingetCustomApps || []).some((a) => a.id === app.id);
+  const appData = (data.wingetCustomApps || []).find((a) => a.id === app.id) || {};
   const cleanAppName = app.name.replace(/[^a-zA-Z0-9-]/g, '');
   const appsPath = `D:\\Apps\\${cleanAppName}`;
   const gamesPath = `D:\\Games\\${cleanAppName}`;
-  
+
   const hasDefault = !!app.defaultLocation;
   const isDefaultLoc = hasDefault && appData.location === app.defaultLocation;
   const isCustomApps = appData.location === appsPath;
   const isCustomGames = appData.location === gamesPath;
-  
-  // Ha a particionálás automatikus, egyetlen alkalmazásnál sincs értelme egyedi útvonalat megadni,
-  // mert nem lesz D: meghajtó, ahova telepíthetnénk.
+
+  // Ha a particionálás automatikus, egyetlen alkalmazásnál sincs értelme egyedi
+  // útvonalat megadni, mert nem lesz D: meghajtó, ahova telepíthetnénk.
   const forceDefaultLocation = app.forceDefaultLocation || partitioningMode === 'auto';
-  
+
   const [forceCustom, setForceCustom] = React.useState(false);
-  
-  let d1Value = "";
+
+  let d1Value = '';
   if (forceCustom) {
-    d1Value = "custom_selection";
-  } else if (appData.location === "" || appData.location === undefined) {
-    d1Value = "";
+    d1Value = 'custom_selection';
+  } else if (appData.location === '' || appData.location === undefined) {
+    d1Value = '';
   } else if (isDefaultLoc) {
     d1Value = app.defaultLocation;
   } else if (isCustomApps || isCustomGames) {
-    d1Value = "custom_selection";
+    d1Value = 'custom_selection';
   } else {
-    d1Value = "custom_selection"; // Ha bármilyen más egyedi érték van
+    d1Value = 'custom_selection'; // Ha bármilyen más egyedi érték van
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap', marginBottom: '6px', minHeight: '32px' }}>
-      <div style={{ flex: '1 1 260px', minWidth: '200px', maxWidth: '300px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '15px',
+        flexWrap: 'wrap',
+        marginBottom: '6px',
+        minHeight: '32px',
+      }}
+    >
+      <div
+        style={{
+          flex: '1 1 260px',
+          minWidth: '200px',
+          maxWidth: '300px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+        }}
+      >
         <button
           type="button"
           role="switch"
+          aria-checked={isSelected}
           aria-labelledby={`app-toggle-${app.id}`}
           className={`toggle ${isSelected ? 'toggle--active' : ''}`}
           onClick={(e) => {
             e.preventDefault();
-            const locToSave = app.defaultLocation || "";
+            const locToSave = app.defaultLocation || '';
             handleWingetCustomAppToggle(app.id, locToSave)(!isSelected);
             if (isSelected) setForceCustom(false);
           }}
@@ -60,20 +85,21 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
         >
           <span className="toggle-thumb" />
         </button>
-        <span 
+        <span
           id={`app-toggle-${app.id}`}
-          style={{ fontSize: '0.9rem', color: 'var(--text-primary)', cursor: 'pointer', userSelect: 'none' }} 
+          style={{ fontSize: '0.9rem', color: 'var(--text-primary)', cursor: 'pointer', userSelect: 'none' }}
           onClick={() => {
-            const locToSave = app.defaultLocation || "";
+            const locToSave = app.defaultLocation || '';
             handleWingetCustomAppToggle(app.id, locToSave)(!isSelected);
             if (isSelected) setForceCustom(false);
-          }}>
+          }}
+        >
           {app.name}
         </span>
       </div>
-      
+
       <div style={{ display: 'flex', gap: '10px', flex: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-        <AnimatedCollapse 
+        <AnimatedCollapse
           show={!forceDefaultLocation && isSelected}
           style={{ flex: '1 1 320px', minWidth: '200px', maxWidth: '400px' }}
         >
@@ -81,9 +107,9 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
             size="small"
             value={d1Value}
             onChange={(val) => {
-              if (val === "custom_selection") {
+              if (val === 'custom_selection') {
                 setForceCustom(true);
-                handleWingetCustomAppLocationChange(app.id, "");
+                handleWingetCustomAppLocationChange(app.id, '');
               } else {
                 setForceCustom(false);
                 handleWingetCustomAppLocationChange(app.id, val);
@@ -91,15 +117,22 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
             }}
             disabled={!isSelected}
             options={[
-              { value: "", label: t('cs.winget.defaultLocation') },
-              ...(hasDefault ? [{ value: app.defaultLocation, label: `${t('cs.winget.recommendedLocation')} (${app.defaultLocation})` }] : []),
-              { value: "custom_selection", label: t('cs.winget.customLocation') }
+              { value: '', label: t('cs.winget.defaultLocation') },
+              ...(hasDefault
+                ? [
+                    {
+                      value: app.defaultLocation,
+                      label: `${t('cs.winget.recommendedLocation')} (${app.defaultLocation})`,
+                    },
+                  ]
+                : []),
+              { value: 'custom_selection', label: t('cs.winget.customLocation') },
             ]}
           />
         </AnimatedCollapse>
 
-        <AnimatedCollapse 
-          show={d1Value === "custom_selection" && isSelected}
+        <AnimatedCollapse
+          show={d1Value === 'custom_selection' && isSelected}
           style={{ flex: '1 1 200px', minWidth: '150px' }}
         >
           <input
@@ -122,7 +155,7 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
 export default function CustomScriptsSection({ config, setConfig, errors = {} }) {
   const { t } = useLanguage();
 
-    const data = config.customScripts || {};
+  const data = config.customScripts || {};
 
   const handleToggle = (field, defaultValueIfOn) => (checked) => {
     setConfig((prev) => ({
@@ -130,7 +163,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
       customScripts: {
         ...prev.customScripts,
         [field]: checked ? defaultValueIfOn : 'none',
-      }
+      },
     }));
   };
 
@@ -140,7 +173,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
       customScripts: {
         ...prev.customScripts,
         [field]: checked,
-      }
+      },
     }));
   };
 
@@ -150,7 +183,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
       customScripts: {
         ...prev.customScripts,
         [field]: value,
-      }
+      },
     }));
   };
 
@@ -162,18 +195,17 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
           ...prev,
           customScripts: {
             ...prev.customScripts,
-            wingetCustomApps: [...prevCustomApps, { id: appId, location: defaultLocation || '' }]
-          }
-        };
-      } else {
-        return {
-          ...prev,
-          customScripts: {
-            ...prev.customScripts,
-            wingetCustomApps: prevCustomApps.filter(a => a.id !== appId)
-          }
+            wingetCustomApps: [...prevCustomApps, { id: appId, location: defaultLocation || '' }],
+          },
         };
       }
+      return {
+        ...prev,
+        customScripts: {
+          ...prev.customScripts,
+          wingetCustomApps: prevCustomApps.filter((a) => a.id !== appId),
+        },
+      };
     });
   };
 
@@ -184,8 +216,8 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         ...prev,
         customScripts: {
           ...prev.customScripts,
-          wingetCustomApps: prevCustomApps.map(a => a.id === appId ? { ...a, location: newLocation } : a)
-        }
+          wingetCustomApps: prevCustomApps.map((a) => (a.id === appId ? { ...a, location: newLocation } : a)),
+        },
       };
     });
   };
@@ -213,28 +245,28 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
             {config.usePresets && (
               <>
                 <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="wingetApps" 
-                    checked={data.wingetApps === 'versionA'} 
+                  <input
+                    type="radio"
+                    name="wingetApps"
+                    checked={data.wingetApps === 'versionA'}
                     onChange={handleRadio('wingetApps', 'versionA')}
                   />
                   <span>{t('cs.winget.home')}</span>
                 </label>
                 <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="wingetApps" 
-                    checked={data.wingetApps === 'versionB'} 
+                  <input
+                    type="radio"
+                    name="wingetApps"
+                    checked={data.wingetApps === 'versionB'}
                     onChange={handleRadio('wingetApps', 'versionB')}
                   />
                   <span>{t('cs.winget.school')}</span>
                 </label>
                 <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="wingetApps" 
-                    checked={data.wingetApps === 'custom'} 
+                  <input
+                    type="radio"
+                    name="wingetApps"
+                    checked={data.wingetApps === 'custom'}
                     onChange={handleRadio('wingetApps', 'custom')}
                   />
                   <span>{t('cs.winget.custom')}</span>
@@ -243,9 +275,19 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
             )}
 
             <AnimatedCollapse show={data.wingetApps === 'custom' || !config.usePresets}>
-              <div style={{ marginTop: config.usePresets ? '15px' : '0', paddingLeft: config.usePresets ? '24px' : '0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '5px' }}>{t('cs.winget.custom.help')}</p>
-                {WINGET_APPS.map(app => (
+              <div
+                style={{
+                  marginTop: config.usePresets ? '15px' : '0',
+                  paddingLeft: config.usePresets ? '24px' : '0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
+              >
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                  {t('cs.winget.custom.help')}
+                </p>
+                {WINGET_APPS.map((app) => (
                   <CustomAppRow
                     key={app.id}
                     app={app}
@@ -272,24 +314,24 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         <AnimatedCollapse show={data.office !== 'none'} marginTop="18px">
           <div className="radio-group-indented">
             <label className="radio-label">
-              <input 
-                type="radio" 
-                name="office" 
-                checked={data.office === 'versionA'} 
+              <input
+                type="radio"
+                name="office"
+                checked={data.office === 'versionA'}
                 onChange={handleRadio('office', 'versionA')}
               />
               <span>{t('cs.office.365')}</span>
             </label>
             <label className="radio-label">
-              <input 
-                type="radio" 
-                name="office" 
-                checked={data.office === 'versionB'} 
+              <input
+                type="radio"
+                name="office"
+                checked={data.office === 'versionB'}
                 onChange={handleRadio('office', 'versionB')}
               />
               <span>{t('cs.office.2021')}</span>
             </label>
-            
+
             <AnimatedCollapse show={data.office === 'versionB'} marginTop="10px">
               <div style={{ paddingLeft: '28px' }}>
                 <InputField
@@ -297,25 +339,19 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
                   label={t('cs.office.2021.key')}
                   value={data.officeKey || ''}
                   placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-                  maxLength={29}
-                  onChange={(val) => {
-                    let formatted = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                    const chunks = [];
-                    for (let i = 0; i < formatted.length; i += 5) {
-                      chunks.push(formatted.substring(i, i + 5));
-                    }
-                    formatted = chunks.join('-');
-                    if (formatted.length > 29) {
-                      formatted = formatted.substring(0, 29);
-                    }
-                    setConfig(prev => ({
+                  maxLength={PRODUCT_KEY_MAX_LENGTH}
+                  error={errors.officeKey}
+                  onChange={(val) =>
+                    setConfig((prev) => ({
                       ...prev,
                       customScripts: {
                         ...prev.customScripts,
-                        officeKey: formatted
-                      }
-                    }));
-                  }}
+                        // Ugyanaz a formázó, mint a termékkulcs mezőnél –
+                        // korábban két külön, egymástól eltérő logika volt.
+                        officeKey: formatProductKey(val),
+                      },
+                    }))
+                  }
                 />
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                   {t('cs.office.2021.key.help')}
@@ -342,7 +378,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
           onChange={handleBooleanToggle('domainJoin')}
           id="cs-domainJoin"
         />
-        
+
         <AnimatedCollapse show={!!data.domainJoin} marginTop="18px">
           <div style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '0' }}>
             <InputField
@@ -351,13 +387,12 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
               value={data.domainName || ''}
               placeholder={t('cs.domain.namePlaceholder')}
               error={errors.domainName}
-              onChange={(val) => setConfig(prev => ({
-                ...prev,
-                customScripts: {
-                  ...prev.customScripts,
-                  domainName: val
-                }
-              }))}
+              onChange={(val) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  customScripts: { ...prev.customScripts, domainName: val },
+                }))
+              }
             />
             <InputField
               id="domainUser"
@@ -365,13 +400,12 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
               value={data.domainUser || ''}
               placeholder={t('cs.domain.userPlaceholder')}
               error={errors.domainUser}
-              onChange={(val) => setConfig(prev => ({
-                ...prev,
-                customScripts: {
-                  ...prev.customScripts,
-                  domainUser: val
-                }
-              }))}
+              onChange={(val) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  customScripts: { ...prev.customScripts, domainUser: val },
+                }))
+              }
             />
             <div style={{ marginTop: '16px' }}>
               <InputField
@@ -381,13 +415,12 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
                 value={data.domainPass || ''}
                 placeholder="••••••••"
                 error={errors.domainPass}
-                onChange={(val) => setConfig(prev => ({
-                  ...prev,
-                  customScripts: {
-                    ...prev.customScripts,
-                    domainPass: val
-                  }
-                }))}
+                onChange={(val) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    customScripts: { ...prev.customScripts, domainPass: val },
+                  }))
+                }
               />
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
@@ -397,5 +430,5 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
         </AnimatedCollapse>
       </div>
     </Card>
-  )
+  );
 }
