@@ -736,6 +736,19 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage, addFil
       wingetCode = SCRIPTS.wingetAppsA;
     } else if (config.customScripts.winget === 'presetB') {
       wingetCode = SCRIPTS.wingetAppsB;
+    } else if (config.customScripts.winget === 'custom') {
+      let customAppsStr = (config.customScripts.wingetCustomApps || []).map(ca => {
+        let appInfo = WINGET_APPS.find(wa => wa.id === ca.id);
+        if (!appInfo) return '';
+        let line = `  @{Id="${ca.id}";Source="${appInfo.source}"`;
+        if (ca.location) line += `;Location="${ca.location}"`;
+        if (appInfo.useOverride) line += `;Override="${appInfo.useOverride}"`;
+        if (appInfo.override) line += `;Override="${appInfo.override}"`;
+        line += `}`;
+        return line;
+      }).filter(l => l).join(',\n');
+      
+      wingetCode = SCRIPTS.wingetCustomBase.replace('##APPS##', customAppsStr);
     }
     
     if (wingetCode) {

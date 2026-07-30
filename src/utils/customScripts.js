@@ -37,17 +37,6 @@ function Wait-ForWinget {
 }
 
 Wait-ForWinget
-$customDirs=@(
-  "D:\\Apps\\qBittorrent",
-  "D:\\Games\\Steam",
-  "D:\\Apps\\EpicGames",
-  "D:\\Apps\\K-LiteCodecPack"
-)
-foreach($dir in $customDirs){
-  if(-not (Test-Path $dir)){
-    New-Item -ItemType Directory -Path $dir | Out-Null
-  }
-}
 $apps=@(
   @{Id="qBittorrent.qBittorrent";Source="winget";Location="D:\\Apps\\qBittorrent"},
   @{Id="Google.Chrome";Source="winget"},
@@ -61,6 +50,12 @@ $apps=@(
 $ok=$true
 $timeoutSec=600
 foreach($a in $apps){
+  $dirPath = $a.Location
+  if(-not $dirPath -and $a.Override -match 'INSTALLDIR=([^"]+)'){ $dirPath = $matches[1] }
+  if($dirPath -and -not (Test-Path $dirPath)){
+    New-Item -ItemType Directory -Path $dirPath -Force | Out-Null
+  }
+  
   $wingetArgs=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--disable-interactivity","--source",$a.Source)
   if($a.Location){
     $wingetArgs+=("--location",$a.Location)
@@ -146,6 +141,12 @@ $ok=$true
 $timeoutSec=600
 
 foreach($a in $apps){
+  $dirPath = $a.Location
+  if(-not $dirPath -and $a.Override -match 'INSTALLDIR=([^"]+)'){ $dirPath = $matches[1] }
+  if($dirPath -and -not (Test-Path $dirPath)){
+    New-Item -ItemType Directory -Path $dirPath -Force | Out-Null
+  }
+
   $wingetArgs=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--disable-interactivity","--source",$a.Source)
   if($a.Location){
     $wingetArgs+=("--location",$a.Location)
@@ -170,6 +171,90 @@ foreach($a in $apps){
   }
 }
 Stop-Process -Name "Discord", "Steam", "msedge", "chrome", "firefox", "iexplore", "Update" -Force -ErrorAction SilentlyContinue
+if($ok){
+  Show-PopupAsync "Az Appok telepítése sikeresen megtörtént!" "Telepítés"
+}else{
+  Show-PopupAsync "Az Appok telepítése során hiba lépett fel!\`nRészletek: C:\\InstallFull.log" "Telepítés"
+  throw "Winget telepítési hiba!"
+}`,
+
+  wingetCustomBase: `$ErrorActionPreference="Stop"
+$ProgressPreference="SilentlyContinue"
+
+function Show-PopupAsync($text,$title=""){
+  $t=$text.Replace("'","''")
+  $ti=$title.Replace("'","''")
+  $cmd="Add-Type -AssemblyName PresentationFramework;[System.Windows.MessageBox]::Show('$t','$ti')|Out-Null"
+  $enc=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+  Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $enc" | Out-Null
+}
+
+function Wait-ForWinget {
+  $maxAttempts = 60
+  $attempt = 0
+  while ($attempt -lt $maxAttempts) {
+    if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
+      $test = & winget --version 2>&1
+      if ($LASTEXITCODE -eq 0 -and $test -match 'v\d+') { return }
+    }
+    if (-not (Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -TimeoutSeconds 1 -ErrorAction SilentlyContinue)) {
+      throw "Nincs internetkapcsolat, Winget telepítés megszakítva!"
+    }
+    try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
+    Start-Sleep -Seconds 5
+    $attempt++
+  }
+  if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+    Show-PopupAsync "Az Appok telepítése során hiba lépett fel (Winget nem található)!" "Telepítés"
+    throw "Winget nem található!"
+  }
+}
+
+Wait-ForWinget
+
+$apps=@(
+##APPS##
+)
+
+$ok=$true
+$timeoutSec=600
+
+foreach($a in $apps){
+  $dirPath = $a.Location
+  if(-not $dirPath -and $a.Override -match 'INSTALLDIR=([^"]+)'){ $dirPath = $matches[1] }
+  if($dirPath -and -not (Test-Path $dirPath)){
+    New-Item -ItemType Directory -Path $dirPath -Force | Out-Null
+  }
+
+  $wingetArgs=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--disable-interactivity","--source",$a.Source)
+  if($a.Location){
+    $wingetArgs+=("--location",$a.Location)
+  }
+  if($a.Override){
+    $wingetArgs+=("--override", $a.Override)
+  }
+  $logLine = "Installing $($a.Id)... "
+  $p=Start-Process -FilePath "winget.exe" -ArgumentList $wingetArgs -PassThru -WindowStyle Hidden
+  if(-not $p.WaitForExit($timeoutSec*1000)){
+    try{ Get-CimInstance Win32_Process | Where-Object ParentProcessId -EQ $p.Id | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; $p.Kill() }catch{}
+    $ok=$false
+    $logLine += "TIMEOUT!"
+    Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
+    continue
+  }
+  $logLine += "ExitCode: $($p.ExitCode)"
+  Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
+  $validExitCodes = @(0, 3010, 1641, 1638, -1978335228, -1978335215, -1978335231, -1978335189)
+  if($validExitCodes -notcontains $p.ExitCode){
+    $ok=$false
+  }
+}
+
+# Steam és Discord automatikus indulásának kikapcsolása
+Remove-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "Steam" -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "Discord" -ErrorAction SilentlyContinue
+Stop-Process -Name "Discord", "Steam", "msedge", "chrome", "firefox", "iexplore", "Update" -Force -ErrorAction SilentlyContinue
+
 if($ok){
   Show-PopupAsync "Az Appok telepítése sikeresen megtörtént!" "Telepítés"
 }else{

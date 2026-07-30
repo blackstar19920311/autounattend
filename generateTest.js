@@ -23,7 +23,11 @@ const config = {
   addEnglishKeyboard: true,
   partitioning: { mode: 'autocd', fullWipe: true },
   customScripts: {
-    winget: 'presetA',
+    winget: 'custom',
+    wingetCustomApps: [
+      { id: 'Google.Chrome', location: '' },
+      { id: 'Valve.Steam', location: 'D:\\Games\\Steam' }
+    ],
     office: 'versionA',
     pcManager: true,
     windowsUpdate: true
