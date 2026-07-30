@@ -7,6 +7,8 @@ export function getDefaultConfig() {
     addEnglishKeyboard: false,
     enableLongPaths: true,
     preventDeviceEncryption: true,
+    // Korábban az oobeSystem fixen 'Central Europe Standard Time'-ot égetett be.
+    timeZone: 'Central Europe Standard Time',
 
     // 2. Particionálás
     partitioning: {
@@ -14,8 +16,13 @@ export function getDefaultConfig() {
       mode: 'auto',
       fullWipe: false,
       diskNumber: 0,
+      // Konfigurálható méretek – korábban be voltak égetve a generátorba,
+      // így kisebb SSD-n a 150 GB-os Windows partíció elhasalt.
+      efiSizeMb: 300,
+      windowsSizeMb: 153600,
+      recoverySizeMb: 1024,
       customDiskpartScript: `SELECT DISK=0
-CLEAN ALL
+CLEAN
 CONVERT GPT
 CREATE PARTITION EFI SIZE=300
 FORMAT QUICK FS=FAT32 LABEL="System"
@@ -25,12 +32,11 @@ CREATE PARTITION PRIMARY SIZE=153600
 FORMAT QUICK FS=NTFS LABEL="Windows"
 ASSIGN LETTER=W
 CREATE PARTITION PRIMARY
-SHRINK MINIMUM=1000
 FORMAT QUICK FS=NTFS LABEL="Adatok"
 ASSIGN LETTER=D
+SHRINK MINIMUM=1024
 CREATE PARTITION PRIMARY
 FORMAT QUICK FS=NTFS LABEL="Recovery"
-ASSIGN LETTER=R
 SET ID="de94bba4-06d1-4d40-a16a-bfd50179d6ac"
 GPT ATTRIBUTES=0x8000000000000001`,
       installPartitionId: 3,
@@ -49,6 +55,8 @@ GPT ATTRIBUTES=0x8000000000000001`,
       mode: 'skip',
       ssid: '',
       password: '',
+      // Korábban be volt égetve a WPA2PSK/AES, nyílt hálózatot nem lehetett megadni.
+      security: 'wpa2psk', // 'wpa2psk' | 'wpa3sae' | 'open'
     },
 
     // 5. Felhasználói fiók
@@ -80,13 +88,18 @@ GPT ATTRIBUTES=0x8000000000000001`,
     disableEdgeDesktopShortcut: true,
     disableWebSearch: false,
     cleanStartPins: false,
+    // Ezt a három kulcsot a generátor OLVASTA, de a defaultConfig soha nem
+    // definiálta – mindig undefined volt, tehát a beállítás halott volt.
+    showHiddenFiles: false,
+    showFileExtensions: true,
+    explorerToThisPC: true,
 
     // 7. Adatvédelem
     disableTelemetry: false,
     disableEdgeFirstRun: false,
     disableCopilot: true,
     disableConsumerFeatures: true,
-    
+
     // 8. Teljesítmény
     disableUAC: false,
     disableFastStartup: false,
@@ -112,19 +125,22 @@ GPT ATTRIBUTES=0x8000000000000001`,
       terminal: false,
       feedbackHub: false,
     },
-    
+    // Örökölt Windows képességek (IE, WordPad, Fax, WMP...) eltávolítása.
+    // A hozzá tartozó Schneegans szkript eddig halott kód volt.
+    removeLegacyCapabilities: false,
+
     // 10. Egyéni szkriptek (FirstLogon)
     customScripts: {
       windowsUpdate: false,
-      wingetApps: 'none', // 'none', 'versionA', 'versionB', 'custom'
+      wingetApps: 'none', // 'none' | 'versionA' | 'versionB' | 'custom'
       wingetCustomApps: [], // [{ id: 'Google.Chrome', location: '' }, ...]
-      office: 'none',     // 'none', 'versionA', 'versionB'
-      officeKey: '',      // Új mező az Office licenckulcsnak
+      office: 'none', // 'none' | 'versionA' | 'versionB'
+      officeKey: '',
       pcManager: false,
       domainJoin: false,
       domainName: '',
       domainUser: '',
-      domainPass: ''
-    }
-  }
+      domainPass: '',
+    },
+  };
 }
