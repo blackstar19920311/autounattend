@@ -557,31 +557,24 @@ Set-ItemProperty $mdmKey 'ConfigureTaskbar' $xml -Type String -Force
     order = orderRef.val;
   }
 
-  // Windows 11 Tálcaikonok Scheduled Task eltávolítva, áthelyezve Active Setupba
-
-  // --- Windows 11 25H2 globális GPO-k (Specialize fázis) ---
-  let gpoScript = '';
-  if (config.hideRecentApps) {
-    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v HideRecentlyAddedApps /t REG_DWORD /d 1 /f\n';
-  }
-  if (config.hideMostUsedApps) {
-    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v ShowOrHideMostUsedApps /t REG_DWORD /d 2 /f\n';
-  }
-  if (config.hideRecommendedFiles) {
-    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v HideRecentJumplists /t REG_DWORD /d 1 /f\n';
-  }
-  if (config.hideTipsAndSuggestions) {
-    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f\n';
-  }
-  if (config.disableWebSearch) {
-    gpoScript += 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 1 /f\n';
-  }
-
-  if (gpoScript.length > 0) {
+  // --- Windows 11 Tálcaikonok Scheduled Task (specialize fázis) ---
+  if (config.showAllTrayIcons) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Windows 11 25H2 globális GPO-k -->');
+    runSyncCmds.push('        <!-- Windows 11: Scheduled Task – percenként promote-olja az összes tray ikont (Schneegans módszer) -->');
+    const trayTaskScript = [
+      "$taskXml = @'",
+      '<?xml version="1.0" encoding="UTF-16"?>',
+      '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">',
+      '<Triggers><LogonTrigger><Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><Enabled>true</Enabled></LogonTrigger></Triggers>',
+      '<Principals><Principal id="Author"><GroupId>S-1-5-32-545</GroupId><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>',
+      '<Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><AllowHardTerminate>true</AllowHardTerminate><StartWhenAvailable>false</StartWhenAvailable><RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable><IdleSettings><StopOnIdleEnd>true</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings><AllowStartOnDemand>true</AllowStartOnDemand><Enabled>true</Enabled><Hidden>false</Hidden><RunOnlyIfIdle>false</RunOnlyIfIdle><WakeToRun>false</WakeToRun><ExecutionTimeLimit>PT72H</ExecutionTimeLimit><Priority>7</Priority></Settings>',
+      "<Actions Context=\"Author\"><Exec><Command>%windir%\\System32\\conhost.exe</Command><Arguments>--headless %windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -WindowStyle Hidden -NoProfile -NonInteractive -Command \"Set-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -Value 1 -Type 'DWord' -ErrorAction SilentlyContinue;\"</Arguments></Exec></Actions>",
+      '</Task>',
+      "'@",
+      "Register-ScheduledTask -TaskName 'ShowAllTrayIcons' -Xml $taskXml -Force | Out-Null"
+    ].join('\\r\\n');
     const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, gpoScript.trim(), 'C:\\Windows\\Temp\\gpos.b64', 'C:\\Windows\\Temp\\gpos.ps1');
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, trayTaskScript, 'C:\\Windows\\Temp\\tray_task.b64', 'C:\\Windows\\Temp\\tray_task.ps1');
     order = orderRef.val;
   }
 
@@ -837,15 +830,35 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
   }
 
+  // --- Start menü: legutóbbi alkalmazások elrejtése ---
+  if (config.hideRecentApps) {
+    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
+  }
+
+  // --- Start menü: leggyakrabban használt alkalmazások elrejtése ---
+  if (config.hideMostUsedApps) {
+    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
+  }
+
+  // --- Start menü: ajánlott fájlok elrejtése ---
+  if (config.hideRecommendedFiles) {
+    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
+  }
+
+  // --- Tippek és javaslatok kikapcsolása ---
+  if (config.hideTipsAndSuggestions) {
+    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f');
+    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f');
+    tweaksCmdLines.push('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 0 /f');
+  }
+
 
   // --- Webes keresés letiltása ---
   if (config.disableWebSearch) {
     tweaksCmdLines.push('reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
   }
 
-  if (config.showAllTrayIcons) {
-    tweaksCmdLines.push(`powershell.exe -NoProfile -Command "Get-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -ErrorAction SilentlyContinue | ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name 'IsPromoted' -Value 1 -ErrorAction SilentlyContinue }"`);
-  }
+
 
   if (tweaksCmdLines.length > 1) {
     const scriptContent = tweaksCmdLines.join('\r\n');
