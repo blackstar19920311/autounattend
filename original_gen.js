@@ -1,9 +1,9 @@
-import { SCRIPTS } from './customScripts.js';
+﻿import { SCRIPTS } from './customScripts.js';
 import { WINGET_APPS } from '../data/wingetAppsList.js';
 import { SCHNEEGANS_SCRIPTS } from '../data/schneegansScripts.js';
 
 /**
- * Windows 11 autounattend.xml generátor - HIBRID SCHNEEGANS MÓDSZER
+ * Windows 11 autounattend.xml gener├ítor - HIBRID SCHNEEGANS M├ôDSZER
  */
 
 export function escapeXml(str) {
@@ -17,14 +17,14 @@ export function escapeXml(str) {
 }
 
 /**
- * Kódol egy stringet Base64-be (UTF-8) BOM nélkül
+ * K├│dol egy stringet Base64-be (UTF-8) BOM n├ęlk├╝l
  */
 function getBase64NoBom(str) {
   return Buffer.from(str, 'utf-8').toString('base64');
 }
 
 /**
- * Kódol egy stringet Base64-be (UTF-16LE) BOM-al (Registry és VBScript számára)
+ * K├│dol egy stringet Base64-be (UTF-16LE) BOM-al (Registry ├ęs VBScript sz├ím├íra)
  */
 function getBase64Utf16(str) {
   const bom = Buffer.from([0xff, 0xfe]);
@@ -37,7 +37,7 @@ function getBase64Utf16(str) {
 // ---------------------------------------------------------------------------
 function buildWindowsPE(config, componentAttrs, inputLocale) {
   const lines = [];
-  lines.push('  <!-- windowsPE – Nyelvi és telepítési beállítások -->');
+  lines.push('  <!-- windowsPE ÔÇô Nyelvi ├ęs telep├şt├ęsi be├íll├şt├ísok -->');
   lines.push('  <settings pass="windowsPE">');
 
   // International-Core-WinPE
@@ -81,10 +81,10 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
   const runSyncCmds = [];
   let order = 1;
 
-  // --- Hardverkövetelmények megkerülése (winPE fázisban kell!) ---
+  // --- Hardverk├Âvetelm├ęnyek megker├╝l├ęse (winPE f├ízisban kell!) ---
   if (config.bypassHardware) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Hardverkövetelmények megkerülése -->');
+    runSyncCmds.push('        <!-- Hardverk├Âvetelm├ęnyek megker├╝l├ęse -->');
     const bypassChecks = [
       'BypassTPMCheck', 'BypassSecureBootCheck', 'BypassRAMCheck',
       'BypassStorageCheck', 'BypassCPUCheck',
@@ -97,7 +97,7 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
     }
   }
 
-  // --- Particionálás ---
+  // --- Particion├íl├ís ---
   if (config.partitioning && config.partitioning.enabled) {
     const diskId = parseInt(config.partitioning.diskNumber || 0, 10);
 
@@ -117,7 +117,7 @@ FORMAT ${formatQuick}FS=NTFS LABEL="Windows"`;
         const scriptLines = script.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
         runSyncCmds.push('');
-        runSyncCmds.push('        <!-- Csak C meghajtó (auto) DISKPART parancsok végrehajtása (Teljes formázás) -->');
+        runSyncCmds.push('        <!-- Csak C meghajt├│ (auto) DISKPART parancsok v├ęgrehajt├ísa (Teljes form├íz├ís) -->');
         
         for (let i = 0; i < scriptLines.length; i++) {
           const redirect = i === 0 ? '>' : '>>';
@@ -130,7 +130,7 @@ FORMAT ${formatQuick}FS=NTFS LABEL="Windows"`;
         
         runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
         runSyncCmds.push(`          <Order>${order++}</Order>`);
-        runSyncCmds.push('          <Description>DISKPART szkript futtatása (Csak C:)</Description>');
+        runSyncCmds.push('          <Description>DISKPART szkript futtat├ísa (Csak C:)</Description>');
         runSyncCmds.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
         runSyncCmds.push('        </RunSynchronousCommand>');
 
@@ -144,9 +144,9 @@ FORMAT ${formatQuick}FS=NTFS LABEL="Windows"`;
         lines.push('        </OSImage>');
         lines.push('      </ImageInstall>');
       } else {
-        // Eredeti (láthatatlan) automatikus GPT partíciók: EFI (100 MB) + MSR (16 MB) + Windows (maradék)
+        // Eredeti (l├íthatatlan) automatikus GPT part├şci├│k: EFI (100 MB) + MSR (16 MB) + Windows (marad├ęk)
         lines.push('');
-        lines.push('      <!-- Lemez particionálás (automatikus GPT) -->');
+        lines.push('      <!-- Lemez particion├íl├ís (automatikus GPT) -->');
         lines.push('      <DiskConfiguration>');
         lines.push('        <WillShowUI>OnError</WillShowUI>');
         lines.push('        <Disk wcm:action="add">');
@@ -222,7 +222,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
       const scriptLines = script.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
       runSyncCmds.push('');
-      runSyncCmds.push('        <!-- C és D meghajtó (autocd) DISKPART parancsok végrehajtása -->');
+      runSyncCmds.push('        <!-- C ├ęs D meghajt├│ (autocd) DISKPART parancsok v├ęgrehajt├ísa -->');
       
       for (let i = 0; i < scriptLines.length; i++) {
         const redirect = i === 0 ? '>' : '>>';
@@ -235,7 +235,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
       
       runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
       runSyncCmds.push(`          <Order>${order++}</Order>`);
-      runSyncCmds.push('          <Description>DISKPART szkript futtatása (C: és D:)</Description>');
+      runSyncCmds.push('          <Description>DISKPART szkript futtat├ísa (C: ├ęs D:)</Description>');
       runSyncCmds.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
       runSyncCmds.push('        </RunSynchronousCommand>');
 
@@ -256,11 +256,11 @@ GPT ATTRIBUTES=0x8000000000000001`;
         const scriptLines = script.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
         runSyncCmds.push('');
-        runSyncCmds.push('        <!-- Egyéni DISKPART parancsok végrehajtása -->');
+        runSyncCmds.push('        <!-- Egy├ęni DISKPART parancsok v├ęgrehajt├ísa -->');
         
         for (let i = 0; i < scriptLines.length; i++) {
           const redirect = i === 0 ? '>' : '>>';
-          // Itt nincsenek zárójelek, ezért a cmd /c probléma nélkül kezeli az idézőjeleket
+          // Itt nincsenek z├ír├│jelek, ez├ęrt a cmd /c probl├ęma n├ęlk├╝l kezeli az id├ęz┼Ĺjeleket
           const cmd = `cmd /c ${redirect}X:\\diskpart.txt echo ${scriptLines[i].replace(/[&|<>^]/g, '^$&')}`;
           runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
           runSyncCmds.push(`          <Order>${order++}</Order>`);
@@ -270,7 +270,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
         
         runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
         runSyncCmds.push(`          <Order>${order++}</Order>`);
-        runSyncCmds.push('          <Description>DISKPART szkript futtatása</Description>');
+        runSyncCmds.push('          <Description>DISKPART szkript futtat├ísa</Description>');
         runSyncCmds.push('          <Path>diskpart /s X:\\diskpart.txt</Path>');
         runSyncCmds.push('        </RunSynchronousCommand>');
       }
@@ -306,13 +306,13 @@ GPT ATTRIBUTES=0x8000000000000001`;
 // ---------------------------------------------------------------------------
 function buildSpecialize(config, componentAttrs, addFile) {
   const lines = [];
-  lines.push('  <!-- specialize – Számítógépnév, fájlkibontás és hardver-megkerülés -->');
+  lines.push('  <!-- specialize ÔÇô Sz├ím├şt├│g├ępn├ęv, f├íjlkibont├ís ├ęs hardver-megker├╝l├ęs -->');
   lines.push('  <settings pass="specialize">');
 
   const prefix = String(config.computerName || 'PC').trim();
   const useRandom = config.randomSuffix !== false;
 
-  // Shell-Setup — ComputerName
+  // Shell-Setup ÔÇö ComputerName
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Shell-Setup')}>`);
   if (useRandom) {
     lines.push('      <ComputerName>TEMPNAME</ComputerName>');
@@ -324,14 +324,14 @@ function buildSpecialize(config, componentAttrs, addFile) {
   let order = 1;
   const runSyncCmds = [];
 
-  // 1. EXTRACT SCRIPTS (A Schneegans mágia)
-  runSyncCmds.push('        <!-- Fájlok kicsomagolása a C:\Windows\Setup\Scripts mappába -->');
+  // 1. EXTRACT SCRIPTS (A Schneegans m├ígia)
+  runSyncCmds.push('        <!-- F├íjlok kicsomagol├ísa a C:\Windows\Setup\Scripts mapp├íba -->');
   runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
   runSyncCmds.push(`          <Order>${order++}</Order>`);
   runSyncCmds.push('          <Path>powershell.exe -WindowStyle Hidden -NoProfile -Command "$xml = [xml]::new(); $xml.Load(\'C:\\Windows\\Panther\\unattend.xml\'); $sb = [scriptblock]::Create( $xml.unattend.Extensions.ExtractScript ); Invoke-Command -ScriptBlock $sb -ArgumentList $xml;"</Path>');
   runSyncCmds.push('        </RunSynchronousCommand>');
 
-  // 2. Specialize.ps1 futtatása
+  // 2. Specialize.ps1 futtat├ísa
   let specializeScript = `$ErrorActionPreference = 'Stop';\n`;
   
   if (useRandom) {
@@ -347,13 +347,13 @@ Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters'
 `;
   }
 
-  // Jelszó lejárati idő tiltása
+  // Jelsz├│ lej├írati id┼Ĺ tilt├ísa
   specializeScript += `net.exe accounts /maxpwage:UNLIMITED;\n`;
 
-  // Bitlocker Device Encryption tiltása
+  // Bitlocker Device Encryption tilt├ísa
   specializeScript += `reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\BitLocker" /v "PreventDeviceEncryption" /t REG_DWORD /d 1 /f;\n`;
 
-  // Hosszú fájlnevek engedélyezése
+  // Hossz├║ f├íjlnevek enged├ęlyez├ęse
   specializeScript += `reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f;\n`;
 
   if (config.disableUAC) {
@@ -410,19 +410,19 @@ reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataC
     experiencesApp: 'Cross Device',
     stickyNotes: 'Sticky Notes',
     quickAssist: 'Quick Assist',
-    weather: 'Időjárás',
+    weather: 'Id┼Ĺj├ír├ís',
     camera: 'Kamera',
-    bingNews: 'Bing Hírek',
+    bingNews: 'Bing H├şrek',
     clipchamp: 'Clipchamp',
-    clock: 'Óra és ébresztők',
-    outlook: 'Új Outlook',
+    clock: '├ôra ├ęs ├ębreszt┼Ĺk',
+    outlook: '├Üj Outlook',
     powerAutomate: 'Power Automate',
     solitaire: 'Solitaire Collection',
     terminal: 'Windows Terminal',
-    feedbackHub: 'Visszajelzési központ',
+    feedbackHub: 'Visszajelz├ęsi k├Âzpont',
   };
 
-  // UWP Bloatware irtás a webes űrlap alapján
+  // UWP Bloatware irt├ís a webes ┼▒rlap alapj├ín
   let bloatScript = `$ErrorActionPreference = 'SilentlyContinue';\n`;
   let hasBloatware = false;
   
@@ -432,7 +432,7 @@ reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataC
         hasBloatware = true;
         const packages = packageName.split(' ');
         for (const pkg of packages) {
-          bloatScript += `Write-Host "${bloatwareNames[key]} eltávolítása (${pkg})...";\n`;
+          bloatScript += `Write-Host "${bloatwareNames[key]} elt├ívol├şt├ísa (${pkg})...";\n`;
           bloatScript += `Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like '*${pkg}*'} | Remove-AppxProvisionedPackage -Online -AllUsers;\n`;
         }
       }
@@ -444,63 +444,18 @@ reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataC
     specializeScript += `& 'C:\\Windows\\Setup\\Scripts\\RemovePackages.ps1';\n`;
   }
 
-  // Lemaradt Registry beállítások pótlása
+  // Lemaradt Registry be├íll├şt├ísok p├│tl├ísa
   specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f;\n`;
   specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v DisableEdgeDesktopShortcutCreation /t REG_DWORD /d 1 /f;\n`;
   specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f;\n`;
   specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsRunInBackground /t REG_DWORD /d 2 /f;\n`;
 
-  if (config.disableEdgeFirstRun) {
-    specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t REG_DWORD /d 1 /f;\n`;
-  }
-
-  // Wi-Fi beállítása
-  if (config.wifi && config.wifi.mode === 'auto' && config.wifi.ssid) {
-    const ssid = config.wifi.ssid;
-    const password = config.wifi.password;
-    const utf8Encode = new TextEncoder();
-    const hexSsid = Array.from(utf8Encode.encode(ssid)).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join('');
-    const safeSsid = escapeXml(ssid);
-    const safePassword = escapeXml(password);
-    
-    const wifiXml = `<?xml version="1.0"?>
-<WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
-	<name>${safeSsid}</name>
-	<SSIDConfig>
-		<SSID>
-			<hex>${hexSsid}</hex>
-			<name>${safeSsid}</name>
-		</SSID>
-	</SSIDConfig>
-	<connectionType>ESS</connectionType>
-	<connectionMode>auto</connectionMode>
-	<MSM>
-		<security>
-			<authEncryption>
-				<authentication>WPA2PSK</authentication>
-				<encryption>AES</encryption>
-				<useOneX>false</useOneX>
-			</authEncryption>
-			<sharedKey>
-				<keyType>passPhrase</keyType>
-				<protected>false</protected>
-				<keyMaterial>${safePassword}</keyMaterial>
-			</sharedKey>
-		</security>
-	</MSM>
-</WLANProfile>`;
-    addFile('C:\\Windows\\Setup\\Scripts\\Wifi.xml', wifiXml);
-    specializeScript += `netsh.exe wlan add profile filename="C:\\Windows\\Setup\\Scripts\\Wifi.xml" user=all;\n`;
-    specializeScript += `Start-Sleep -Seconds 2;\n`;
-    specializeScript += `netsh.exe wlan connect name="${safeSsid}";\n`;
-  }
-
-  // Start Menü ürítése házirenddel
+  // Start Men├╝ ├╝r├şt├ęse h├ízirenddel
   if (config.hideTaskbarIcons) {
     specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v "ConfigureStartPins" /t REG_SZ /d '{"pinnedList":[]}' /f;\n`;
     specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v "NoPinningStoreToTaskbar" /t REG_DWORD /d 1 /f;\n`;
     
-    // UnlockStartLayout Ütemezett feladat
+    // UnlockStartLayout ├ťtemezett feladat
     addFile('C:\\Windows\\Setup\\Scripts\\UnlockStartLayout.vbs', SCHNEEGANS_SCRIPTS.unlockStartLayoutVbs);
     addFile('C:\\Windows\\Setup\\Scripts\\UnlockStartLayout.xml', SCHNEEGANS_SCRIPTS.unlockStartLayoutXml);
     specializeScript += `schtasks.exe /create /tn "UnlockStartLayout" /xml "C:\\Windows\\Setup\\Scripts\\UnlockStartLayout.xml" /f;\n`;
@@ -514,13 +469,13 @@ reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataC
 
   addFile('C:\\Windows\\Setup\\Scripts\\Specialize.ps1', specializeScript);
   
-  runSyncCmds.push('        <!-- Specialize szkript futtatása -->');
+  runSyncCmds.push('        <!-- Specialize szkript futtat├ísa -->');
   runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
   runSyncCmds.push(`          <Order>${order++}</Order>`);
   runSyncCmds.push('          <Path>powershell.exe -WindowStyle Hidden -NoProfile -Command "Invoke-ExecutionPolicyBypass -CommandFile \'C:\\Windows\\Setup\\Scripts\\Specialize.ps1\'"</Path>');
   runSyncCmds.push('        </RunSynchronousCommand>');
 
-  // 3. Default User Profil módosítása
+  // 3. Default User Profil m├│dos├şt├ísa
   let defaultUserScript = `$ErrorActionPreference = 'Stop';\n`;
   defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f;\n`;
   defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f;\n`;
@@ -539,50 +494,9 @@ reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataC
     defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v HideFileExt /t REG_DWORD /d 0 /f;\n`;
   }
 
-  // További Vizuális és Start menü Tweak-ek az eredeti kódból
-  if (config.hideRecentApps) {
-    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f;\n`;
-  }
-  if (config.hideMostUsedApps) {
-    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f;\n`;
-  }
-  if (config.hideRecommendedFiles) {
-    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f;\n`;
-  }
-  if (config.searchBoxMode) {
-    const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
-    const value = searchModeValues[config.searchBoxMode];
-    if (value !== undefined) {
-      defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f;\n`;
-    }
-  }
-  if (config.disableTransparency) {
-    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f;\n`;
-  }
-  if (config.hideTipsAndSuggestions) {
-    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f;\n`;
-    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f;\n`;
-    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 0 /f;\n`;
-    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableSoftLanding /t REG_DWORD /d 1 /f;\n`;
-  }
-  if (config.desktopIcons) {
-    const iconMap = {
-      computer: '{20D04FE0-3AEA-1069-A2D8-08002B30309D}',
-      userFiles: '{59031a47-3f72-44a7-89c5-5595fe6b30ee}',
-      network: '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}',
-      recycleBin: '{645FF040-5081-101B-9F08-00AA002F954E}',
-      controlPanel: '{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}'
-    };
-    for (const [key, clsid] of Object.entries(iconMap)) {
-      if (config.desktopIcons[key]) {
-        defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v "${clsid}" /t REG_DWORD /d 0 /f;\n`;
-      }
-    }
-  }
-
   addFile('C:\\Windows\\Setup\\Scripts\\DefaultUser.ps1', defaultUserScript);
 
-  runSyncCmds.push('        <!-- Default User betöltése és módosítása -->');
+  runSyncCmds.push('        <!-- Default User bet├Âlt├ęse ├ęs m├│dos├şt├ísa -->');
   runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
   runSyncCmds.push(`          <Order>${order++}</Order>`);
   runSyncCmds.push('          <Path>reg.exe load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"</Path>');
@@ -612,10 +526,10 @@ reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataC
 // ---------------------------------------------------------------------------
 function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage, addFile) {
   const lines = [];
-  lines.push('  <!-- oobeSystem – Felhasználók és első bejelentkezés -->');
+  lines.push('  <!-- oobeSystem ÔÇô Felhaszn├íl├│k ├ęs els┼Ĺ bejelentkez├ęs -->');
   lines.push('  <settings pass="oobeSystem">');
 
-  // Helyi fiók
+  // Helyi fi├│k
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Shell-Setup')}>`);
   if (config.addEnglishKeyboard) {
     lines.push('      <InputLocale>040e:0000040e;0409:00000409</InputLocale>');
@@ -692,13 +606,9 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage, addFil
   lines.push('  </settings>');
 
   // -------------------------------------------------------------
-  // Alkalmazás telepítő szkriptek legenerálása a FirstLogon-hoz
+  // Alkalmaz├ís telep├şt┼Ĺ szkriptek legener├íl├ísa a FirstLogon-hoz
   // -------------------------------------------------------------
   let firstLogonScript = `$ErrorActionPreference = 'Stop';\n`;
-  
-  if (config.wifi && config.wifi.mode === 'manual') {
-    firstLogonScript += `Start-Process -FilePath "cmd.exe" -ArgumentList "/c start ms-availablenetworks:" -WindowStyle Hidden;\n`;
-  }
   
   let appInstallers = [];
 
@@ -754,19 +664,19 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage, addFil
 
   firstLogonScript += appInstallers.join('\n');
 
-  // Végső UserOnce hívás és takarítás
+  // V├ęgs┼Ĺ UserOnce h├şv├ís ├ęs takar├şt├ís
   firstLogonScript += `\n& 'C:\\Windows\\Setup\\Scripts\\UserOnce.ps1'\n`;
   firstLogonScript += `Remove-Item -Path 'C:\\Windows\\Setup\\Scripts' -Recurse -Force -ErrorAction SilentlyContinue\n`;
 
   addFile('C:\\Windows\\Setup\\Scripts\\FirstLogon.ps1', firstLogonScript);
 
-  // UserOnce (Utólagos takarítás, ha kell)
+  // UserOnce (Ut├│lagos takar├şt├ís, ha kell)
   let userOnce = `$ErrorActionPreference = 'Stop';\n`;
   userOnce += `Get-AppxPackage -Name 'Microsoft.Windows.Ai.Copilot.Provider' | Remove-AppxPackage -ErrorAction SilentlyContinue;\n`;
   addFile('C:\\Windows\\Setup\\Scripts\\UserOnce.ps1', userOnce);
 
   // Invoke-ExecutionPolicyBypass PowerShell modul (Schneegans)
-  // Ez szükséges ahhoz, hogy a script ne szálljon el.
+  // Ez sz├╝ks├ęges ahhoz, hogy a script ne sz├ílljon el.
   let defaultProfile = `
 function Invoke-ExecutionPolicyBypass {
   param([Parameter(Mandatory=\$true)][string]\$CommandFile)
@@ -774,7 +684,7 @@ function Invoke-ExecutionPolicyBypass {
   if (\$process.ExitCode -ne 0) { throw "Script \$CommandFile failed with exit code \$(\$process.ExitCode)" }
 }
 `;
-  // Mivel a Specialize és a FirstLogon futtatja ezeket külön ablakból, a PowerShell profilba rakjuk
+  // Mivel a Specialize ├ęs a FirstLogon futtatja ezeket k├╝l├Ân ablakb├│l, a PowerShell profilba rakjuk
   addFile('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\profile.ps1', defaultProfile);
 
   return lines.join('\n');
