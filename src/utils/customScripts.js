@@ -18,7 +18,11 @@ function Show-PopupAsync($text,$title=""){
 function Wait-ForWinget {
   $maxAttempts = 60
   $attempt = 0
-  while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
+  while ($attempt -lt $maxAttempts) {
+    if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
+      $test = & winget --version 2>&1
+      if ($LASTEXITCODE -eq 0 -and $test -match 'v\d+') { return }
+    }
     try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
@@ -54,7 +58,7 @@ $apps=@(
 $ok=$true
 $timeoutSec=600
 foreach($a in $apps){
-  $wingetArgs=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--source",$a.Source)
+  $wingetArgs=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--disable-interactivity","--source",$a.Source)
   if($a.Location){
     $wingetArgs+=("--location",$a.Location)
   }
@@ -64,7 +68,7 @@ foreach($a in $apps){
   $logLine = "Installing $($a.Id)... "
   $p=Start-Process -FilePath "winget.exe" -ArgumentList $wingetArgs -PassThru -WindowStyle Hidden
   if(-not $p.WaitForExit($timeoutSec*1000)){
-    try{$p.Kill()}catch{}
+    try{ Get-CimInstance Win32_Process | Where-Object ParentProcessId -EQ $p.Id | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; $p.Kill() }catch{}
     $ok=$false
     $logLine += "TIMEOUT!"
     Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
@@ -103,7 +107,11 @@ function Show-PopupAsync($text,$title=""){
 function Wait-ForWinget {
   $maxAttempts = 60
   $attempt = 0
-  while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
+  while ($attempt -lt $maxAttempts) {
+    if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
+      $test = & winget --version 2>&1
+      if ($LASTEXITCODE -eq 0 -and $test -match 'v\d+') { return }
+    }
     try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
@@ -131,7 +139,7 @@ $ok=$true
 $timeoutSec=600
 
 foreach($a in $apps){
-  $wingetArgs=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--source",$a.Source)
+  $wingetArgs=@("install","-e","--id",$a.Id,"-h","--accept-package-agreements","--accept-source-agreements","--disable-interactivity","--source",$a.Source)
   if($a.Location){
     $wingetArgs+=("--location",$a.Location)
   }
@@ -141,7 +149,7 @@ foreach($a in $apps){
   $logLine = "Installing $($a.Id)... "
   $p=Start-Process -FilePath "winget.exe" -ArgumentList $wingetArgs -PassThru -WindowStyle Hidden
   if(-not $p.WaitForExit($timeoutSec*1000)){
-    try{$p.Kill()}catch{}
+    try{ Get-CimInstance Win32_Process | Where-Object ParentProcessId -EQ $p.Id | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; $p.Kill() }catch{}
     $ok=$false
     $logLine += "TIMEOUT!"
     Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
@@ -176,7 +184,11 @@ function Show-PopupAsync($text,$title=""){
 function Wait-ForWinget {
   $maxAttempts = 60
   $attempt = 0
-  while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
+  while ($attempt -lt $maxAttempts) {
+    if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
+      $test = & winget --version 2>&1
+      if ($LASTEXITCODE -eq 0 -and $test -match 'v\d+') { return }
+    }
     try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
@@ -289,10 +301,12 @@ function Invoke-OfficeActivation($key) {
 function Wait-ForWinget {
     $maxAttempts = 60
     $attempt = 0
-    while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
-        try {
-            Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
-        } catch {}
+    while ($attempt -lt $maxAttempts) {
+        if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
+            $test = & winget --version 2>&1
+            if ($LASTEXITCODE -eq 0 -and $test -match 'v\d+') { return }
+        }
+        try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
         Start-Sleep -Seconds 5
         $attempt++
     }

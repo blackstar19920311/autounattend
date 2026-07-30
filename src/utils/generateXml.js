@@ -25,34 +25,18 @@ export function escapeXml(str) {
  * Encodes a PowerShell script string to a UTF-16LE Base64 string WITH BOM for certutil / -File
  */
 function encodePowerShellBase64(script) {
-  const charCodes = [0xff, 0xfe]; // BOM for UTF-16LE
-  for (let i = 0; i < script.length; i++) {
-    const code = script.charCodeAt(i);
-    charCodes.push(code & 0xff);
-    charCodes.push((code >> 8) & 0xff);
-  }
-  const binaryArr = [];
-  for (let i = 0; i < charCodes.length; i++) {
-    binaryArr.push(String.fromCharCode(charCodes[i]));
-  }
-  return btoa(binaryArr.join(''));
+  if (!script) return '';
+  const bom = Buffer.from([0xff, 0xfe]);
+  const utf16le = Buffer.from(script, 'utf16le');
+  return Buffer.concat([bom, utf16le]).toString('base64');
 }
 
 /**
  * Encodes a PowerShell script string to a UTF-16LE Base64 string WITHOUT BOM for -EncodedCommand
  */
 function encodePowerShellBase64NoBOM(script) {
-  const charCodes = []; // No BOM for direct memory execution
-  for (let i = 0; i < script.length; i++) {
-    const code = script.charCodeAt(i);
-    charCodes.push(code & 0xff);
-    charCodes.push((code >> 8) & 0xff);
-  }
-  const binaryArr = [];
-  for (let i = 0; i < charCodes.length; i++) {
-    binaryArr.push(String.fromCharCode(charCodes[i]));
-  }
-  return btoa(binaryArr.join(''));
+  if (!script) return '';
+  return Buffer.from(script, 'utf16le').toString('base64');
 }
 
 /**
@@ -107,7 +91,9 @@ ${scriptContent}
 } catch {
     Add-Content -Path $ShortLog -Value "[$((Get-Date).ToString('HH:mm:ss'))] HIBÁS: $ScriptName" -Encoding utf8
     Add-Content -Path $FullLog -Value "" -Encoding utf8
-    Add-Content -Path $FullLog -Value "[HIBA] $($_.Exception.Message)" -Encoding utf8
+    $errMsg = $_.Exception.Message
+    if ($ScriptName -match 'Tartományba léptetés') { $errMsg = '*** HIBAÜZENET MASZKOLVA BIZTONSÁGI OKOKBÓL ***' }
+    Add-Content -Path $FullLog -Value "[HIBA] $errMsg" -Encoding utf8
 }`;
 
   const base64 = encodePowerShellBase64(wrappedScript);
@@ -207,9 +193,9 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Setup')}>`);
   lines.push('      <UserData>');
 
-  if (config.productKey && config.productKey.trim() !== '') {
+  if (config.productKey && String(config.productKey).trim() !== '') {
     lines.push('        <ProductKey>');
-    lines.push(`          <Key>${escapeXml(config.productKey.trim())}</Key>`);
+    lines.push(`          <Key>${escapeXml(String(config.productKey).trim())}</Key>`);
     lines.push('        </ProductKey>');
   } else {
     lines.push('        <ProductKey>');
@@ -392,7 +378,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
       lines.push('      </ImageInstall>');
 
     } else if (config.partitioning.mode === 'custom') {
-      const script = (config.partitioning.customDiskpartScript || '').trim();
+      const script = String(config.partitioning.customDiskpartScript || '').trim();
 
       if (script) {
         const scriptLines = script.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -433,7 +419,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
   if (runSyncCmds.length > 0) {
     lines.push('');
     lines.push('      <RunSynchronous>');
-    lines.push(...runSyncCmds);
+    runSyncCmds.forEach(cmd => lines.push(cmd));
     lines.push('      </RunSynchronous>');
   }
 
@@ -451,7 +437,7 @@ function buildSpecialize(config, componentAttrs) {
   lines.push('  <!-- specialize – Számítógépnév és hardver-megkerülés -->');
   lines.push('  <settings pass="specialize">');
 
-  const prefix = (config.computerName || 'PC').trim();
+  const prefix = String(config.computerName || 'PC').trim();
   const useRandom = config.randomSuffix !== false;
 
   // Shell-Setup — ComputerName
@@ -477,8 +463,9 @@ function buildSpecialize(config, componentAttrs) {
     const psScript = `
 $letters = -join (1..2 | ForEach-Object { [char](Get-Random -Minimum 65 -Maximum 91) })
 $digits = '{0:D2}' -f (Get-Random -Minimum 0 -Maximum 100)
-$newName = '${prefix.replace(/'/g, "''")}-' + $letters + $digits
-$script = "while(\`$true){ Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'Hostname' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'NV Hostname' '$newName' -Force; Start-Sleep -Milliseconds 50 }"
+$safePrefix = '${prefix.replace(/\r?\n|\r/g, '').replace(/'/g, "''")}'
+$newName = $safePrefix + '-' + $letters + $digits
+$script = "\\$endTime = (Get-Date).AddMinutes(15); while((Get-Date) -lt \\$endTime){ Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'Hostname' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'NV Hostname' '$newName' -Force; if((Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName').ComputerName -eq '$newName'){ break }; Start-Sleep -Milliseconds 500 }"
 $script | Out-File -FilePath 'C:\\Windows\\Temp\\rename_loop.ps1' -Encoding ascii
 Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File C:\\Windows\\Temp\\rename_loop.ps1'
 `;
@@ -538,13 +525,34 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     order = orderRef.val;
   }
 
-  // --- Hálózat megkerülése (BypassNRO a Specialize fázisban) ---
+  // --- Biztonsági beállítások, Hálózat megkerülése, Telemetria, UAC, Gyorsindítás (Specialize fázis) ---
+  const sysPolCmds = [];
+  
   if (config.bypassNetwork) {
-    runSyncCmds.push('        <!-- Hálózat megkerülése (BypassNRO) -->');
-    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-    runSyncCmds.push(`          <Order>${order++}</Order>`);
-    runSyncCmds.push('          <Path>cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f</Path>');
-    runSyncCmds.push('        </RunSynchronousCommand>');
+    sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE" -Name "BypassNRO" -Value 1 -Type DWord -Force');
+  }
+  
+  if (config.disableTelemetry) {
+    sysPolCmds.push('New-Item -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" -Force | Out-Null');
+    sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" -Name "AllowTelemetry" -Value 0 -Type DWord -Force');
+    sysPolCmds.push('New-Item -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection" -Force | Out-Null');
+    sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection" -Name "AllowTelemetry" -Value 0 -Type DWord -Force');
+  }
+
+  if (config.disableUAC) {
+    sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" -Name "ConsentPromptBehaviorAdmin" -Value 0 -Type DWord -Force');
+  }
+
+  if (config.disableFastStartup) {
+    sysPolCmds.push('New-Item -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Force | Out-Null');
+    sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 0 -Type DWord -Force');
+  }
+
+  if (sysPolCmds.length > 0) {
+    runSyncCmds.push('        <!-- Rendszerbiztonság és Hálózat (Specialize) -->');
+    const orderRef = { val: order };
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, sysPolCmds.join('\n'), 'C:\\Windows\\Temp\\syspol.b64', 'C:\\Windows\\Temp\\syspol.ps1');
+    order = orderRef.val;
   }
 
   // --- Windows 11 Tálcaikonok és Vizuális beállítások (Logon Scheduled Task) ---
@@ -640,7 +648,6 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
   if (vtScript.length > initialLength + 1 || config.showAllTrayIcons) {
     const vtTaskXml = `
 $taskXml = @'
-<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
 <Triggers>
 <LogonTrigger>${config.showAllTrayIcons ? '<Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition>' : ''}<Enabled>true</Enabled></LogonTrigger>
@@ -725,7 +732,7 @@ Register-ScheduledTask -TaskName 'VisualTweaksTask' -Xml $taskXml -Force | Out-N
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Deployment')}>`);
   if (runSyncCmds.length > 0) {
     lines.push('      <RunSynchronous>');
-    lines.push(...runSyncCmds);
+    runSyncCmds.forEach(cmd => lines.push(cmd));
     lines.push('      </RunSynchronous>');
   }
   lines.push('    </component>');
@@ -770,13 +777,13 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
   lines.push('      </OOBE>');
 
   // UserAccounts
-  if (config.username && config.username.trim() !== '') {
+  if (config.username && String(config.username).trim() !== '') {
     lines.push('');
     lines.push('      <!-- Felhasználói fiók -->');
     lines.push('      <UserAccounts>');
     lines.push('        <LocalAccounts>');
     lines.push('          <LocalAccount wcm:action="add">');
-    lines.push(`            <Name>${escapeXml(config.username.trim())}</Name>`);
+    lines.push(`            <Name>${escapeXml(String(config.username).trim())}</Name>`);
     lines.push('            <Group>*S-1-5-32-544</Group>');
 
     lines.push('            <Password>');
@@ -790,12 +797,12 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
   }
 
   // AutoLogon
-  if (config.autoLogin && config.username && config.username.trim() !== '') {
+  if (config.autoLogin && config.username && String(config.username).trim() !== '') {
     lines.push('');
     lines.push('      <!-- Automatikus bejelentkezés -->');
     lines.push('      <AutoLogon>');
     lines.push('        <Enabled>true</Enabled>');
-    lines.push(`        <Username>${escapeXml(config.username.trim())}</Username>`);
+    lines.push(`        <Username>${escapeXml(String(config.username).trim())}</Username>`);
     lines.push('        <Password>');
     lines.push(`          <Value>${escapeXml(config.password || '')}</Value>`);
     lines.push('          <PlainText>true</PlainText>');
@@ -847,7 +854,7 @@ function buildFirstLogonCommands(config, uiLanguage) {
 
   if (config.username) {
     // --- Jelszó lejáratának letiltása ---
-    const psCmd = `Set-LocalUser -Name '${config.username.trim().replace(/'/g, "''")}' -PasswordNeverExpires $true`;
+    const psCmd = `Set-LocalUser -Name '${String(config.username).trim().replace(/'/g, "''")}' -PasswordNeverExpires $true`;
     commands.push({
       command: `powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${encodePowerShellBase64NoBOM(psCmd)}`,
       description: 'Jelszó lejáratának letiltása',
@@ -862,8 +869,8 @@ function buildFirstLogonCommands(config, uiLanguage) {
       const password = config.wifi.password;
       const utf8Encode = new TextEncoder();
       const hexSsid = Array.from(utf8Encode.encode(ssid)).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join('');
-      const safeSsid = escapeXml(ssid);
-      const safePassword = escapeXml(password);
+      const safeSsid = escapeXml(String(ssid).replace(/\r?\n|\r/g, ''));
+      const safePassword = escapeXml(String(password).replace(/\r?\n|\r/g, ''));
       
       const wifiScript = `
 $xml = @'
@@ -916,33 +923,7 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
 
 
   // Start menü takarítás kikerült innen, most a specialize fázisban van (LayoutModification.json)
-
-  if (config.disableTelemetry) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f',
-      description: 'Telemetria letiltása (rendszabály)',
-    });
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f',
-      description: 'Telemetria letiltása (adatgyűjtés)',
-    });
-  }
-
-  // --- UAC Kikapcsolása ---
-  if (config.disableUAC) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f',
-      description: 'UAC (Felhasználói fiókok felügyelete) kikapcsolása',
-    });
-  }
-
-  // --- Gyorsindítás kikapcsolása ---
-  if (config.disableFastStartup) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f',
-      description: 'Gyorsindítás kikapcsolása',
-    });
-  }
+  // Telemetria, UAC, Gyorsindítás kikerültek innen, most a specialize fázisban vannak
 
   // Alvás letiltása és teljesítmény energiaséma kikerült innen, most a specialize fázisban van
 
@@ -1000,8 +981,8 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
           overrideParts.push(appInfo.override);
         }
         
-        if (config.partitioning?.mode !== 'auto' && userApp.location && userApp.location.trim() !== '') {
-          const safeLoc = userApp.location.trim();
+        if (config.partitioning?.mode !== 'auto' && userApp.location && String(userApp.location).trim() !== '') {
+          const safeLoc = String(userApp.location).trim();
           if (appInfo.useOverride) {
             const sep = appInfo.useOverride.endsWith(' ') ? '' : '=';
             overrideParts.push(`${appInfo.useOverride}${sep}${safeLoc}`);
@@ -1023,8 +1004,8 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       const hasVlc = selectedApps.some(a => a.id === 'VideoLAN.VLC');
 
       const customDirsList = selectedApps
-        .filter(a => config.partitioning?.mode !== 'auto' && a.location && a.location.trim() !== '')
-        .map(a => `'${a.location.trim().replace(/'/g, "''")}'`)
+        .filter(a => config.partitioning?.mode !== 'auto' && a.location && String(a.location).trim() !== '')
+        .map(a => `'${String(a.location).trim().replace(/'/g, "''")}'`)
         .join(',\n  ');
 
       let vlcHook = '';
@@ -1165,9 +1146,9 @@ if($ok){
       scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
         SCRIPTS.domainJoin
-          .replace('##DOMAIN_NAME##', (config.customScripts.domainName || '').replace(/'/g, "''"))
-          .replace('##DOMAIN_USER##', (config.customScripts.domainUser || '').replace(/'/g, "''"))
-          .replace('##DOMAIN_PASS##', (config.customScripts.domainPass || '').replace(/'/g, "''")),
+          .replace('##DOMAIN_NAME##', String(config.customScripts.domainName || '').replace(/'/g, "''"))
+          .replace('##DOMAIN_USER##', String(config.customScripts.domainUser || '').replace(/'/g, "''"))
+          .replace('##DOMAIN_PASS##', String(config.customScripts.domainPass || '').replace(/'/g, "''")),
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
         `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
         'Egyéni Szkript: Active Directory Tartományba léptetés'
@@ -1192,6 +1173,8 @@ if($ok){
   if (scriptPaths.length > 0) {
     const cleanupScript = `
 Remove-Item -Path C:\\Windows\\Temp\\* -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path C:\\Windows\\Panther\\unattend.xml -Force -ErrorAction SilentlyContinue
+Remove-Item -Path C:\\Windows\\System32\\sysprep\\unattend.xml -Force -ErrorAction SilentlyContinue
     `.trim();
 
     const cleanupPath = addBase64ScriptToFirstLogon(
