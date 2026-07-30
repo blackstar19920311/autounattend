@@ -11,6 +11,9 @@ import { encodeUtf8Base64, encodeUtf16LeBase64 } from './base64.js';
  *    ExtractScript csomagolja ki (lásd schneegansScripts.js).
  *  - A szkripteket KÖZVETLENÜL indítjuk (`-NoProfile -ExecutionPolicy Bypass -File`),
  *    így nincs szükség a régi, System32-be írt globális `profile.ps1`-re.
+ *  - A registry írásokhoz PowerShell cmdleteket használunk, nem `reg.exe` +
+ *    idézőjel-zsonglőrködést: az utóbbi bármilyen szóközös vagy idézőjeles
+ *    értéknél (pl. a Start pinek JSON-ja) elhasal.
  *  - Az elemek sorrendje az unattend sémát követi (a WSIM/Microsoft példák szerint).
  */
 
@@ -24,6 +27,8 @@ const LOG_DIR = 'C:\\Windows\\Temp';
 const DISKPART_FILE = 'X:\\diskpart.txt';
 const EVENT_SOURCE = 'UnattendGenerator';
 const DEFAULT_USER_HIVE = 'C:\\Users\\Default\\NTUSER.DAT';
+/** A betöltött Default User hive PowerShell-provider útvonala. */
+const DEFAULT_USER_ROOT = 'Registry::HKEY_USERS\\DefaultUser';
 const LAYOUT_MODIFICATION_PATH =
   'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell\\LayoutModification.xml';
 
@@ -37,12 +42,35 @@ const RECOVERY_TYPE_GUID = 'de94bba4-06d1-4d40-a16a-bfd50179d6ac';
 
 const PS_RUN = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File';
 
+/** Közös PowerShell segédfüggvények, amiket a generált szkriptek használnak. */
+const PS_HELPERS = `function Write-SetupLog {
+  param([string]$Message)
+  "$(Get-Date -Format o) $Message" | Out-File -FilePath $script:LogFile -Append -Encoding utf8
+}
+
+function Set-RegistryValue {
+  param(
+    [Parameter(Mandatory)][string]$Path,
+    [Parameter(Mandatory)][string]$Name,
+    [Parameter(Mandatory)][string]$Type,
+    [Parameter(Mandatory)]$Value
+  )
+  try {
+    if (-not (Test-Path -LiteralPath $Path)) {
+      New-Item -Path $Path -Force -ErrorAction Stop | Out-Null
+    }
+    New-ItemProperty -LiteralPath $Path -Name $Name -PropertyType $Type -Value $Value -Force -ErrorAction Stop | Out-Null
+  } catch {
+    Write-SetupLog "Registry write failed ($Path\\$Name): $($_.Exception.Message)"
+  }
+}`;
+
 // --- Segédfüggvények --------------------------------------------------------
 
 export function escapeXml(str) {
   if (str == null) return '';
   return String(str)
-    // XML 1.0-ban tiltott vezérlőkarakterek kiszűrése
+    // XML 1.0-ban tiltott vezérlőkarakterek kiszűrése (tab/CR/LF megmarad)
     .replace(/[-\u0008\u000B\u000C\u000E-\u001F]/g, '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -152,6 +180,13 @@ function syncCommand(order, commandLine, description) {
   return out;
 }
 
+/** `Start-Process`-alapú szkriptindítás, ami megvárja a végét. */
+function psInvokeScript(path) {
+  return `Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',${psQuote(
+    path
+  )}) -Wait -WindowStyle Hidden | Out-Null;`;
+}
+
 /**
  * DISKPART szkript kiírása WinPE-ben.
  *
@@ -160,9 +195,7 @@ function syncCommand(order, commandLine, description) {
  * most egyetlen zárójelezett cmd blokk, így sokkal átláthatóbb és tesztelhető.
  */
 export function buildDiskpartCommands(scriptLines, description, startOrder) {
-  const lines = scriptLines
-    .map((l) => String(l).trim())
-    .filter((l) => l.length > 0);
+  const lines = scriptLines.map((l) => String(l).trim()).filter((l) => l.length > 0);
   const esc = (l) => l.replace(/[&|<>^]/g, '^$&');
   const cmds = [];
   let order = startOrder;
@@ -337,7 +370,7 @@ function buildWindowsPE(config, componentAttrs, locale) {
       // JAVÍTVA: a SHRINK csak MÁR MEGFORMÁZOTT NTFS köteten működik, ezért a
       // sorrend CREATE -> FORMAT -> SHRINK. Korábban CREATE -> SHRINK -> FORMAT
       // volt, ami garantáltan elhasalt, és vele a Recovery partíció is.
-      // Az ASSIGN LETTER sorok is visszakerültek (a D: enélkül nem kapott betűt).
+      // Az ASSIGN LETTER sor is visszakerült (a D: enélkül nem kapott betűt).
       const script = [
         `SELECT DISK=${diskId}`,
         cleanCmd,
@@ -367,7 +400,10 @@ function buildWindowsPE(config, componentAttrs, locale) {
         runSyncCmds = runSyncCmds.concat(built.cmds);
         order = built.order;
       }
-      const installPartition = Math.max(1, parseInt(part.installPartitionId, 10) || AUTO_WINDOWS_PARTITION_ID);
+      const installPartition = Math.max(
+        1,
+        parseInt(part.installPartitionId, 10) || AUTO_WINDOWS_PARTITION_ID
+      );
       emitInstallTo(installPartition);
     }
   }
@@ -401,30 +437,42 @@ function buildWindowsPE(config, componentAttrs, locale) {
 
 // --- specialize pass --------------------------------------------------------
 
-function buildSpecializeScript(config, addFile, locale) {
+function buildSpecializeScript(config, addFile) {
   const s = [];
-  const logFile = `${LOG_DIR}\\Specialize.log`;
 
   // Ezek best-effort tweak-ek: egyetlen elszálló registry írás NE bukjon
   // a teljes telepítéssel. Minden lépés naplózva van.
   s.push("$ErrorActionPreference = 'Continue';");
-  s.push(`$log = ${psQuote(logFile)};`);
-  s.push('function Write-Log { param([string]$Message) ; "$(Get-Date -Format o) $Message" | Out-File -FilePath $log -Append -Encoding utf8; }');
-  s.push("Write-Log 'Specialize start.';");
+  s.push(`$script:LogFile = ${psQuote(`${LOG_DIR}\\Specialize.log`)};`);
+  s.push(PS_HELPERS);
+  s.push('');
+  s.push("Write-SetupLog 'Specialize start.';");
+
+  const hklm = (subKey) => `HKLM:\\${subKey}`;
+  const reg = (subKey, name, type, value) =>
+    `Set-RegistryValue -Path ${psQuote(hklm(subKey))} -Name ${psQuote(name)} -Type ${type} -Value ${value};`;
 
   const prefix = String(config.computerName || 'PC').trim();
-  if (config.randomSuffix !== false && config.randomSuffix) {
+  if (config.randomSuffix) {
     s.push('try {');
     s.push('  $letters = -join (1..2 | ForEach-Object { [char](Get-Random -Minimum 65 -Maximum 91) });');
     s.push("  $digits = '{0:D2}' -f (Get-Random -Minimum 0 -Maximum 100);");
     s.push(`  $safePrefix = ${psQuote(prefix.replace(/\r?\n|\r/g, ''))};`);
     s.push("  $newName = $safePrefix + '-' + $letters + $digits;");
-    s.push("  Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName' 'ComputerName' $newName -Force;");
-    s.push("  Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName' 'ComputerName' $newName -Force;");
-    s.push("  Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'Hostname' $newName -Force;");
-    s.push("  Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'NV Hostname' $newName -Force;");
-    s.push('  Write-Log "Computer name set to $newName.";');
-    s.push('} catch { Write-Log "Computer rename failed: $_"; }');
+    s.push(
+      "  Set-ItemProperty -LiteralPath 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName' -Name 'ComputerName' -Value $newName -Force;"
+    );
+    s.push(
+      "  Set-ItemProperty -LiteralPath 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName' -Name 'ComputerName' -Value $newName -Force;"
+    );
+    s.push(
+      "  Set-ItemProperty -LiteralPath 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' -Name 'Hostname' -Value $newName -Force;"
+    );
+    s.push(
+      "  Set-ItemProperty -LiteralPath 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' -Name 'NV Hostname' -Value $newName -Force;"
+    );
+    s.push('  Write-SetupLog "Computer name set to $newName.";');
+    s.push('} catch { Write-SetupLog "Computer rename failed: $($_.Exception.Message)"; }');
   }
 
   // JAVÍTVA: korábban a jelszó-lejárat tiltása feltétel nélkül kimeitt, a
@@ -434,26 +482,29 @@ function buildSpecializeScript(config, addFile, locale) {
   }
 
   // Event source regisztrálása – enélkül az UnlockStartLayout trigger sosem sült el.
-  s.push(`if (-not [System.Diagnostics.EventLog]::SourceExists(${psQuote(EVENT_SOURCE)})) {`);
-  s.push(`  New-EventLog -LogName 'Application' -Source ${psQuote(EVENT_SOURCE)};`);
-  s.push('}');
-
-  const reg = (path, name, type, value) =>
-    `reg.exe add "${path}" /v "${name}" /t ${type} /d ${value} /f | Out-Null;`;
+  s.push('try {');
+  s.push(`  if (-not [System.Diagnostics.EventLog]::SourceExists(${psQuote(EVENT_SOURCE)})) {`);
+  s.push(`    New-EventLog -LogName 'Application' -Source ${psQuote(EVENT_SOURCE)};`);
+  s.push('  }');
+  s.push('} catch { Write-SetupLog "Event source registration failed: $($_.Exception.Message)"; }');
 
   if (config.preventDeviceEncryption) {
-    s.push(reg('HKLM\\SYSTEM\\CurrentControlSet\\Control\\BitLocker', 'PreventDeviceEncryption', 'REG_DWORD', '1'));
+    s.push(reg('SYSTEM\\CurrentControlSet\\Control\\BitLocker', 'PreventDeviceEncryption', 'DWord', '1'));
   }
   if (config.enableLongPaths) {
-    s.push(reg('HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem', 'LongPathsEnabled', 'REG_DWORD', '1'));
+    s.push(reg('SYSTEM\\CurrentControlSet\\Control\\FileSystem', 'LongPathsEnabled', 'DWord', '1'));
   }
   if (config.disableUAC) {
-    s.push("Write-Log 'FIGYELEM: az UAC kikapcsolasa (EnableLUA=0) megbenitja a Store/UWP appokat es a Beallitasokat.';");
-    s.push(reg('HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System', 'EnableLUA', 'REG_DWORD', '0'));
+    s.push(
+      "Write-SetupLog 'WARNING: disabling UAC (EnableLUA=0) breaks Store/UWP apps and the Settings app on Windows 11.';"
+    );
+    s.push(reg('SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System', 'EnableLUA', 'DWord', '0'));
   }
   if (config.disableSleep) {
     s.push('$out = powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61;');
-    s.push("if ($out -match '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})') { powercfg -setactive $matches[1]; }");
+    s.push(
+      "if ($out -match '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})') { powercfg -setactive $matches[1]; }"
+    );
     s.push('powercfg /change standby-timeout-ac 0;');
     s.push('powercfg /change standby-timeout-dc 0;');
     s.push('powercfg /change monitor-timeout-ac 0;');
@@ -463,36 +514,48 @@ function buildSpecializeScript(config, addFile, locale) {
     // A BypassNRO-t a Microsoft kivezette a friss buildekből, ezért csak
     // örökölt kompatibilitásként megy ki. A tényleges, támogatott megoldás a
     // helyi fiók unattendből + HideOnlineAccountScreens (lásd oobeSystem).
-    s.push(reg('HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE', 'BypassNRO', 'REG_DWORD', '1'));
+    s.push(reg('SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE', 'BypassNRO', 'DWord', '1'));
   }
   if (config.disableTelemetry) {
-    s.push(reg('HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection', 'AllowTelemetry', 'REG_DWORD', '0'));
-    s.push(reg('HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection', 'AllowTelemetry', 'REG_DWORD', '0'));
+    s.push(reg('SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection', 'AllowTelemetry', 'DWord', '0'));
+    s.push(
+      reg('SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection', 'AllowTelemetry', 'DWord', '0')
+    );
   }
   if (config.disableFastStartup) {
-    s.push(reg('HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power', 'HiberbootEnabled', 'REG_DWORD', '0'));
+    s.push(reg('SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power', 'HiberbootEnabled', 'DWord', '0'));
   }
   if (config.disableNewsAndInterests) {
-    s.push(reg('HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh', 'AllowNewsAndInterests', 'REG_DWORD', '0'));
+    s.push(reg('SOFTWARE\\Policies\\Microsoft\\Dsh', 'AllowNewsAndInterests', 'DWord', '0'));
   }
   if (config.disableEdgeDesktopShortcut) {
-    s.push(reg('HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer', 'DisableEdgeDesktopShortcutCreation', 'REG_DWORD', '1'));
+    s.push(
+      reg(
+        'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer',
+        'DisableEdgeDesktopShortcutCreation',
+        'DWord',
+        '1'
+      )
+    );
   }
   if (config.disableConsumerFeatures) {
-    s.push(reg('HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent', 'DisableWindowsConsumerFeatures', 'REG_DWORD', '1'));
+    s.push(
+      reg('SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent', 'DisableWindowsConsumerFeatures', 'DWord', '1')
+    );
   }
   if (config.disableBackgroundApps) {
-    s.push(reg('HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy', 'LetAppsRunInBackground', 'REG_DWORD', '2'));
+    s.push(reg('SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy', 'LetAppsRunInBackground', 'DWord', '2'));
   }
   if (config.disableEdgeFirstRun) {
-    s.push(reg('HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge', 'HideFirstRunExperience', 'REG_DWORD', '1'));
+    s.push(reg('SOFTWARE\\Policies\\Microsoft\\Edge', 'HideFirstRunExperience', 'DWord', '1'));
   }
-  // JAVÍTVA: a "nemrég hozzáadott appok" gépszintű házirend, nem HKCU kulcs.
+  // JAVÍTVA: a "nemrég hozzáadott appok" és a "javasolt" szekció gépszintű
+  // házirend, nem HKCU kulcs.
   if (config.hideRecentApps) {
-    s.push(reg('HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer', 'HideRecentlyAddedApps', 'REG_DWORD', '1'));
+    s.push(reg('SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer', 'HideRecentlyAddedApps', 'DWord', '1'));
   }
   if (config.hideRecommendedFiles) {
-    s.push(reg('HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer', 'HideRecommendedSection', 'REG_DWORD', '1'));
+    s.push(reg('SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer', 'HideRecommendedSection', 'DWord', '1'));
   }
 
   // --- Bloatware ---
@@ -524,25 +587,29 @@ function buildSpecializeScript(config, addFile, locale) {
   if (selectors.length > 0) {
     // A rendes, naplózó, PONTOS egyezésű Schneegans szkript – korábban ez halott
     // kód volt, helyette egy néma SilentlyContinue wildcard-os verzió futott.
-    const script = SCHNEEGANS_SCRIPTS.removePackages.replace(
-      '##SELECTORS##',
-      selectors.map((sel) => `  ${psQuote(sel)};`).join('\n')
+    const path = `${SCRIPTS_DIR}\\RemovePackages.ps1`;
+    addFile(
+      path,
+      SCHNEEGANS_SCRIPTS.removePackages.replace(
+        '##SELECTORS##',
+        selectors.map((sel) => `  ${psQuote(sel)};`).join('\n')
+      )
     );
-    addFile(`${SCRIPTS_DIR}\\RemovePackages.ps1`, script);
-    s.push(`& ${PS_RUN.split(' ').slice(1).join(' ')} | Out-Null;`.replace('| Out-Null;', ''));
-    s.pop();
-    s.push(`Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',${psQuote(`${SCRIPTS_DIR}\\RemovePackages.ps1`)}) -Wait -WindowStyle Hidden;`);
-    s.push("Write-Log 'RemovePackages done.';");
+    s.push(psInvokeScript(path));
+    s.push("Write-SetupLog 'RemovePackages done.';");
   }
 
   if (config.removeLegacyCapabilities) {
-    const script = SCHNEEGANS_SCRIPTS.removeCapabilities.replace(
-      '##SELECTORS##',
-      SCHNEEGANS_SCRIPTS.legacyCapabilities.map((sel) => `  ${psQuote(sel)};`).join('\n')
+    const path = `${SCRIPTS_DIR}\\RemoveCapabilities.ps1`;
+    addFile(
+      path,
+      SCHNEEGANS_SCRIPTS.removeCapabilities.replace(
+        '##SELECTORS##',
+        SCHNEEGANS_SCRIPTS.legacyCapabilities.map((sel) => `  ${psQuote(sel)};`).join('\n')
+      )
     );
-    addFile(`${SCRIPTS_DIR}\\RemoveCapabilities.ps1`, script);
-    s.push(`Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',${psQuote(`${SCRIPTS_DIR}\\RemoveCapabilities.ps1`)}) -Wait -WindowStyle Hidden;`);
-    s.push("Write-Log 'RemoveCapabilities done.';");
+    s.push(psInvokeScript(path));
+    s.push("Write-SetupLog 'RemoveCapabilities done.';");
   }
 
   // --- Wi-Fi ---
@@ -597,30 +664,38 @@ ${securityBlock}
 		</security>
 	</MSM>
 </WLANProfile>`;
-    addFile(`${FILES_DIR}\\Wifi.xml`, wifiXml);
+    const wifiPath = `${FILES_DIR}\\Wifi.xml`;
+    addFile(wifiPath, wifiXml);
     // JAVÍTVA: az SSID-t PowerShell változóba tesszük (single-quote escape),
     // nem az XML-escape-elt sztringet toljuk a netsh-be. Korábban egy `&`-et
     // tartalmazó SSID-nél literál "&amp;" ment ki.
     s.push(`$wifiSsid = ${psQuote(ssid)};`);
-    s.push(`netsh.exe wlan add profile filename="${FILES_DIR}\\Wifi.xml" user=all | Out-Null;`);
+    s.push(`$wifiProfile = ${psQuote(wifiPath)};`);
+    s.push('netsh.exe wlan add profile filename="$wifiProfile" user=all | Out-Null;');
     s.push('Start-Sleep -Seconds 2;');
     s.push('netsh.exe wlan connect name="$wifiSsid" | Out-Null;');
   }
 
   // --- Start menü / tálca ---
   const registerTask = (name, xmlPath) =>
-    `Register-ScheduledTask -TaskName ${psQuote(name)} -Xml (Get-Content -Raw -LiteralPath ${psQuote(xmlPath)}) -Force | Out-Null;`;
+    `try { Register-ScheduledTask -TaskName ${psQuote(name)} -Xml (Get-Content -Raw -LiteralPath ${psQuote(
+      xmlPath
+    )}) -Force | Out-Null; } catch { Write-SetupLog "Task ${name} registration failed: $($_.Exception.Message)"; }`;
 
   if (config.cleanStartPins) {
+    // A JSON értéket PowerShell cmdlettel írjuk: a `reg.exe /d "{\"...\"}"`
+    // forma a PowerShell parseren nem jut át épségben.
     s.push(
-      `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v "ConfigureStartPins" /t REG_SZ /d "{\\"pinnedList\\": []}" /f | Out-Null;`
+      `Set-RegistryValue -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer' -Name 'ConfigureStartPins' -Type String -Value ${psQuote(
+        '{"pinnedList":[]}'
+      )};`
     );
     // A korábban halott taskbarLayoutModificationXml végre használatban.
     addFile(LAYOUT_MODIFICATION_PATH, SCHNEEGANS_SCRIPTS.taskbarLayoutModificationXml);
   }
 
   if (config.hideTaskbarIcons) {
-    s.push(reg('HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer', 'NoPinningStoreToTaskbar', 'REG_DWORD', '1'));
+    s.push(reg('SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer', 'NoPinningStoreToTaskbar', 'DWord', '1'));
     // A VBS és a task XML a TARTÓS mappába kerül, mert a FirstLogon a végén
     // kitörli a Scripts mappát – korábban ezzel a saját lábát vágta le.
     const vbsPath = `${FILES_DIR}\\UnlockStartLayout.vbs`;
@@ -638,63 +713,86 @@ ${securityBlock}
     s.push(registerTask('ShowAllTrayIcons', xmlPath));
   }
 
-  s.push("Write-Log 'Specialize done.';");
+  s.push("Write-SetupLog 'Specialize done.';");
+  s.push('exit 0;');
   return s.join('\n') + '\n';
 }
 
 function buildDefaultUserScript(config) {
   const body = [];
   const reg = (subKey, name, type, value) =>
-    `  reg.exe add "$hive\\${subKey}" /v "${name}" /t ${type} /d ${value} /f | Out-Null;`;
+    `  Set-RegistryValue -Path ${psQuote(`${DEFAULT_USER_ROOT}\\${subKey}`)} -Name ${psQuote(
+      name
+    )} -Type ${type} -Value ${value};`;
 
   if (config.disableCopilot) {
-    body.push(reg('Software\\Policies\\Microsoft\\Windows\\WindowsCopilot', 'TurnOffWindowsCopilot', 'REG_DWORD', '1'));
+    body.push(reg('Software\\Policies\\Microsoft\\Windows\\WindowsCopilot', 'TurnOffWindowsCopilot', 'DWord', '1'));
   }
   if (config.disableWebSearch) {
-    body.push(reg('Software\\Policies\\Microsoft\\Windows\\Explorer', 'DisableSearchBoxSuggestions', 'REG_DWORD', '1'));
+    body.push(reg('Software\\Policies\\Microsoft\\Windows\\Explorer', 'DisableSearchBoxSuggestions', 'DWord', '1'));
   }
   if (config.disableGameDVR) {
-    body.push(reg('System\\GameConfigStore', 'GameDVR_Enabled', 'REG_DWORD', '0'));
+    body.push(reg('System\\GameConfigStore', 'GameDVR_Enabled', 'DWord', '0'));
   }
   if (config.disableMouseAcceleration) {
     // JAVÍTVA: a MouseSpeed egyedül nem kapcsolja ki a gyorsítást, a két
     // threshold érték is kell hozzá.
-    body.push(reg('Control Panel\\Mouse', 'MouseSpeed', 'REG_SZ', '0'));
-    body.push(reg('Control Panel\\Mouse', 'MouseThreshold1', 'REG_SZ', '0'));
-    body.push(reg('Control Panel\\Mouse', 'MouseThreshold2', 'REG_SZ', '0'));
+    body.push(reg('Control Panel\\Mouse', 'MouseSpeed', 'String', psQuote('0')));
+    body.push(reg('Control Panel\\Mouse', 'MouseThreshold1', 'String', psQuote('0')));
+    body.push(reg('Control Panel\\Mouse', 'MouseThreshold2', 'String', psQuote('0')));
   }
   if (config.explorerToThisPC) {
-    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'LaunchTo', 'REG_DWORD', '1'));
+    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'LaunchTo', 'DWord', '1'));
   }
   if (config.showHiddenFiles) {
-    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'Hidden', 'REG_DWORD', '1'));
+    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'Hidden', 'DWord', '1'));
   }
   if (config.showFileExtensions) {
-    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'HideFileExt', 'REG_DWORD', '0'));
+    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'HideFileExt', 'DWord', '0'));
   }
   // JAVÍTVA: Win11-en a Start_TrackProgs / Start_TrackDocs a helyes kulcs az
-  // Explorer\\Advanced alatt, nem a ShowRecentList / ShowFrequentList a Start alatt.
+  // Explorer\Advanced alatt, nem a ShowRecentList / ShowFrequentList a Start alatt.
   if (config.hideMostUsedApps) {
-    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'Start_TrackProgs', 'REG_DWORD', '0'));
+    body.push(
+      reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'Start_TrackProgs', 'DWord', '0')
+    );
   }
   if (config.hideRecommendedFiles) {
-    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'Start_TrackDocs', 'REG_DWORD', '0'));
+    body.push(
+      reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced', 'Start_TrackDocs', 'DWord', '0')
+    );
   }
   if (config.searchBoxMode) {
     const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
     const value = searchModeValues[config.searchBoxMode];
     if (value !== undefined) {
-      body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Search', 'SearchboxTaskbarMode', 'REG_DWORD', String(value)));
+      body.push(
+        reg(
+          'Software\\Microsoft\\Windows\\CurrentVersion\\Search',
+          'SearchboxTaskbarMode',
+          'DWord',
+          String(value)
+        )
+      );
     }
   }
   if (config.disableTransparency) {
-    body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize', 'EnableTransparency', 'REG_DWORD', '0'));
+    body.push(
+      reg('Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize', 'EnableTransparency', 'DWord', '0')
+    );
   }
   if (config.hideTipsAndSuggestions) {
     for (const id of ['338388', '338389', '338393']) {
-      body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager', `SubscribedContent-${id}Enabled`, 'REG_DWORD', '0'));
+      body.push(
+        reg(
+          'Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager',
+          `SubscribedContent-${id}Enabled`,
+          'DWord',
+          '0'
+        )
+      );
     }
-    body.push(reg('Software\\Policies\\Microsoft\\Windows\\CloudContent', 'DisableSoftLanding', 'REG_DWORD', '1'));
+    body.push(reg('Software\\Policies\\Microsoft\\Windows\\CloudContent', 'DisableSoftLanding', 'DWord', '1'));
   }
   if (config.desktopIcons) {
     const iconMap = {
@@ -707,8 +805,22 @@ function buildDefaultUserScript(config) {
     for (const [key, clsid] of Object.entries(iconMap)) {
       if (config.desktopIcons[key]) {
         // 0 = látszik. Mindkét panel kulcsát írjuk.
-        body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel', clsid, 'REG_DWORD', '0'));
-        body.push(reg('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\ClassicStartMenu', clsid, 'REG_DWORD', '0'));
+        body.push(
+          reg(
+            'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel',
+            clsid,
+            'DWord',
+            '0'
+          )
+        );
+        body.push(
+          reg(
+            'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\ClassicStartMenu',
+            clsid,
+            'DWord',
+            '0'
+          )
+        );
       }
     }
   }
@@ -720,29 +832,29 @@ function buildDefaultUserScript(config) {
   // RunSynchronousCommand volt, hiba esetén bent maradó hive-val.
   const lines = [];
   lines.push("$ErrorActionPreference = 'Continue';");
-  lines.push(`$log = ${psQuote(`${LOG_DIR}\\DefaultUser.log`)};`);
-  lines.push('function Write-Log { param([string]$Message) ; "$(Get-Date -Format o) $Message" | Out-File -FilePath $log -Append -Encoding utf8; }');
-  lines.push("$hive = 'HKU\\DefaultUser';");
-  lines.push(`reg.exe load "$hive" ${psQuote(DEFAULT_USER_HIVE)} | Out-Null;`);
+  lines.push(`$script:LogFile = ${psQuote(`${LOG_DIR}\\DefaultUser.log`)};`);
+  lines.push(PS_HELPERS);
+  lines.push('');
+  lines.push(`reg.exe load "HKU\\DefaultUser" ${psQuote(DEFAULT_USER_HIVE)} | Out-Null;`);
   lines.push('try {');
   lines.push(...body);
   lines.push('} finally {');
   lines.push('  [System.GC]::Collect();');
   lines.push('  [System.GC]::WaitForPendingFinalizers();');
   lines.push('  Start-Sleep -Milliseconds 500;');
-  lines.push('  reg.exe unload "$hive" | Out-Null;');
-  lines.push("  Write-Log 'Default user hive unloaded.';");
+  lines.push('  reg.exe unload "HKU\\DefaultUser" | Out-Null;');
+  lines.push("  Write-SetupLog 'Default user hive unloaded.';");
   lines.push('}');
+  lines.push('exit 0;');
   return lines.join('\n') + '\n';
 }
 
-function buildSpecialize(config, componentAttrs, addFile, locale) {
+function buildSpecialize(config, componentAttrs, addFile) {
   const out = [];
   out.push('  <!-- specialize: gépnév, fájlkicsomagolás, rendszerszintű beállítások -->');
   out.push('  <settings pass="specialize">');
 
-  const specializeScript = buildSpecializeScript(config, addFile, locale);
-  addFile(`${SCRIPTS_DIR}\\Specialize.ps1`, specializeScript);
+  addFile(`${SCRIPTS_DIR}\\Specialize.ps1`, buildSpecializeScript(config, addFile));
 
   const defaultUserScript = buildDefaultUserScript(config);
   if (defaultUserScript) {
@@ -752,7 +864,7 @@ function buildSpecialize(config, componentAttrs, addFile, locale) {
   let order = 1;
   const cmds = [];
 
-  // JAVÍTVA: a szöveg dupla idézőjelben van, így a \\W és \\S nem esik ki
+  // JAVÍTVA: a leíró szöveg dupla idézőjelben van, így a \W és \S nem esik ki
   // (korábban a kimeneti XML-ben "C:WindowsSetupScripts" szerepelt).
   cmds.push(
     ...runSync(
@@ -763,7 +875,9 @@ function buildSpecialize(config, componentAttrs, addFile, locale) {
   );
   cmds.push(...runSync(order++, `${PS_RUN} "${SCRIPTS_DIR}\\Specialize.ps1"`, 'Specialize szkript futtatása'));
   if (defaultUserScript) {
-    cmds.push(...runSync(order++, `${PS_RUN} "${SCRIPTS_DIR}\\DefaultUser.ps1"`, 'Default User profil beállítása'));
+    cmds.push(
+      ...runSync(order++, `${PS_RUN} "${SCRIPTS_DIR}\\DefaultUser.ps1"`, 'Default User profil beállítása')
+    );
   }
 
   // A RunSynchronous a Microsoft-Windows-Deployment komponens eleme, NEM a
@@ -780,7 +894,9 @@ function buildSpecialize(config, componentAttrs, addFile, locale) {
     // A végleges nevet a Specialize.ps1 állítja be (prefix + véletlen utótag).
     out.push('      <ComputerName>TEMPNAME</ComputerName>');
   } else {
-    out.push(`      <ComputerName>${escapeXml(String(config.computerName || 'PC').trim() || 'PC')}</ComputerName>`);
+    out.push(
+      `      <ComputerName>${escapeXml(String(config.computerName || 'PC').trim() || 'PC')}</ComputerName>`
+    );
   }
   out.push('    </component>');
   out.push('  </settings>');
@@ -789,8 +905,8 @@ function buildSpecialize(config, componentAttrs, addFile, locale) {
 
 // --- oobeSystem pass --------------------------------------------------------
 
-function buildWingetCustomList(config) {
-  const entries = (config.customScripts?.wingetCustomApps || [])
+export function buildWingetCustomList(config) {
+  const entries = ((config.customScripts && config.customScripts.wingetCustomApps) || [])
     .map((entry) => {
       const meta = WINGET_APPS.find((a) => a.id === entry.id);
       if (!meta) return null;
@@ -863,7 +979,7 @@ function buildOobeSystem(config, componentAttrs, locale, addFile) {
   out.push(
     ...syncCommand(
       1,
-      `C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "[System.Diagnostics.EventLog]::WriteEntry( '${EVENT_SOURCE}', \"User $env:USERNAME has logged on.\", [System.Diagnostics.EventLogEntryType]::Information, 1 );"`,
+      `C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "[System.Diagnostics.EventLog]::WriteEntry( '${EVENT_SOURCE}', \\"User $env:USERNAME has logged on.\\", [System.Diagnostics.EventLogEntryType]::Information, 1 );"`,
       'Bejelentkezési esemény kiírása (UnlockStartLayout trigger)'
     )
   );
@@ -938,40 +1054,50 @@ function buildOobeSystem(config, componentAttrs, locale, addFile) {
       if (list) wingetCode = SCRIPTS.wingetCustomBase.replace('##APPS##', list);
     }
     if (wingetCode) {
-      addFile(`${SCRIPTS_DIR}\\App-Winget.ps1`, wingetCode);
-      installers.push({ name: 'Winget alkalmazások', path: `${SCRIPTS_DIR}\\App-Winget.ps1` });
+      const path = `${SCRIPTS_DIR}\\App-Winget.ps1`;
+      addFile(path, wingetCode);
+      installers.push({ name: 'Winget alkalmazasok', path });
     }
   }
 
   if (cs.office === 'versionA') {
-    addFile(`${SCRIPTS_DIR}\\App-Office.ps1`, SCRIPTS.officeA.replace(/##OFFICE_LANG##/g, locale.officeLang));
-    installers.push({ name: 'Microsoft 365', path: `${SCRIPTS_DIR}\\App-Office.ps1` });
+    const path = `${SCRIPTS_DIR}\\App-Office.ps1`;
+    addFile(path, SCRIPTS.officeA.replace(/##OFFICE_LANG##/g, locale.officeLang));
+    installers.push({ name: 'Microsoft 365', path });
   } else if (cs.office === 'versionB') {
-    const officeB = SCRIPTS.officeB
-      .replace('##OFFICE_MAK_KEY##', String(cs.officeKey || '').replace(/'/g, "''"))
-      .replace(/##OFFICE_LANG##/g, locale.officeLang);
-    addFile(`${SCRIPTS_DIR}\\App-Office.ps1`, officeB);
-    installers.push({ name: 'Office 2021', path: `${SCRIPTS_DIR}\\App-Office.ps1` });
+    const path = `${SCRIPTS_DIR}\\App-Office.ps1`;
+    addFile(
+      path,
+      SCRIPTS.officeB
+        .replace('##OFFICE_MAK_KEY##', String(cs.officeKey || '').replace(/'/g, "''"))
+        .replace(/##OFFICE_LANG##/g, locale.officeLang)
+    );
+    installers.push({ name: 'Office 2021', path });
   }
 
   if (cs.pcManager) {
-    addFile(`${SCRIPTS_DIR}\\App-PCManager.ps1`, SCRIPTS.pcManager);
-    installers.push({ name: 'PC Manager', path: `${SCRIPTS_DIR}\\App-PCManager.ps1` });
+    const path = `${SCRIPTS_DIR}\\App-PCManager.ps1`;
+    addFile(path, SCRIPTS.pcManager);
+    installers.push({ name: 'PC Manager', path });
   }
 
   if (cs.windowsUpdate) {
-    addFile(`${SCRIPTS_DIR}\\App-WindowsUpdate.ps1`, SCRIPTS.windowsUpdate);
-    installers.push({ name: 'Windows Update', path: `${SCRIPTS_DIR}\\App-WindowsUpdate.ps1` });
+    const path = `${SCRIPTS_DIR}\\App-WindowsUpdate.ps1`;
+    addFile(path, SCRIPTS.windowsUpdate);
+    installers.push({ name: 'Windows Update', path });
   }
 
   // A tartományba léptetés MINDIG utolsó: újraindítást kér.
   if (cs.domainJoin) {
-    const adCode = SCRIPTS.domainJoin
-      .replace('##DOMAIN_NAME##', String(cs.domainName || '').replace(/'/g, "''"))
-      .replace('##DOMAIN_USER##', String(cs.domainUser || '').replace(/'/g, "''"))
-      .replace('##DOMAIN_PASS##', String(cs.domainPass || '').replace(/'/g, "''"));
-    addFile(`${SCRIPTS_DIR}\\App-DomainJoin.ps1`, adCode);
-    installers.push({ name: 'Tartományba léptetés', path: `${SCRIPTS_DIR}\\App-DomainJoin.ps1` });
+    const path = `${SCRIPTS_DIR}\\App-DomainJoin.ps1`;
+    addFile(
+      path,
+      SCRIPTS.domainJoin
+        .replace('##DOMAIN_NAME##', String(cs.domainName || '').replace(/'/g, "''"))
+        .replace('##DOMAIN_USER##', String(cs.domainUser || '').replace(/'/g, "''"))
+        .replace('##DOMAIN_PASS##', String(cs.domainPass || '').replace(/'/g, "''"))
+    );
+    installers.push({ name: 'Tartomanyba leptetes', path });
   }
 
   const first = [];
@@ -979,41 +1105,55 @@ function buildOobeSystem(config, componentAttrs, locale, addFile) {
   // összes továbbit ÉS a takarítást is. Most minden telepítő külön try/catch-ben
   // fut, a hibákat összegyűjtjük, a takarítás pedig finally-ben mindig lefut.
   first.push("$ErrorActionPreference = 'Continue';");
-  first.push(`$log = ${psQuote(`${LOG_DIR}\\FirstLogon.log`)};`);
-  first.push('function Write-Log { param([string]$Message) ; "$(Get-Date -Format o) $Message" | Out-File -FilePath $log -Append -Encoding utf8; }');
+  first.push(`$script:LogFile = ${psQuote(`${LOG_DIR}\\FirstLogon.log`)};`);
+  first.push('function Write-SetupLog { param([string]$Message) ; "$(Get-Date -Format o) $Message" | Out-File -FilePath $script:LogFile -Append -Encoding utf8 }');
   first.push('$failed = @();');
+  first.push('');
   first.push('function Invoke-SetupScript {');
   first.push('  param([string]$Name, [string]$Path)');
-  first.push('  if (-not (Test-Path -LiteralPath $Path)) { Write-Log "$Name: script missing ($Path)."; return $false; }');
-  first.push('  Write-Log "$Name: start.";');
+  first.push('  if (-not (Test-Path -LiteralPath $Path)) {');
+  first.push('    Write-SetupLog "$Name: script missing ($Path).";');
+  first.push('    return $false;');
+  first.push('  }');
+  first.push('  Write-SetupLog "$Name: start.";');
   first.push('  try {');
-  first.push("    $p = Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$Path) -PassThru -Wait -WindowStyle Maximized;");
-  first.push('    if ($p.ExitCode -ne 0) { Write-Log "$Name: FAILED with exit code $($p.ExitCode)."; return $false; }');
-  first.push('    Write-Log "$Name: ok.";');
+  first.push(
+    "    $p = Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$Path) -PassThru -Wait -WindowStyle Maximized;"
+  );
+  first.push('    if ($p.ExitCode -ne 0) {');
+  first.push('      Write-SetupLog "$Name: FAILED with exit code $($p.ExitCode).";');
+  first.push('      return $false;');
+  first.push('    }');
+  first.push('    Write-SetupLog "$Name: ok.";');
   first.push('    return $true;');
   first.push('  } catch {');
-  first.push('    Write-Log "$Name: EXCEPTION $_";');
+  first.push('    Write-SetupLog "$Name: EXCEPTION $($_.Exception.Message)";');
   first.push('    return $false;');
   first.push('  }');
   first.push('}');
+  first.push('');
   first.push('try {');
 
   const wifi = config.wifi || {};
   if (wifi.mode === 'manual') {
-    first.push('  Start-Process -FilePath "cmd.exe" -ArgumentList "/c start ms-availablenetworks:" -WindowStyle Hidden;');
+    first.push("  Start-Process -FilePath 'cmd.exe' -ArgumentList '/c start ms-availablenetworks:' -WindowStyle Hidden;");
     first.push('  Start-Sleep -Seconds 3;');
   }
 
   for (const inst of installers) {
-    first.push(`  if (-not (Invoke-SetupScript -Name ${psQuote(inst.name)} -Path ${psQuote(inst.path)})) { $failed += ${psQuote(inst.name)}; }`);
+    first.push(
+      `  if (-not (Invoke-SetupScript -Name ${psQuote(inst.name)} -Path ${psQuote(
+        inst.path
+      )})) { $failed += ${psQuote(inst.name)}; }`
+    );
   }
 
   first.push(`  Invoke-SetupScript -Name 'UserOnce' -Path ${psQuote(`${SCRIPTS_DIR}\\UserOnce.ps1`)} | Out-Null;`);
   first.push('} finally {');
   first.push('  if ($failed.Count -gt 0) {');
-  first.push('    Write-Log "Failed steps: $($failed -join \', \')";');
+  first.push("    Write-SetupLog \"Failed steps: $($failed -join ', ')\";");
   first.push('  } else {');
-  first.push("    Write-Log 'All steps completed.';");
+  first.push("    Write-SetupLog 'All steps completed.';");
   first.push('  }');
   // Csak a Scripts mappát töröljük. A Files mappa TARTÓSAN megmarad, mert az
   // ütemezett feladatok onnan futnak – korábban a törlés a saját lábát vágta le.
@@ -1023,9 +1163,12 @@ function buildOobeSystem(config, componentAttrs, locale, addFile) {
 
   const userOnce = ["$ErrorActionPreference = 'Continue';"];
   if (config.disableCopilot) {
-    userOnce.push("Get-AppxPackage -Name 'Microsoft.Windows.Ai.Copilot.Provider' | Remove-AppxPackage -ErrorAction SilentlyContinue;");
+    userOnce.push(
+      "Get-AppxPackage -Name 'Microsoft.Windows.Ai.Copilot.Provider' | Remove-AppxPackage -ErrorAction SilentlyContinue;"
+    );
     userOnce.push("Get-AppxPackage -Name 'Microsoft.Copilot' | Remove-AppxPackage -ErrorAction SilentlyContinue;");
   }
+  userOnce.push('exit 0;');
   addFile(`${SCRIPTS_DIR}\\UserOnce.ps1`, userOnce.join('\n') + '\n');
 
   // MEGJEGYZÉS: nincs többé profile.ps1 a System32-ben. A régi megoldás egy
@@ -1063,7 +1206,7 @@ export function generateXml(rawConfig, uiLanguage = null) {
     `name="${name}" processorArchitecture="${arch}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"`;
 
   const windowsPE = buildWindowsPE(config, componentAttrs, locale);
-  const specialize = buildSpecialize(config, componentAttrs, addFile, locale);
+  const specialize = buildSpecialize(config, componentAttrs, addFile);
   const oobe = buildOobeSystem(config, componentAttrs, locale, addFile);
 
   let extensions = '';
