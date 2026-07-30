@@ -559,27 +559,8 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
   duScript.push('echo Loading Default User registry hive...');
   duScript.push('reg load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"');
 
-  if (config.desktopIcons) {
-    const iconMap = {
-      computer: '{20D04FE0-3AEA-1069-A2D8-08002B30309D}',
-      network: '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}',
-    };
-    for (const [key, clsid] of Object.entries(iconMap)) {
-      if (config.desktopIcons[key]) {
-        duScript.push(`reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v ${clsid} /t REG_DWORD /d 0 /f`);
-      }
-    }
-  }
-
-  if (config.searchBoxMode) {
-    const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
-    const value = searchModeValues[config.searchBoxMode];
-    if (value !== undefined) duScript.push(`reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`);
-  }
-
-  if (config.hideTaskbarIcons) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
   if (config.showAllTrayIcons) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f');
-  if (config.disableTransparency) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
+  if (config.hideTaskbarIcons) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
   if (config.hideRecentApps) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
   if (config.hideMostUsedApps) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
   if (config.hideRecommendedFiles) duScript.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
@@ -601,24 +582,90 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     order = orderRef.val;
   }
 
-  // --- Windows 11 Tálcaikonok Scheduled Task (specialize fázis) ---
+  // --- Windows 11 Tálcaikonok és Vizuális beállítások (Logon Scheduled Task) ---
+  let vtScript = [];
+  vtScript.push('$flag = "HKCU:\\Software\\AutoUnattend\\VisualTweaksApplied"');
+  vtScript.push('if (Test-Path $flag) { exit }');
+
+  if (config.desktopIcons) {
+    const iconMap = {
+      computer: '{20D04FE0-3AEA-1069-A2D8-08002B30309D}',
+      userFiles: '{59031a47-3f72-44a7-89c5-5595fe6b30ee}',
+      network: '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}',
+      recycleBin: '{645FF040-5081-101B-9F08-00AA002F954E}',
+      controlPanel: '{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}'
+    };
+    for (const [key, clsid] of Object.entries(iconMap)) {
+      if (config.desktopIcons[key]) {
+        vtScript.push(`Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" -Name "${clsid}" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue`);
+      }
+    }
+  }
+
+  if (config.searchBoxMode) {
+    const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
+    const value = searchModeValues[config.searchBoxMode];
+    if (value !== undefined) {
+      vtScript.push(`Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" -Name "SearchboxTaskbarMode" -Value ${value} -Type DWord -Force -ErrorAction SilentlyContinue`);
+    }
+  }
+
+  if (config.hideTaskbarIcons) {
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" -Name "ShowTaskViewButton" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+  }
+  if (config.disableTransparency) {
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" -Name "EnableTransparency" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+  }
+  if (config.hideRecommendedFiles) {
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" -Name "Start_TrackDocs" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+  }
+  if (config.hideTipsAndSuggestions) {
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "SubscribedContent-338388Enabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "SubscribedContent-338389Enabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+    vtScript.push('Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "SubscribedContent-338393Enabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue');
+  }
+
   if (config.showAllTrayIcons) {
+    vtScript.push("Set-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -Value 1 -Type 'DWord' -ErrorAction SilentlyContinue");
+  }
+
+  if (vtScript.length > 2) {
+    vtScript.push('New-Item -Path "HKCU:\\Software\\AutoUnattend" -Force -ErrorAction SilentlyContinue | Out-Null');
+    vtScript.push('New-ItemProperty -Path "HKCU:\\Software\\AutoUnattend" -Name "VisualTweaksApplied" -Value 1 -PropertyType DWord -Force -ErrorAction SilentlyContinue | Out-Null');
+    
+    vtScript.push('$code = @\'');
+    vtScript.push('using System;');
+    vtScript.push('using System.Runtime.InteropServices;');
+    vtScript.push('public class Win32 {');
+    vtScript.push('    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]');
+    vtScript.push('    public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);');
+    vtScript.push('}');
+    vtScript.push('\'@');
+    vtScript.push('Add-Type $code');
+    vtScript.push('[Win32]::SendMessageTimeout([IntPtr]0xffff, 0x001A, [UIntPtr]0, "TraySettings", 2, 5000, [ref][UIntPtr]::Zero) | Out-Null');
+
+    const vtTaskXml = `
+$taskXml = @'
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+<Triggers>
+<LogonTrigger><Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><Enabled>true</Enabled></LogonTrigger>
+</Triggers>
+<Principals><Principal id="Author"><GroupId>S-1-5-32-545</GroupId><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
+<Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><AllowHardTerminate>true</AllowHardTerminate><StartWhenAvailable>false</StartWhenAvailable><RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable><IdleSettings><StopOnIdleEnd>true</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings><AllowStartOnDemand>true</AllowStartOnDemand><Enabled>true</Enabled><Hidden>false</Hidden><RunOnlyIfIdle>false</RunOnlyIfIdle><WakeToRun>false</WakeToRun><ExecutionTimeLimit>PT72H</ExecutionTimeLimit><Priority>7</Priority></Settings>
+<Actions Context="Author"><Exec><Command>%windir%\\System32\\conhost.exe</Command><Arguments>--headless %windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -WindowStyle Hidden -NoProfile -NonInteractive -EncodedCommand ##ENCODED_CMD##</Arguments></Exec></Actions>
+</Task>
+'@
+$enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes(@'
+${vtScript.join('\r\n')}
+'@))
+$taskXml = $taskXml -replace '##ENCODED_CMD##', $enc
+Register-ScheduledTask -TaskName 'VisualTweaksTask' -Xml $taskXml -Force | Out-Null
+`;
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Windows 11: Scheduled Task – percenként promote-olja az összes tray ikont (Schneegans módszer) -->');
-    const trayTaskScript = [
-      "$taskXml = @'",
-      '<?xml version="1.0" encoding="UTF-16"?>',
-      '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">',
-      '<Triggers><LogonTrigger><Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><Enabled>true</Enabled></LogonTrigger></Triggers>',
-      '<Principals><Principal id="Author"><GroupId>S-1-5-32-545</GroupId><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>',
-      '<Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><AllowHardTerminate>true</AllowHardTerminate><StartWhenAvailable>false</StartWhenAvailable><RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable><IdleSettings><StopOnIdleEnd>true</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings><AllowStartOnDemand>true</AllowStartOnDemand><Enabled>true</Enabled><Hidden>false</Hidden><RunOnlyIfIdle>false</RunOnlyIfIdle><WakeToRun>false</WakeToRun><ExecutionTimeLimit>PT72H</ExecutionTimeLimit><Priority>7</Priority></Settings>',
-      "<Actions Context=\"Author\"><Exec><Command>%windir%\\System32\\conhost.exe</Command><Arguments>--headless %windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -WindowStyle Hidden -NoProfile -NonInteractive -Command \"Set-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -Value 1 -Type 'DWord' -ErrorAction SilentlyContinue;\"</Arguments></Exec></Actions>",
-      '</Task>',
-      "'@",
-      "Register-ScheduledTask -TaskName 'ShowAllTrayIcons' -Xml $taskXml -Force | Out-Null"
-    ].join('\r\n');
+    runSyncCmds.push('        <!-- Windows 11: VisualTweaksTask (Egyszer futó Logon Feladat a vizuális elemekhez) -->');
     const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, trayTaskScript, 'C:\\Windows\\Temp\\tray_task.b64', 'C:\\Windows\\Temp\\tray_task.ps1');
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, vtTaskXml, 'C:\\Windows\\Temp\\vt_task.b64', 'C:\\Windows\\Temp\\vt_task.ps1');
     order = orderRef.val;
   }
 
