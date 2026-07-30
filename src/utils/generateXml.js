@@ -596,14 +596,14 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     vtScript.push('New-Item -Path "HKCU:\\Software\\AutoUnattend" -Force -ErrorAction SilentlyContinue | Out-Null');
     vtScript.push('New-ItemProperty -Path "HKCU:\\Software\\AutoUnattend" -Name "VisualTweaksApplied" -Value 1 -PropertyType DWord -Force -ErrorAction SilentlyContinue | Out-Null');
     
-    vtScript.push('$code = @\'');
+    vtScript.push('$code = @"');
     vtScript.push('using System;');
     vtScript.push('using System.Runtime.InteropServices;');
     vtScript.push('public class Win32 {');
     vtScript.push('    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]');
     vtScript.push('    public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);');
     vtScript.push('}');
-    vtScript.push('\'@');
+    vtScript.push('"@');
     vtScript.push('Add-Type $code');
     vtScript.push('[Win32]::SendMessageTimeout([IntPtr]0xffff, 0x001A, [UIntPtr]0, "TraySettings", 2, 5000, [ref][UIntPtr]::Zero) | Out-Null');
   }
@@ -673,12 +673,12 @@ Register-ScheduledTask -TaskName 'VisualTweaksTask' -Xml $taskXml -Force | Out-N
   let bloatScript = [];
   if (config.bloatware) {
     bloatScript.push('$ErrorActionPreference = "SilentlyContinue"');
-    bloatScript.push('Write-Host "Removing Bloatware..."');
+    bloatScript.push('Write-Host "Felesleges alkalmazások eltávolítása..."');
     for (const [key, packageName] of Object.entries(bloatwarePackages)) {
       if (config.bloatware[key]) {
         const packages = packageName.split(' ');
         for (const pkg of packages) {
-          bloatScript.push(`Write-Host "Removing ${bloatwareNames[key]} (${pkg})..."`);
+          bloatScript.push(`Write-Host "${bloatwareNames[key]} eltávolítása (${pkg})..."`);
           bloatScript.push(`Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like '*${pkg}*'} | Remove-AppxProvisionedPackage -Online`);
         }
       }
@@ -749,7 +749,7 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
     lines.push('        <LocalAccounts>');
     lines.push('          <LocalAccount wcm:action="add">');
     lines.push(`            <Name>${escapeXml(config.username.trim())}</Name>`);
-    lines.push('            <Group>Administrators</Group>');
+    lines.push('            <Group>*S-1-5-32-544</Group>');
 
     lines.push('            <Password>');
     lines.push(`              <Value>${escapeXml(config.password || '')}</Value>`);
@@ -1067,16 +1067,16 @@ foreach($a in $apps){
   if($a.Override){
     $installArgs+=("--override", ('"' + $a.Override + '"'))
   }
-  $logLine = "Installing $($a.Id)... "
+  $logLine = "Telepítés folyamatban: $($a.Id)... "
   $p=Start-Process -FilePath "winget.exe" -ArgumentList $installArgs -PassThru -WindowStyle Hidden
   if(-not $p.WaitForExit($timeoutSec*1000)){
     try{$p.Kill()}catch{}
     $ok=$false
-    $logLine += "TIMEOUT!"
+    $logLine += "IDŐTÚLLÉPÉS!"
     Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
     continue
   }
-  $logLine += "ExitCode: $($p.ExitCode)"
+  $logLine += "Kimeneti kód: $($p.ExitCode)"
   Add-Content -Path $FullLog -Value "    $logLine" -Encoding utf8
   $validExitCodes = @(0, 3010, 1641, 1638, -1978335228, -1978335215, -1978335231, -1978335189)
   if($validExitCodes -notcontains $p.ExitCode){
@@ -1168,22 +1168,22 @@ if($ok){
   }
 
   // --- Végső takarítás ---
-  const cleanupScript = `
-Remove-Item -Path C:\\Windows\\Temp\\* -Recurse -Force -ErrorAction SilentlyContinue
-  `.trim();
-
-  const cleanupPath = addBase64ScriptToFirstLogon(
-    commands,
-    cleanupScript,
-    'C:\\Windows\\Temp\\cleanup.b64',
-    'C:\\Windows\\Temp\\cleanup.ps1',
-    'Végső takarítás (Ideiglenes fájlok és szkriptek törlése)'
-  );
-  scriptPaths.push(cleanupPath);
-
-  // --- RunAll.ps1 Karmester (Orchestrator) generálása ---
-  // Egyetlen PowerShell ablak nyílik meg, ami sorban meghívja az összes előkészített szkriptet.
   if (scriptPaths.length > 0) {
+    const cleanupScript = `
+Remove-Item -Path C:\\Windows\\Temp\\* -Recurse -Force -ErrorAction SilentlyContinue
+    `.trim();
+
+    const cleanupPath = addBase64ScriptToFirstLogon(
+      commands,
+      cleanupScript,
+      'C:\\Windows\\Temp\\cleanup.b64',
+      'C:\\Windows\\Temp\\cleanup.ps1',
+      'Végső takarítás (Ideiglenes fájlok és szkriptek törlése)'
+    );
+    scriptPaths.push(cleanupPath);
+
+    // --- RunAll.ps1 Karmester (Orchestrator) generálása ---
+    // Egyetlen PowerShell ablak nyílik meg, ami sorban meghívja az összes előkészített szkriptet.
     const runAllLines = scriptPaths.map(p => `& "${p}"`).join('\n');
     const runAllB64 = encodePowerShellBase64(runAllLines);
     const runAllChunkSize = 200;
