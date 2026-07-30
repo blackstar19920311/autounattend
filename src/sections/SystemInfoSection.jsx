@@ -120,6 +120,23 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
           onChange={(value) => setConfig((prev) => ({ ...prev, addEnglishKeyboard: value }))}
         />
       </AnimatedCollapse>
+
+      <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <Toggle
+          id="enableLongPaths"
+          label={t('sysinfo.longPaths.title')}
+          description={t('sysinfo.longPaths.desc')}
+          checked={config.enableLongPaths}
+          onChange={(value) => setConfig((prev) => ({ ...prev, enableLongPaths: value }))}
+        />
+        <Toggle
+          id="preventDeviceEncryption"
+          label={t('sysinfo.deviceEncryption.title')}
+          description={t('sysinfo.deviceEncryption.desc')}
+          checked={config.preventDeviceEncryption}
+          onChange={(value) => setConfig((prev) => ({ ...prev, preventDeviceEncryption: value }))}
+        />
+      </div>
     </Card>
   );
 }

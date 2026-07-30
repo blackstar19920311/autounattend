@@ -34,6 +34,22 @@ export default function PrivacySection({ config, setConfig }) {
         onChange={handleToggle('disableUAC')}
         id="disableUAC"
       />
+      <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <Toggle
+          id="disableConsumerFeatures"
+          label={t('privacy.consumerFeatures.title')}
+          description={t('privacy.consumerFeatures.desc')}
+          checked={config.disableConsumerFeatures}
+          onChange={handleToggle('disableConsumerFeatures')}
+        />
+        <Toggle
+          id="disableCopilot"
+          label={t('privacy.copilot.title')}
+          description={t('privacy.copilot.desc')}
+          checked={config.disableCopilot}
+          onChange={handleToggle('disableCopilot')}
+        />
+      </div>
     </Card>
   );
 }

@@ -351,10 +351,14 @@ Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters'
   specializeScript += `net.exe accounts /maxpwage:UNLIMITED;\n`;
 
   // Bitlocker Device Encryption tiltása
-  specializeScript += `reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\BitLocker" /v "PreventDeviceEncryption" /t REG_DWORD /d 1 /f;\n`;
+  if (config.preventDeviceEncryption) {
+    specializeScript += `reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\BitLocker" /v "PreventDeviceEncryption" /t REG_DWORD /d 1 /f;\n`;
+  }
 
   // Hosszú fájlnevek engedélyezése
-  specializeScript += `reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f;\n`;
+  if (config.enableLongPaths) {
+    specializeScript += `reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f;\n`;
+  }
 
   if (config.disableUAC) {
     specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v EnableLUA /t REG_DWORD /d 0 /f;\n`;
@@ -445,10 +449,18 @@ reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataC
   }
 
   // Lemaradt Registry beállítások pótlása
-  specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f;\n`;
-  specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v DisableEdgeDesktopShortcutCreation /t REG_DWORD /d 1 /f;\n`;
-  specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f;\n`;
-  specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsRunInBackground /t REG_DWORD /d 2 /f;\n`;
+  if (config.disableNewsAndInterests) {
+    specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f;\n`;
+  }
+  if (config.disableEdgeDesktopShortcut) {
+    specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v DisableEdgeDesktopShortcutCreation /t REG_DWORD /d 1 /f;\n`;
+  }
+  if (config.disableConsumerFeatures) {
+    specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f;\n`;
+  }
+  if (config.disableBackgroundApps) {
+    specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsRunInBackground /t REG_DWORD /d 2 /f;\n`;
+  }
 
   if (config.disableEdgeFirstRun) {
     specializeScript += `reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t REG_DWORD /d 1 /f;\n`;
@@ -522,9 +534,15 @@ reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataC
 
   // 3. Default User Profil módosítása
   let defaultUserScript = `$ErrorActionPreference = 'Stop';\n`;
-  defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f;\n`;
-  defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f;\n`;
-  defaultUserScript += `reg.exe add "HKU\\DefaultUser\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f;\n`;
+  if (config.disableCopilot) {
+    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f;\n`;
+  }
+  if (config.disableWebSearch) {
+    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f;\n`;
+  }
+  if (config.disableGameDVR) {
+    defaultUserScript += `reg.exe add "HKU\\DefaultUser\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f;\n`;
+  }
 
   if (config.disableMouseAcceleration) {
     defaultUserScript += `reg.exe add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f;\n`;
@@ -628,15 +646,21 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage, addFil
   lines.push('      <TimeZone>Central Europe Standard Time</TimeZone>');
   
   lines.push('      <OOBE>');
-  lines.push('        <HideEULAPage>true</HideEULAPage>');
-  lines.push('        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>');
-  lines.push('        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>');
-  lines.push('        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>');
-  lines.push('        <NetworkLocation>Home</NetworkLocation>');
-  lines.push('        <ProtectYourPC>3</ProtectYourPC>');
-  lines.push('        <SkipMachineOOBE>true</SkipMachineOOBE>');
-  lines.push('        <SkipUserOOBE>true</SkipUserOOBE>');
-  lines.push('        <HideLocalAccountScreen>true</HideLocalAccountScreen>');
+  if (config.silentOOBEPrivacy) {
+    lines.push('        <HideEULAPage>true</HideEULAPage>');
+    lines.push('        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>');
+    lines.push('        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>');
+    lines.push('        <ProtectYourPC>3</ProtectYourPC>');
+    lines.push('        <HideLocalAccountScreen>true</HideLocalAccountScreen>');
+  }
+  if (config.silentOOBENetwork) {
+    lines.push('        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>');
+    lines.push('        <NetworkLocation>Home</NetworkLocation>');
+  }
+  if (config.silentOOBEBlueScreens) {
+    lines.push('        <SkipMachineOOBE>true</SkipMachineOOBE>');
+    lines.push('        <SkipUserOOBE>true</SkipUserOOBE>');
+  }
   lines.push('      </OOBE>');
 
   const locUser = config.localUser || {};
@@ -649,6 +673,9 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage, addFil
   lines.push('          <LocalAccount wcm:action="add">');
   lines.push(`            <Name>${escapeXml(user)}</Name>`);
   lines.push('            <Group>Administrators</Group>');
+  if (config.disablePasswordExpiration) {
+    lines.push('            <PasswordExpires>false</PasswordExpires>');
+  }
   if (hasPass) {
     lines.push('            <Password>');
     lines.push(`              <Value>${escapeXml(pass)}</Value>`);

@@ -34,6 +34,22 @@ export default function PerformanceSection({ config, setConfig }) {
         onChange={handleToggle('disableMouseAcceleration')}
         id="disableMouseAcceleration"
       />
+      <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <Toggle
+          id="disableBackgroundApps"
+          label={t('performance.backgroundApps.title')}
+          description={t('performance.backgroundApps.desc')}
+          checked={config.disableBackgroundApps}
+          onChange={handleToggle('disableBackgroundApps')}
+        />
+        <Toggle
+          id="disableGameDVR"
+          label={t('performance.gameDVR.title')}
+          description={t('performance.gameDVR.desc')}
+          checked={config.disableGameDVR}
+          onChange={handleToggle('disableGameDVR')}
+        />
+      </div>
     </Card>
   );
 }

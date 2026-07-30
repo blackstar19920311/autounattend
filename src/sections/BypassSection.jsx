@@ -35,6 +35,29 @@ export default function BypassSection({ config, setConfig }) {
         onChange={handleToggle('autoAcceptEula')}
         id="autoAcceptEula"
       />
+      <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <Toggle
+          id="silentOOBEPrivacy"
+          label={t('bypass.silentPrivacy.title')}
+          description={t('bypass.silentPrivacy.desc')}
+          checked={config.silentOOBEPrivacy}
+          onChange={handleToggle('silentOOBEPrivacy')}
+        />
+        <Toggle
+          id="silentOOBENetwork"
+          label={t('bypass.silentNetwork.title')}
+          description={t('bypass.silentNetwork.desc')}
+          checked={config.silentOOBENetwork}
+          onChange={handleToggle('silentOOBENetwork')}
+        />
+        <Toggle
+          id="silentOOBEBlueScreens"
+          label={t('bypass.silentBlueScreens.title')}
+          description={t('bypass.silentBlueScreens.desc')}
+          checked={config.silentOOBEBlueScreens}
+          onChange={handleToggle('silentOOBEBlueScreens')}
+        />
+      </div>
     </Card>
   );
 }

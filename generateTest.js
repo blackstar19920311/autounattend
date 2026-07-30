@@ -1,10 +1,13 @@
 import fs from 'fs';
 import { generateXml } from './src/utils/generateXml.js';
 
+import { getDefaultConfig } from './src/data/defaultConfig.js';
+
 const config = {
+  ...getDefaultConfig(),
   computerName: 'Karmester',
   randomSuffix: true,
-  autoLogon: true,
+  autoLogin: true,
   localUser: { username: 'Rendszergazda', password: '123' },
   disableSleep: true,
   hideTaskbarIcons: true,

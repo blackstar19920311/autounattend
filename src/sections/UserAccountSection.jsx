@@ -46,6 +46,15 @@ export default function UserAccountSection({ config, setConfig, errors = {} }) {
         onChange={(value) => setConfig((prev) => ({ ...prev, autoLogin: value }))}
         disabled={!config.username}
       />
+      <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <Toggle
+          id="disablePasswordExpiration"
+          label={t('user.passwordExpiration.title')}
+          description={t('user.passwordExpiration.desc')}
+          checked={config.disablePasswordExpiration}
+          onChange={(value) => setConfig((prev) => ({ ...prev, disablePasswordExpiration: value }))}
+        />
+      </div>
     </Card>
   );
 }

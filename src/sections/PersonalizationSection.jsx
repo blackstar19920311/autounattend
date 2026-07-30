@@ -138,6 +138,22 @@ export default function PersonalizationSection({ config, setConfig }) {
         onChange={handleToggle('cleanStartPins')}
         id="cleanStartPins"
       />
+      <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <Toggle
+          id="disableNewsAndInterests"
+          label={t('personalization.newsAndInterests.title')}
+          description={t('personalization.newsAndInterests.desc')}
+          checked={config.disableNewsAndInterests}
+          onChange={handleToggle('disableNewsAndInterests')}
+        />
+        <Toggle
+          id="disableEdgeDesktopShortcut"
+          label={t('personalization.edgeDesktopShortcut.title')}
+          description={t('personalization.edgeDesktopShortcut.desc')}
+          checked={config.disableEdgeDesktopShortcut}
+          onChange={handleToggle('disableEdgeDesktopShortcut')}
+        />
+      </div>
     </Card>
   );
 }

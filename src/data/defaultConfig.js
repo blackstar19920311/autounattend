@@ -5,6 +5,8 @@ export function getDefaultConfig() {
     installLanguage: 'hu',
     architecture: 'amd64',
     addEnglishKeyboard: false,
+    enableLongPaths: true,
+    preventDeviceEncryption: true,
 
     // 2. Particionálás
     partitioning: {
@@ -38,6 +40,9 @@ GPT ATTRIBUTES=0x8000000000000001`,
     bypassHardware: false,
     bypassNetwork: false,
     autoAcceptEula: false,
+    silentOOBEPrivacy: true,
+    silentOOBENetwork: true,
+    silentOOBEBlueScreens: true,
 
     // 4. Hálózat és Wi-Fi
     wifi: {
@@ -53,6 +58,7 @@ GPT ATTRIBUTES=0x8000000000000001`,
     username: 'RG',
     password: '',
     autoLogin: false,
+    disablePasswordExpiration: true,
 
     // 6. Személyre szabás
     desktopIcons: {
@@ -70,18 +76,24 @@ GPT ATTRIBUTES=0x8000000000000001`,
     hideMostUsedApps: false,
     hideRecommendedFiles: false,
     hideTipsAndSuggestions: false,
+    disableNewsAndInterests: true,
+    disableEdgeDesktopShortcut: true,
     disableWebSearch: false,
     cleanStartPins: false,
 
     // 7. Adatvédelem
     disableTelemetry: false,
     disableEdgeFirstRun: false,
+    disableCopilot: true,
+    disableConsumerFeatures: true,
     
     // 8. Teljesítmény
     disableUAC: false,
     disableFastStartup: false,
     disableSleep: false,
     disableMouseAcceleration: false,
+    disableBackgroundApps: true,
+    disableGameDVR: true,
 
     // 9. Bloatware
     bloatware: {
