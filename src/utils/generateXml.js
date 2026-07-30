@@ -789,7 +789,9 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage, addFil
 
   // UserOnce (Utólagos takarítás, ha kell)
   let userOnce = `$ErrorActionPreference = 'Stop';\n`;
-  userOnce += `Get-AppxPackage -Name 'Microsoft.Windows.Ai.Copilot.Provider' | Remove-AppxPackage -ErrorAction SilentlyContinue;\n`;
+  if (config.disableCopilot) {
+    userOnce += `Get-AppxPackage -Name 'Microsoft.Windows.Ai.Copilot.Provider' | Remove-AppxPackage -ErrorAction SilentlyContinue;\n`;
+  }
   addFile('C:\\Windows\\Setup\\Scripts\\UserOnce.ps1', userOnce);
 
   // Invoke-ExecutionPolicyBypass PowerShell modul (Schneegans)
