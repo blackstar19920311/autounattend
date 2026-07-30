@@ -23,6 +23,9 @@ function Wait-ForWinget {
       $test = & winget --version 2>&1
       if ($LASTEXITCODE -eq 0 -and $test -match 'v\d+') { return }
     }
+    if (-not (Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -TimeoutSeconds 1 -ErrorAction SilentlyContinue)) {
+      throw "Nincs internetkapcsolat, Winget telepítés megszakítva!"
+    }
     try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
@@ -63,7 +66,7 @@ foreach($a in $apps){
     $wingetArgs+=("--location",$a.Location)
   }
   if($a.Override){
-    $wingetArgs+=("--override", ('"' + $a.Override + '"'))
+    $wingetArgs+=("--override", $a.Override)
   }
   $logLine = "Installing $($a.Id)... "
   $p=Start-Process -FilePath "winget.exe" -ArgumentList $wingetArgs -PassThru -WindowStyle Hidden
@@ -85,6 +88,7 @@ foreach($a in $apps){
 # Steam és Discord automatikus indulásának kikapcsolása
 Remove-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "Steam" -ErrorAction SilentlyContinue
 Remove-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "Discord" -ErrorAction SilentlyContinue
+Stop-Process -Name "Discord", "Steam", "msedge", "chrome", "firefox", "iexplore", "Update" -Force -ErrorAction SilentlyContinue
 
 if($ok){
   Show-PopupAsync "Az Appok telepítése sikeresen megtörtént!" "Telepítés"
@@ -111,6 +115,9 @@ function Wait-ForWinget {
     if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
       $test = & winget --version 2>&1
       if ($LASTEXITCODE -eq 0 -and $test -match 'v\d+') { return }
+    }
+    if (-not (Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -TimeoutSeconds 1 -ErrorAction SilentlyContinue)) {
+      throw "Nincs internetkapcsolat, Winget telepítés megszakítva!"
     }
     try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
@@ -144,7 +151,7 @@ foreach($a in $apps){
     $wingetArgs+=("--location",$a.Location)
   }
   if($a.Override){
-    $wingetArgs+=("--override", ('"' + $a.Override + '"'))
+    $wingetArgs+=("--override", $a.Override)
   }
   $logLine = "Installing $($a.Id)... "
   $p=Start-Process -FilePath "winget.exe" -ArgumentList $wingetArgs -PassThru -WindowStyle Hidden
@@ -162,7 +169,7 @@ foreach($a in $apps){
     $ok=$false
   }
 }
-
+Stop-Process -Name "Discord", "Steam", "msedge", "chrome", "firefox", "iexplore", "Update" -Force -ErrorAction SilentlyContinue
 if($ok){
   Show-PopupAsync "Az Appok telepítése sikeresen megtörtént!" "Telepítés"
 }else{
@@ -189,6 +196,9 @@ function Wait-ForWinget {
       $test = & winget --version 2>&1
       if ($LASTEXITCODE -eq 0 -and $test -match 'v\d+') { return }
     }
+    if (-not (Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -TimeoutSeconds 1 -ErrorAction SilentlyContinue)) {
+      throw "Nincs internetkapcsolat, Winget telepítés megszakítva!"
+    }
     try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
@@ -199,8 +209,9 @@ function Wait-ForWinget {
 try {
   Wait-ForWinget
 
-  winget install -e --id Microsoft.OfficeDeploymentTool --source winget --silent --accept-package-agreements --accept-source-agreements
-  if ($LASTEXITCODE -ne 0) { throw "Az Office Deployment Tool telepitese nem sikerult." }
+  $p = Start-Process -FilePath "winget.exe" -ArgumentList "install -e --id Microsoft.OfficeDeploymentTool --source winget --silent --accept-package-agreements --accept-source-agreements --disable-interactivity" -PassThru -WindowStyle Hidden
+  $p.WaitForExit(600 * 1000) | Out-Null
+  if ($p.ExitCode -ne 0) { throw "Az Office Deployment Tool telepitese nem sikerult." }
 
   $odtSetup = $null
   $searchRoots = @()
@@ -240,7 +251,11 @@ try {
 </Configuration>
 '@ | Out-File -FilePath $xmlPath -Encoding utf8 -Force
 
-  $p = Start-Process -FilePath $odtSetup -ArgumentList "/configure \`"$xmlPath\`"" -Wait -PassThru
+  $p = Start-Process -FilePath $odtSetup -ArgumentList "/configure \`"$xmlPath\`"" -PassThru -WindowStyle Hidden
+  if (-not $p.WaitForExit(1800 * 1000)) {
+    try{ Get-CimInstance Win32_Process | Where-Object ParentProcessId -EQ $p.Id | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; $p.Kill() }catch{}
+    throw "ODT telepites idotullepes miatt leallt."
+  }
   if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { throw "ODT telepites sikertelen (ExitCode: $($p.ExitCode))." }
 
   Show-PopupAsync "Az Office telepítése sikeresen megtörtént!" "Telepítés"
@@ -318,11 +333,10 @@ function Wait-ForWinget {
 try {
     Wait-ForWinget
 
-    winget install -e --id Microsoft.OfficeDeploymentTool --source winget --silent --accept-package-agreements --accept-source-agreements
-
-    # FIX: 3010 = sikeres telepítés, újraindítás szükséges – ez nem hiba
-    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 3010) {
-        throw "Az Office Deployment Tool telepitese nem sikerult. (ExitCode: $LASTEXITCODE)"
+    $p = Start-Process -FilePath "winget.exe" -ArgumentList "install -e --id Microsoft.OfficeDeploymentTool --source winget --silent --accept-package-agreements --accept-source-agreements --disable-interactivity" -PassThru -WindowStyle Hidden
+    $p.WaitForExit(600 * 1000) | Out-Null
+    if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) {
+        throw "Az Office Deployment Tool telepitese nem sikerult. (ExitCode: $($p.ExitCode))"
     }
 
     $odtSetup = $null
@@ -367,8 +381,12 @@ try {
 </Configuration>
 "@ | Out-File -FilePath $xmlPath -Encoding utf8 -Force
 
-    $p = Start-Process -FilePath $odtSetup -ArgumentList "/configure \`"$xmlPath\`"" -Wait -PassThru
-    if ($p.ExitCode -ne 0) {
+    $p = Start-Process -FilePath $odtSetup -ArgumentList "/configure \`"$xmlPath\`"" -PassThru -WindowStyle Hidden
+    if (-not $p.WaitForExit(1800 * 1000)) {
+      try{ Get-CimInstance Win32_Process | Where-Object ParentProcessId -EQ $p.Id | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; $p.Kill() }catch{}
+      throw "ODT telepites idotullepes miatt leallt."
+    }
+    if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) {
         throw "ODT telepites sikertelen (ExitCode: $($p.ExitCode))."
     }
 
@@ -401,11 +419,16 @@ $exitCode=1
 try{
   Set-WinHomeLocation -GeoId $GeoUS
   Start-Sleep -Seconds 2
-  winget source update | Out-Null
-  $installArgs=@("install","-e","--id",$id,"-h","--source","msstore","--accept-package-agreements","--accept-source-agreements")
+  $pU=Start-Process -FilePath "winget.exe" -ArgumentList "source update" -PassThru -WindowStyle Hidden
+  $pU.WaitForExit(60000) | Out-Null
+  $installArgs=@("install","-e","--id",$id,"-h","--source","msstore","--accept-package-agreements","--accept-source-agreements","--disable-interactivity")
   $p=Start-Process -FilePath "winget.exe" -ArgumentList $installArgs -PassThru -WindowStyle Hidden
-  $p.WaitForExit(1200 * 1000) | Out-Null
-  if($p.ExitCode -eq 0){$exitCode=0}else{$exitCode=1}
+  if(-not $p.WaitForExit(1200 * 1000)){
+    try{ Get-CimInstance Win32_Process | Where-Object ParentProcessId -EQ $p.Id | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; $p.Kill() }catch{}
+    $exitCode=1
+  }else{
+    if($p.ExitCode -eq 0){$exitCode=0}else{$exitCode=1}
+  }
 }catch{
   $exitCode=1
 }finally{

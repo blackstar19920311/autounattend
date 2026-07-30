@@ -519,6 +519,9 @@ $xml = '<?xml version="1.0" encoding="utf-8"?>
 $shellPath = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
 New-Item -Path $shellPath -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
 Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF8 -Force
+
+# Windows 11 25H2 Start Menu Layout (JSON)
+Set-Content -Path "$shellPath\\LayoutModification.json" -Value '{"pinnedList":[]}' -Encoding UTF8 -Force
 `;
     const orderRef = { val: order };
     addBase64ScriptToSyncCmds(runSyncCmds, orderRef, taskbarPolicyScript.trim(), 'C:\\Windows\\Temp\\tbpolicy.b64', 'C:\\Windows\\Temp\\tbpolicy.ps1');
@@ -547,6 +550,32 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     sysPolCmds.push('New-Item -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Force | Out-Null');
     sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 0 -Type DWord -Force');
   }
+
+  // --- Lighter OS & Quality of Life Tweaks ---
+  sysPolCmds.push('New-Item -Path "HKCU:\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" -Force | Out-Null');
+  sysPolCmds.push('Set-ItemProperty -Path "HKCU:\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" -Name "TurnOffWindowsCopilot" -Value 1 -Type DWord -Force');
+  
+  sysPolCmds.push('New-Item -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh" -Force | Out-Null');
+  sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh" -Name "AllowNewsAndInterests" -Value 0 -Type DWord -Force');
+  
+  sysPolCmds.push('New-Item -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" -Force | Out-Null');
+  sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" -Name "DisableEdgeDesktopShortcutCreation" -Value 1 -Type DWord -Force');
+  sysPolCmds.push('Remove-Item -Path "C:\\Users\\Public\\Desktop\\Microsoft Edge.lnk" -Force -ErrorAction SilentlyContinue');
+
+  sysPolCmds.push('New-Item -Path "HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer" -Force | Out-Null');
+  sysPolCmds.push('Set-ItemProperty -Path "HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer" -Name "DisableSearchBoxSuggestions" -Value 1 -Type DWord -Force');
+
+  sysPolCmds.push('New-Item -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" -Force | Out-Null');
+  sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" -Name "DisableWindowsConsumerFeatures" -Value 1 -Type DWord -Force');
+
+  sysPolCmds.push('New-Item -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" -Force | Out-Null');
+  sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" -Name "LetAppsRunInBackground" -Value 2 -Type DWord -Force');
+
+  sysPolCmds.push('New-Item -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" -Force | Out-Null');
+  sysPolCmds.push('Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" -Name "AllowGameDVR" -Value 0 -Type DWord -Force');
+  sysPolCmds.push('New-Item -Path "HKCU:\\System\\GameConfigStore" -Force | Out-Null');
+  sysPolCmds.push('Set-ItemProperty -Path "HKCU:\\System\\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord -Force');
+
 
   if (sysPolCmds.length > 0) {
     runSyncCmds.push('        <!-- Rendszerbiztonság és Hálózat (Specialize) -->');
@@ -775,6 +804,7 @@ function buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage) {
   lines.push('        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>');
   lines.push('        <ProtectYourPC>3</ProtectYourPC>');
   lines.push('      </OOBE>');
+  lines.push('      <TimeZone>Central European Standard Time</TimeZone>');
 
   // UserAccounts
   if (config.username && String(config.username).trim() !== '') {
