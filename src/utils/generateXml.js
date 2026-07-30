@@ -22,10 +22,27 @@ export function escapeXml(str) {
 }
 
 /**
- * Encodes a PowerShell script string to a UTF-16LE Base64 string for -EncodedCommand
+ * Encodes a PowerShell script string to a UTF-16LE Base64 string WITH BOM for certutil / -File
  */
 function encodePowerShellBase64(script) {
-  const charCodes = [0xff, 0xfe]; // BOM for UTF-16LE so PowerShell -File parses it correctly
+  const charCodes = [0xff, 0xfe]; // BOM for UTF-16LE
+  for (let i = 0; i < script.length; i++) {
+    const code = script.charCodeAt(i);
+    charCodes.push(code & 0xff);
+    charCodes.push((code >> 8) & 0xff);
+  }
+  const binaryArr = [];
+  for (let i = 0; i < charCodes.length; i++) {
+    binaryArr.push(String.fromCharCode(charCodes[i]));
+  }
+  return btoa(binaryArr.join(''));
+}
+
+/**
+ * Encodes a PowerShell script string to a UTF-16LE Base64 string WITHOUT BOM for -EncodedCommand
+ */
+function encodePowerShellBase64NoBOM(script) {
+  const charCodes = []; // No BOM for direct memory execution
   for (let i = 0; i < script.length; i++) {
     const code = script.charCodeAt(i);
     charCodes.push(code & 0xff);
@@ -521,6 +538,15 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     order = orderRef.val;
   }
 
+  // --- Hálózat megkerülése (BypassNRO a Specialize fázisban) ---
+  if (config.bypassNetwork) {
+    runSyncCmds.push('        <!-- Hálózat megkerülése (BypassNRO) -->');
+    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+    runSyncCmds.push(`          <Order>${order++}</Order>`);
+    runSyncCmds.push('          <Path>cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f</Path>');
+    runSyncCmds.push('        </RunSynchronousCommand>');
+  }
+
   // --- Windows 11 Tálcaikonok és Vizuális beállítások (Logon Scheduled Task) ---
   let vtScript = [];
   vtScript.push('$flag = "HKCU:\\Software\\AutoUnattend\\VisualTweaksApplied"');
@@ -595,7 +621,10 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
   if (vtScript.length > initialLength) {
     vtScript.push('New-Item -Path "HKCU:\\Software\\AutoUnattend" -Force -ErrorAction SilentlyContinue | Out-Null');
     vtScript.push('New-ItemProperty -Path "HKCU:\\Software\\AutoUnattend" -Name "VisualTweaksApplied" -Value 1 -PropertyType DWord -Force -ErrorAction SilentlyContinue | Out-Null');
-    
+  }
+  vtScript.push('}'); // Zárjuk le a "csak egyszer futó" blokkot!
+
+  if (config.showAllTrayIcons) {
     vtScript.push('$code = @"');
     vtScript.push('using System;');
     vtScript.push('using System.Runtime.InteropServices;');
@@ -604,10 +633,9 @@ Set-Content -Path "$shellPath\\LayoutModification.xml" -Value $xml -Encoding UTF
     vtScript.push('    public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);');
     vtScript.push('}');
     vtScript.push('"@');
-    vtScript.push('Add-Type $code');
+    vtScript.push('if (-not ([System.Management.Automation.PSTypeName]"Win32").Type) { Add-Type $code }');
     vtScript.push('[Win32]::SendMessageTimeout([IntPtr]0xffff, 0x001A, [UIntPtr]0, "TraySettings", 2, 5000, [ref][UIntPtr]::Zero) | Out-Null');
   }
-  vtScript.push('}'); // Zárjuk le a "csak egyszer futó" blokkot!
 
   if (vtScript.length > initialLength + 1 || config.showAllTrayIcons) {
     const vtTaskXml = `
@@ -615,7 +643,7 @@ $taskXml = @'
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
 <Triggers>
-<LogonTrigger><Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><Enabled>true</Enabled></LogonTrigger>
+<LogonTrigger>${config.showAllTrayIcons ? '<Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition>' : ''}<Enabled>true</Enabled></LogonTrigger>
 </Triggers>
 <Principals><Principal id="Author"><GroupId>S-1-5-32-545</GroupId><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
 <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><AllowHardTerminate>true</AllowHardTerminate><StartWhenAvailable>false</StartWhenAvailable><RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable><IdleSettings><StopOnIdleEnd>true</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings><AllowStartOnDemand>true</AllowStartOnDemand><Enabled>true</Enabled><Hidden>false</Hidden><RunOnlyIfIdle>false</RunOnlyIfIdle><WakeToRun>false</WakeToRun><ExecutionTimeLimit>PT72H</ExecutionTimeLimit><Priority>7</Priority></Settings>
@@ -821,18 +849,11 @@ function buildFirstLogonCommands(config, uiLanguage) {
     // --- Jelszó lejáratának letiltása ---
     const psCmd = `Set-LocalUser -Name '${config.username.trim().replace(/'/g, "''")}' -PasswordNeverExpires $true`;
     commands.push({
-      command: `powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${encodePowerShellBase64(psCmd)}`,
+      command: `powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${encodePowerShellBase64NoBOM(psCmd)}`,
       description: 'Jelszó lejáratának letiltása',
     });
   }
 
-  // --- Hálózat megkerülése ---
-  if (config.bypassNetwork) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f',
-      description: 'Hálózati követelmény megkerülése',
-    });
-  }
 
   // --- Wi-Fi beállítások ---
   if (config.wifi) {
