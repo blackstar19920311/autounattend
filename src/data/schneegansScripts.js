@@ -1,96 +1,25 @@
-export const SCHNEEGANS_SCRIPTS = {
-  removePackages: `$selectors = @(
-	'Microsoft.Microsoft3DViewer';
-	'Microsoft.BingSearch';
-	'Microsoft.WindowsCamera';
-	'Microsoft.WindowsAlarms';
-	'Microsoft.Copilot';
-	'Microsoft.549981C3F5F10';
-	'Microsoft.Windows.DevHome';
-	'MicrosoftCorporationII.MicrosoftFamily';
-	'Microsoft.WindowsFeedbackHub';
-	'Microsoft.GetHelp';
-	'Microsoft.Getstarted';
-	'microsoft.windowscommunicationsapps';
-	'Microsoft.WindowsMaps';
-	'Microsoft.MixedReality.Portal';
-	'Microsoft.BingNews';
-	'Microsoft.MicrosoftOfficeHub';
-	'Microsoft.Office.OneNote';
-	'Microsoft.OutlookForWindows';
-	'Microsoft.MSPaint';
-	'Microsoft.People';
-	'Microsoft.PowerAutomateDesktop';
-	'MicrosoftCorporationII.QuickAssist';
-	'Microsoft.SkypeApp';
-	'Microsoft.MicrosoftSolitaireCollection';
-	'Microsoft.MicrosoftStickyNotes';
-	'Microsoft.Todos';
-	'Microsoft.WindowsSoundRecorder';
-	'Microsoft.Wallet';
-	'Microsoft.BingWeather';
-	'Microsoft.YourPhone';
-	'Microsoft.ZuneVideo';
-);
-$getCommand = {
-  Get-AppxProvisionedPackage -Online;
-};
-$filterCommand = {
-  $_.DisplayName -eq $selector;
-};
-$removeCommand = {
-  [CmdletBinding()]
-  param(
-    [Parameter( Mandatory, ValueFromPipeline )]
-    $InputObject
-  );
-  process {
-    $InputObject | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction 'Continue';
-  }
-};
-$type = 'Package';
-$logfile = 'C:\Windows\Setup\Scripts\RemovePackages.log';
-& {
-	$installed = & $getCommand;
-	foreach( $selector in $selectors ) {
-		$result = [ordered] @{
-			Selector = $selector;
-		};
-		$found = $installed | Where-Object -FilterScript $filterCommand;
-		if( $found ) {
-			$result.Output = $found | & $removeCommand;
-			if( $? ) {
-				$result.Message = "$type removed.";
-			} else {
-				$result.Message = "$type not removed.";
-				$result.Error = $Error[0];
-			}
-		} else {
-			$result.Message = "$type not installed.";
-		}
-		$result | ConvertTo-Json -Depth 3 -Compress;
-	}
-} *>&1 >> $logfile;
-`,
+/**
+ * Schneegans-stílusú segédszkriptek.
+ *
+ * Fontos változás: az `extractScript` most már BASE64-et dekódol, nem nyers
+ * szöveget ír ki. Korábban az `addFile()` base64-et tett a `<File>` elemekbe,
+ * az extract script viszont `$encoding.GetBytes($file.InnerText)`-tel dolgozott,
+ * vagyis minden kicsomagolt fájlba a base64 sztring került, nem a szkript.
+ * Ráadásul a `.vbs`-eknél duplán jött a BOM (generátor + GetPreamble).
+ *
+ * Az új megállapodás: a `<File>` tartalma a fájl PONTOS byte-folyamának
+ * base64 kódja, BOM-mal együtt, ha az adott típusnak kell. Az extract script
+ * csak dekódol és kiír – nincs kódolás-találgatás, nincs dupla BOM.
+ */
 
-  removeCapabilities: `$selectors = @(
-	'Print.Fax.Scan';
-	'Browser.InternetExplorer';
-	'MathRecognizer';
-	'OpenSSH.Client';
-	'App.Support.QuickAssist';
-	'App.StepsRecorder';
-	'Media.WindowsMediaPlayer';
-	'Microsoft.Windows.WordPad';
+const REMOVE_TEMPLATE = (type, getCommand, filterCommand, removeCommand, logName) => `$selectors = @(
+##SELECTORS##
 );
 $getCommand = {
-  Get-WindowsCapability -Online | Where-Object -Property 'State' -NotIn -Value @(
-    'NotPresent';
-    'Removed';
-  );
+${getCommand}
 };
 $filterCommand = {
-  ($_.Name -split '~')[0] -eq $selector;
+${filterCommand}
 };
 $removeCommand = {
   [CmdletBinding()]
@@ -99,37 +28,69 @@ $removeCommand = {
     $InputObject
   );
   process {
-    $InputObject | Remove-WindowsCapability -Online -ErrorAction 'Continue';
+${removeCommand}
   }
 };
-$type = 'Capability';
-$logfile = 'C:\Windows\Setup\Scripts\RemoveCapabilities.log';
+$type = '${type}';
+$logfile = 'C:\\Windows\\Temp\\${logName}';
 & {
-	$installed = & $getCommand;
-	foreach( $selector in $selectors ) {
-		$result = [ordered] @{
-			Selector = $selector;
-		};
-		$found = $installed | Where-Object -FilterScript $filterCommand;
-		if( $found ) {
-			$result.Output = $found | & $removeCommand;
-			if( $? ) {
-				$result.Message = "$type removed.";
-			} else {
-				$result.Message = "$type not removed.";
-				$result.Error = $Error[0];
-			}
-		} else {
-			$result.Message = "$type not installed.";
-		}
-		$result | ConvertTo-Json -Depth 3 -Compress;
-	}
+  $installed = & $getCommand;
+  foreach( $selector in $selectors ) {
+    $result = [ordered] @{
+      Selector = $selector;
+    };
+    $found = $installed | Where-Object -FilterScript $filterCommand;
+    if( $found ) {
+      $result.Output = $found | & $removeCommand;
+      if( $? ) {
+        $result.Message = "$type removed.";
+      } else {
+        $result.Message = "$type not removed.";
+        $result.Error = $Error[0];
+      }
+    } else {
+      $result.Message = "$type not installed.";
+    }
+    $result | ConvertTo-Json -Depth 3 -Compress;
+  }
 } *>&1 >> $logfile;
-`,
+`;
+
+export const SCHNEEGANS_SCRIPTS = {
+  /**
+   * UWP csomagok eltávolítása. A `##SELECTORS##` helyére a generátor teszi be
+   * a kiválasztott csomagneveket. PONTOS (`-eq`) egyezést használ, nem wildcardot,
+   * és minden lépést naplóz – szemben a régi, néma `SilentlyContinue` verzióval.
+   */
+  removePackages: REMOVE_TEMPLATE(
+    'Package',
+    '  Get-AppxProvisionedPackage -Online;',
+    '  $_.DisplayName -eq $selector;',
+    "    $InputObject | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction 'Continue';",
+    'RemovePackages.log'
+  ),
+
+  /** Örökölt Windows képességek eltávolítása (opcionális). */
+  removeCapabilities: REMOVE_TEMPLATE(
+    'Capability',
+    "  Get-WindowsCapability -Online | Where-Object -Property 'State' -NotIn -Value @( 'NotPresent'; 'Removed'; );",
+    "  ($_.Name -split '~')[0] -eq $selector;",
+    "    $InputObject | Remove-WindowsCapability -Online -ErrorAction 'Continue';",
+    'RemoveCapabilities.log'
+  ),
+
+  /** Az örökölt képességek listája (a UI egyetlen kapcsolóval kéri őket). */
+  legacyCapabilities: [
+    'Print.Fax.Scan',
+    'Browser.InternetExplorer',
+    'MathRecognizer',
+    'App.StepsRecorder',
+    'Media.WindowsMediaPlayer',
+    'Microsoft.Windows.WordPad',
+  ],
 
   unlockStartLayoutVbs: `HKU = &H80000003
 Set reg = GetObject("winmgmts://./root/default:StdRegProv")
-Set fso = CreateObject("Scripting.FileSystemObject")
 
 If reg.EnumKey(HKU, "", sids) = 0 Then
 	If Not IsNull(sids) Then
@@ -144,6 +105,22 @@ If reg.EnumKey(HKU, "", sids) = 0 Then
 End If
 `,
 
+  showAllTrayIconsVbs: `HKCU = &H80000001
+key = "Control Panel\\NotifyIconSettings"
+Set reg = GetObject("winmgmts://./root/default:StdRegProv")
+If reg.EnumKey(HKCU, key, names) = 0 Then
+	If Not IsNull(names) Then
+		For Each name In names
+			reg.SetDWORDValue HKCU, key + "\\" + name, "IsPromoted", 1
+		Next
+	End If
+End If
+`,
+
+  /**
+   * A `##VBS_PATH##` helyére a generátor a TARTÓS könyvtárat írja
+   * (C:\\Windows\\Setup\\Files), nem a FirstLogon végén törölt Scripts mappát.
+   */
   unlockStartLayoutXml: `<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
 	<Triggers>
 		<EventTrigger>
@@ -179,7 +156,7 @@ End If
 	<Actions Context="Author">
 		<Exec>
 			<Command>C:\\Windows\\System32\\wscript.exe</Command>
-			<Arguments>C:\\Windows\\Setup\\Scripts\\UnlockStartLayout.vbs</Arguments>
+			<Arguments>##VBS_PATH##</Arguments>
 		</Exec>
 	</Actions>
 </Task>
@@ -223,24 +200,16 @@ End If
 	<Actions Context="Author">
 		<Exec>
 			<Command>C:\\Windows\\System32\\wscript.exe</Command>
-			<Arguments>C:\\Windows\\Setup\\Scripts\\ShowAllTrayIcons.vbs</Arguments>
+			<Arguments>##VBS_PATH##</Arguments>
 		</Exec>
 	</Actions>
 </Task>
 `,
 
-  showAllTrayIconsVbs: `HKCU = &H80000001
-key = "Control Panel\\NotifyIconSettings"
-Set reg = GetObject("winmgmts://./root/default:StdRegProv")
-If reg.EnumKey(HKCU, key, names) = 0 Then
-	If Not IsNull(names) Then
-		For Each name In names
-			reg.SetDWORDValue HKCU, key + "\\" + name, "IsPromoted", 1
-		Next
-	End If
-End If
-`,
-
+  /**
+   * Üres Start/tálca layout. Korábban halott kód volt – most a `cleanStartPins`
+   * kapcsoló írja ki a Default User profiljába.
+   */
   taskbarLayoutModificationXml: `<LayoutModificationTemplate xmlns:defaultlayout="http://schemas.microsoft.com/Start/2014/FullDefaultLayout" xmlns:start="http://schemas.microsoft.com/Start/2014/StartLayout" Version="1" xmlns="http://schemas.microsoft.com/Start/2014/LayoutModification">
 	<LayoutOptions StartTileGroupCellWidth="6" />
 	<DefaultLayoutOverride>
@@ -251,20 +220,24 @@ End If
 </LayoutModificationTemplate>
 `,
 
+  /**
+   * A `<File>` elemek kicsomagolása. Base64 -> nyers byte-ok -> fájl.
+   * Nincs kódolás-találgatás, nincs dupla BOM.
+   */
   extractScript: `param(
     [xml] $Document
 );
 
+$ErrorActionPreference = 'Stop';
+
 foreach( $file in $Document.unattend.Extensions.File ) {
     $path = [System.Environment]::ExpandEnvironmentVariables( $file.GetAttribute( 'path' ) );
-    mkdir -Path( $path | Split-Path -Parent ) -ErrorAction 'SilentlyContinue';
-    $encoding = switch( [System.IO.Path]::GetExtension( $path ) ) {
-        { $_ -in '.ps1', '.xml' } { [System.Text.Encoding]::UTF8; }
-        { $_ -in '.reg', '.vbs', '.js' } { [System.Text.UnicodeEncoding]::new( $false, $true ); }
-        default { [System.Text.Encoding]::Default; }
-    };
-    $bytes = $encoding.GetPreamble() + $encoding.GetBytes( $file.InnerText.Trim() );
+    $parent = Split-Path -Path $path -Parent;
+    if( -not ( Test-Path -LiteralPath $parent ) ) {
+        New-Item -Path $parent -ItemType 'Directory' -Force | Out-Null;
+    }
+    $bytes = [System.Convert]::FromBase64String( ( $file.InnerText -replace '\\s', '' ) );
     [System.IO.File]::WriteAllBytes( $path, $bytes );
 }
-`
+`,
 };
