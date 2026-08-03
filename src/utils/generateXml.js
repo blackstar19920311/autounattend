@@ -1,5 +1,5 @@
-import { SCRIPTS } from './customScripts';
-import { WINGET_APPS } from '../data/wingetAppsList';
+import { SCRIPTS } from './customScripts.js';
+import { WINGET_APPS } from '../data/wingetAppsList.js';
 
 /**
  * Windows 11 autounattend.xml generátor.
@@ -997,7 +997,7 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     // 2. Winget Apps
     if (config.customScripts.wingetApps === 'versionA') {
       let scriptA = SCRIPTS.wingetAppsA;
-      if (config.partitioning?.mode !== 'auto') {
+      if (config.partitioning?.enabled && config.partitioning?.mode === 'autocd') {
         scriptA = scriptA.replace(
           '@{Id="Ghisler.TotalCommander";Source="winget"}',
           '@{Id="Ghisler.TotalCommander";Source="winget";Override="/A D:\\Apps\\TotalCommander"}'
@@ -1016,7 +1016,7 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       scriptCounter++;
     } else if (config.customScripts.wingetApps === 'versionB') {
       let scriptB = SCRIPTS.wingetAppsB;
-      if (config.partitioning?.mode !== 'auto') {
+      if (config.partitioning?.enabled && config.partitioning?.mode === 'autocd') {
         scriptB = scriptB.replace(
           '$apps=@(',
           'if(-not (Test-Path "D:\\Apps\\VLC")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force -ErrorAction Stop | Out-Null } catch {} }\nNew-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nNew-Item -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\nSet-ItemProperty -Path "HKLM:\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC" -Name "InstallDir" -Value "D:\\Apps\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null\n$apps=@('
@@ -1041,8 +1041,9 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
         if (appInfo.override) {
           overrideParts.push(appInfo.override);
         }
+        const isAutoCd = config.partitioning?.enabled && config.partitioning?.mode === 'autocd';
         
-        if (config.partitioning?.mode !== 'auto' && userApp.location && userApp.location.trim() !== '') {
+        if (isAutoCd && userApp.location && userApp.location.trim() !== '') {
           const safeLoc = userApp.location.trim();
           if (appInfo.useOverride) {
             const sep = appInfo.useOverride.endsWith(' ') ? '' : '=';
@@ -1064,13 +1065,15 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       const hasDiscord = selectedApps.some(a => a.id === 'Discord.Discord');
       const hasVlc = selectedApps.some(a => a.id === 'VideoLAN.VLC');
 
+      const isAutoCd = config.partitioning?.enabled && config.partitioning?.mode === 'autocd';
+
       const customDirsList = selectedApps
-        .filter(a => config.partitioning?.mode !== 'auto' && a.location && a.location.trim() !== '')
+        .filter(a => isAutoCd && a.location && a.location.trim() !== '')
         .map(a => `'${a.location.trim().replace(/'/g, "''")}'`)
         .join(',\n  ');
 
       let vlcHook = '';
-      if (config.partitioning?.mode !== 'auto' && hasVlc) {
+      if (isAutoCd && hasVlc) {
         vlcHook = `
 if(-not (Test-Path "D:\\Apps\\VLC")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\VLC" -Force -ErrorAction Stop | Out-Null } catch {} }
 New-Item -Path "HKLM:\\SOFTWARE\\VideoLAN\\VLC" -Force -ErrorAction SilentlyContinue | Out-Null
