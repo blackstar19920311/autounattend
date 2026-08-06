@@ -630,13 +630,18 @@ foreach ($pkg in $packagesToRemove) {
     const defaultUserRegCmds = [];
     const hklmGpoCmds = [];
 
-    // Keresőmező mód (Default User)
-    if (config.searchBoxMode && config.searchBoxMode !== 'full') {
-      const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
+    // Keresőmező mód (HKLM GPO - minden felhasználóra érvényes)
+    if (config.searchBoxMode) {
+      const searchModeValues = { full: 3, iconLabel: 2, iconOnly: 1, hidden: 0 };
       const value = searchModeValues[config.searchBoxMode];
       if (value !== undefined) {
-        defaultUserRegCmds.push(`reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`);
+        hklmGpoCmds.push(`reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`);
       }
+    }
+
+    // Háttérkép módosításának tiltása (HKLM GPO)
+    if (config.disableWallpaperChange) {
+      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\ActiveDesktop" /v NoChangingWallPaper /t REG_DWORD /d 1 /f');
     }
 
     // Feladatnézet gomb elrejtése (Default User)

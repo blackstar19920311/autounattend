@@ -93,6 +93,13 @@ export default function PersonalizationSection({ config, setConfig }) {
         onChange={handleToggle('disableTransparency')}
         id="disableTransparency"
       />
+      <Toggle
+        label={t('pers.wallpaper')}
+        description={t('pers.wallpaper.desc')}
+        checked={config.disableWallpaperChange}
+        onChange={handleToggle('disableWallpaperChange')}
+        id="disableWallpaperChange"
+      />
 
       {/* 4.3 Start menü */}
       <h3 className="subsection">{t('pers.startMenu')}</h3>
