@@ -578,6 +578,128 @@ Set-ItemProperty $mdmKey 'ConfigureTaskbar' $xml -Type String -Force
     order = orderRef.val;
   }
 
+  // --- Bloatware eltávolítása (Specialize fázis - SYSTEM szinten, még bejelentkezés előtt) ---
+  if (config.bloatware) {
+    const bloatwarePackages = {
+      todo: 'Microsoft.Todos',
+      experiencesApp: 'MicrosoftWindows.CrossDevice',
+      stickyNotes: 'Microsoft.MicrosoftStickyNotes',
+      quickAssist: 'MicrosoftCorporationII.QuickAssist',
+      weather: 'Microsoft.BingWeather',
+      camera: 'Microsoft.WindowsCamera',
+      bingNews: 'Microsoft.BingNews Microsoft.BingSearch',
+      clipchamp: 'Clipchamp.Clipchamp',
+      clock: 'Microsoft.WindowsAlarms',
+      outlook: 'Microsoft.OutlookForWindows',
+      powerAutomate: 'Microsoft.PowerAutomateDesktop',
+      solitaire: 'Microsoft.MicrosoftSolitaireCollection',
+      terminal: 'Microsoft.WindowsTerminal',
+      feedbackHub: 'Microsoft.WindowsFeedbackHub',
+    };
+
+    const selectedPackages = [];
+    for (const [key, packageName] of Object.entries(bloatwarePackages)) {
+      if (config.bloatware[key]) {
+        const packages = packageName.split(' ');
+        selectedPackages.push(...packages);
+      }
+    }
+
+    if (selectedPackages.length > 0) {
+      runSyncCmds.push('');
+      runSyncCmds.push('        <!-- Bloatware eltávolítása (Provisioned csomagok - Specialize) -->');
+      const packageList = selectedPackages.map(p => `'${p}'`).join(',\n  ');
+      const bloatwareScript = `
+$packagesToRemove = @(
+  ${packageList}
+)
+foreach ($pkg in $packagesToRemove) {
+  Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -like "*$pkg*" } | ForEach-Object {
+    try { Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue } catch {}
+  }
+}
+`;
+      const orderRef = { val: order };
+      addBase64ScriptToSyncCmds(runSyncCmds, orderRef, bloatwareScript.trim(), 'C:\\Windows\\Temp\\bloatware.b64', 'C:\\Windows\\Temp\\bloatware.ps1');
+      order = orderRef.val;
+    }
+  }
+
+  // --- Start menü és személyre szabási beállítások (Default User profil + HKLM GPO házirendek) ---
+  {
+    const defaultUserRegCmds = [];
+    const hklmGpoCmds = [];
+
+    // Keresőmező mód (Default User)
+    if (config.searchBoxMode && config.searchBoxMode !== 'full') {
+      const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
+      const value = searchModeValues[config.searchBoxMode];
+      if (value !== undefined) {
+        defaultUserRegCmds.push(`reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`);
+      }
+    }
+
+    // Feladatnézet gomb elrejtése (Default User)
+    if (config.hideTaskbarIcons) {
+      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
+    }
+
+    // Minden tálcaikon megjelenítése (Default User)
+    if (config.showAllTrayIcons) {
+      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f');
+    }
+
+    // Átlátszóság kikapcsolása (Default User)
+    if (config.disableTransparency) {
+      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Themes\\\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
+    }
+
+    // Start menü: legutóbbi alkalmazások elrejtése (Default User)
+    if (config.hideRecentApps) {
+      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
+    }
+
+    // Start menü: leggyakrabban használt alkalmazások elrejtése (Default User)
+    if (config.hideMostUsedApps) {
+      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
+    }
+
+    // Start menü: ajánlott fájlok elrejtése (Default User)
+    if (config.hideRecommendedFiles) {
+      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
+    }
+
+    // Tippek és javaslatok kikapcsolása (HKLM GPO - minden felhasználóra érvényes)
+    if (config.hideTipsAndSuggestions) {
+      hklmGpoCmds.push('reg add "HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f');
+    }
+
+    // Webes keresés letiltása (HKLM GPO - minden felhasználóra érvényes)
+    if (config.disableWebSearch) {
+      hklmGpoCmds.push('reg add "HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
+    }
+
+    if (defaultUserRegCmds.length > 0 || hklmGpoCmds.length > 0) {
+      runSyncCmds.push('');
+      runSyncCmds.push('        <!-- Start menü és személyre szabási beállítások (Default User + GPO) -->');
+      let settingsScript = '';
+
+      if (defaultUserRegCmds.length > 0) {
+        settingsScript += 'reg load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"\n';
+        settingsScript += defaultUserRegCmds.join('\n') + '\n';
+        settingsScript += 'reg unload "HKU\\DefaultUser"\n';
+      }
+
+      if (hklmGpoCmds.length > 0) {
+        settingsScript += hklmGpoCmds.join('\n') + '\n';
+      }
+
+      const orderRef = { val: order };
+      addBase64ScriptToSyncCmds(runSyncCmds, orderRef, settingsScript.trim(), 'C:\\Windows\\Temp\\startmenu.b64', 'C:\\Windows\\Temp\\startmenu.ps1');
+      order = orderRef.val;
+    }
+  }
+
   lines.push('');
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Deployment')}>`);
   if (runSyncCmds.length > 0) {
@@ -805,97 +927,9 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     }
   }
 
-  // --- Keresőmező mód ---
-  if (config.searchBoxMode && config.searchBoxMode !== 'full') {
-    const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
-    const value = searchModeValues[config.searchBoxMode];
-    if (value !== undefined) {
-      commands.push({
-        command: `cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`,
-        description: 'Keresőmező mód beállítása a tálcán',
-      });
-    }
-  }
 
-  // --- Tálca ikonok elrejtése (TaskView) ---
-  if (config.hideTaskbarIcons) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f',
-      description: 'Feladatnézet gomb elrejtése',
-    });
-  }
+  // Start menü és személyre szabási beállítások átkerültek a specialize fázisba (Default User + GPO)
 
-  // --- Minden tálcaikon megjelenítése ---
-  if (config.showAllTrayIcons) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f',
-      description: 'Minden tálcaikon megjelenítése (Windows 10)',
-    });
-  }
-
-  // --- Explorer újraindítása, hogy a tálca beállítások azonnal érvénybe lépjenek ---
-  if (config.hideTaskbarIcons || (config.searchBoxMode && config.searchBoxMode !== 'full') || config.showAllTrayIcons) {
-    commands.push({
-      command: 'cmd /c taskkill /f /im explorer.exe & start explorer.exe',
-      description: 'Windows Intéző újraindítása a tálca frissítéséhez',
-    });
-  }
-
-  // --- Átlátszóság kikapcsolása ---
-  if (config.disableTransparency) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f',
-      description: 'Átlátszósági effektusok kikapcsolása',
-    });
-  }
-
-  // --- Start menü: legutóbbi alkalmazások elrejtése ---
-  if (config.hideRecentApps) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f',
-      description: 'Legutóbbi alkalmazások elrejtése a Start menüből',
-    });
-  }
-
-  // --- Start menü: leggyakrabban használt alkalmazások elrejtése ---
-  if (config.hideMostUsedApps) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f',
-      description: 'Leggyakrabban használt alkalmazások elrejtése',
-    });
-  }
-
-  // --- Start menü: ajánlott fájlok elrejtése ---
-  if (config.hideRecommendedFiles) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f',
-      description: 'Ajánlott fájlok elrejtése a Start menüből',
-    });
-  }
-
-  // --- Tippek és javaslatok kikapcsolása ---
-  if (config.hideTipsAndSuggestions) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f',
-      description: 'Tippek és javaslatok kikapcsolása (1/3)',
-    });
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f',
-      description: 'Tippek és javaslatok kikapcsolása (2/3)',
-    });
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 0 /f',
-      description: 'Tippek és javaslatok kikapcsolása (3/3)',
-    });
-  }
-
-  // --- Webes keresés letiltása ---
-  if (config.disableWebSearch) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f',
-      description: 'Webes keresési javaslatok letiltása',
-    });
-  }
 
   // Start menü takarítás kikerült innen, most a specialize fázisban van (LayoutModification.json)
 
@@ -941,54 +975,9 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
 
   // Egérgyorsulás kikapcsolása kikerült innen, most a specialize fázisban van (Default User)
 
-  // --- Bloatware eltávolítása ---
-  const bloatwarePackages = {
-    todo: 'Microsoft.Todos',
-    experiencesApp: 'MicrosoftWindows.CrossDevice',
-    stickyNotes: 'Microsoft.MicrosoftStickyNotes',
-    quickAssist: 'MicrosoftCorporationII.QuickAssist',
-    weather: 'Microsoft.BingWeather',
-    camera: 'Microsoft.WindowsCamera',
-    bingNews: 'Microsoft.BingNews Microsoft.BingSearch',
-    clipchamp: 'Clipchamp.Clipchamp',
-    clock: 'Microsoft.WindowsAlarms',
-    outlook: 'Microsoft.OutlookForWindows',
-    powerAutomate: 'Microsoft.PowerAutomateDesktop',
-    solitaire: 'Microsoft.MicrosoftSolitaireCollection',
-    terminal: 'Microsoft.WindowsTerminal',
-    feedbackHub: 'Microsoft.WindowsFeedbackHub',
-  };
 
-  const bloatwareNames = {
-    todo: 'Microsoft To Do',
-    experiencesApp: 'Cross Device (Eszközök között)',
-    stickyNotes: 'Sticky Notes (Öntapadó jegyzetek)',
-    quickAssist: 'Quick Assist (Távsegítség)',
-    weather: 'Időjárás',
-    camera: 'Kamera',
-    bingNews: 'Bing Hírek',
-    clipchamp: 'Clipchamp',
-    clock: 'Óra és ébresztők',
-    outlook: 'Új Outlook',
-    powerAutomate: 'Power Automate',
-    solitaire: 'Solitaire Collection',
-    terminal: 'Windows Terminal',
-    feedbackHub: 'Visszajelzési központ',
-  };
+  // Bloatware eltávolítás átkerült a specialize fázisba (Remove-AppxProvisionedPackage)
 
-  if (config.bloatware) {
-    for (const [key, packageName] of Object.entries(bloatwarePackages)) {
-      if (config.bloatware[key]) {
-        const packages = packageName.split(' ');
-        for (const pkg of packages) {
-          commands.push({
-            command: `cmd /c powershell -Command "Get-AppxPackage -AllUsers *${pkg}* | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue; Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like '*${pkg}*'} | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue"`,
-            description: `${bloatwareNames[key]} (${pkg}) eltávolítása`,
-          });
-        }
-      }
-    }
-  }
 
   // --- 8. Egyéni Szkriptek (FirstLogon) ---
   if (config.customScripts) {
@@ -1098,7 +1087,6 @@ function Wait-ForWinget {
   $maxAttempts = 60
   $attempt = 0
   while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
-    try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
   }

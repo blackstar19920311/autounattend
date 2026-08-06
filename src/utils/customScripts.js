@@ -19,7 +19,6 @@ function Wait-ForWinget {
   $maxAttempts = 60
   $attempt = 0
   while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
-    try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
   }
@@ -104,7 +103,6 @@ function Wait-ForWinget {
   $maxAttempts = 60
   $attempt = 0
   while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
-    try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
   }
@@ -177,7 +175,6 @@ function Wait-ForWinget {
   $maxAttempts = 60
   $attempt = 0
   while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
-    try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue } catch {}
     Start-Sleep -Seconds 5
     $attempt++
   }
@@ -290,9 +287,6 @@ function Wait-ForWinget {
     $maxAttempts = 60
     $attempt = 0
     while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
-        try {
-            Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
-        } catch {}
         Start-Sleep -Seconds 5
         $attempt++
     }
