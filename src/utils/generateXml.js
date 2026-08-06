@@ -557,26 +557,7 @@ Set-ItemProperty $mdmKey 'ConfigureTaskbar' $xml -Type String -Force
     order = orderRef.val;
   }
 
-  // --- Windows 11 Tálcaikonok Scheduled Task (specialize fázis) ---
-  if (config.showAllTrayIcons) {
-    runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Windows 11: Scheduled Task – percenként promote-olja az összes tray ikont (Schneegans módszer) -->');
-    const trayTaskScript = [
-      "$taskXml = @'",
-      '<?xml version="1.0" encoding="UTF-16"?>',
-      '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">',
-      '<Triggers><LogonTrigger><Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><Enabled>true</Enabled></LogonTrigger></Triggers>',
-      '<Principals><Principal id="Author"><GroupId>S-1-5-32-545</GroupId><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>',
-      '<Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><AllowHardTerminate>true</AllowHardTerminate><StartWhenAvailable>false</StartWhenAvailable><RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable><IdleSettings><StopOnIdleEnd>true</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings><AllowStartOnDemand>true</AllowStartOnDemand><Enabled>true</Enabled><Hidden>false</Hidden><RunOnlyIfIdle>false</RunOnlyIfIdle><WakeToRun>false</WakeToRun><ExecutionTimeLimit>PT72H</ExecutionTimeLimit><Priority>7</Priority></Settings>',
-      "<Actions Context=\"Author\"><Exec><Command>%windir%\\System32\\conhost.exe</Command><Arguments>--headless %windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -WindowStyle Hidden -NoProfile -NonInteractive -Command \"Set-ItemProperty -Path 'Registry::HKCU\\Control Panel\\NotifyIconSettings\\*' -Name 'IsPromoted' -Value 1 -Type 'DWord' -ErrorAction SilentlyContinue;\"</Arguments></Exec></Actions>",
-      '</Task>',
-      "'@",
-      "Register-ScheduledTask -TaskName 'ShowAllTrayIcons' -Xml $taskXml -Force | Out-Null"
-    ].join('\r\n');
-    const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, trayTaskScript, 'C:\\Windows\\Temp\\tray_task.b64', 'C:\\Windows\\Temp\\tray_task.ps1');
-    order = orderRef.val;
-  }
+
 
   // --- Bloatware eltávolítása (Specialize fázis - SYSTEM szinten, még bejelentkezés előtt) ---
   if (config.bloatware) {
@@ -644,10 +625,7 @@ foreach ($pkg in $packagesToRemove) {
       defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
     }
 
-    // Minden tálcaikon megjelenítése (Default User)
-    if (config.showAllTrayIcons) {
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f');
-    }
+
 
     // Átlátszóság kikapcsolása (Default User)
     if (config.disableTransparency) {
