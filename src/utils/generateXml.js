@@ -635,48 +635,48 @@ foreach ($pkg in $packagesToRemove) {
       const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
       const value = searchModeValues[config.searchBoxMode];
       if (value !== undefined) {
-        defaultUserRegCmds.push(`reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`);
+        defaultUserRegCmds.push(`reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`);
       }
     }
 
     // Feladatnézet gomb elrejtése (Default User)
     if (config.hideTaskbarIcons) {
-      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
     }
 
     // Minden tálcaikon megjelenítése (Default User)
     if (config.showAllTrayIcons) {
-      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f');
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f');
     }
 
     // Átlátszóság kikapcsolása (Default User)
     if (config.disableTransparency) {
-      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Themes\\\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
     }
 
     // Start menü: legutóbbi alkalmazások elrejtése (Default User)
     if (config.hideRecentApps) {
-      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
     }
 
     // Start menü: leggyakrabban használt alkalmazások elrejtése (Default User)
     if (config.hideMostUsedApps) {
-      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
     }
 
     // Start menü: ajánlott fájlok elrejtése (Default User)
     if (config.hideRecommendedFiles) {
-      defaultUserRegCmds.push('reg add "HKU\\\\DefaultUser\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
     }
 
     // Tippek és javaslatok kikapcsolása (HKLM GPO - minden felhasználóra érvényes)
     if (config.hideTipsAndSuggestions) {
-      hklmGpoCmds.push('reg add "HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f');
+      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f');
     }
 
     // Webes keresés letiltása (HKLM GPO - minden felhasználóra érvényes)
     if (config.disableWebSearch) {
-      hklmGpoCmds.push('reg add "HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
+      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
     }
 
     if (defaultUserRegCmds.length > 0 || hklmGpoCmds.length > 0) {
