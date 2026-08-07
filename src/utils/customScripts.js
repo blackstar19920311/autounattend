@@ -342,6 +342,9 @@ try {
       <ExcludeApp ID="Teams" />
     </Product>
   </Add>
+  <RemoveMSI />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+  <Property Name="PinIconsToTaskbar" Value="FALSE" />
   <Display Level="None" AcceptEULA="TRUE" />
   <Logging Level="Standard" Path="%temp%" />
 </Configuration>
