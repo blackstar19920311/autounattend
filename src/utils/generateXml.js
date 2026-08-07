@@ -478,15 +478,20 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
     runSyncCmds.push('');
     runSyncCmds.push('        <!-- Start menü kitűzött elemeinek törlése (csak Gépház) -->');
     const layoutScript = `
-$json = '{"pinnedList":[{"packagedAppId":"windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"}]}'
+$dir = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
+New-Item -Path $dir -ItemType Directory -Force | Out-Null
 
-$mdmKey = 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start'
-New-Item $mdmKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $mdmKey 'ConfigureStartPins' $json -Type String -Force
+$json = @'
+{
+  "pinnedList": [
+    {
+      "packagedAppId": "windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"
+    }
+  ]
+}
+'@
 
-$gpoKey = 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer'
-New-Item $gpoKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $gpoKey 'ConfigureStartPins' $json -Type String -Force
+Set-Content -Path "$dir\\LayoutModification.json" -Value $json -Encoding UTF8
 `;
     const orderRef = { val: order };
     addBase64ScriptToSyncCmds(runSyncCmds, orderRef, layoutScript.trim(), 'C:\\Windows\\Temp\\layout.b64', 'C:\\Windows\\Temp\\layout.ps1');
