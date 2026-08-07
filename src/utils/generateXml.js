@@ -554,9 +554,10 @@ $xml = '<?xml version="1.0" encoding="utf-8"?>
   </CustomTaskbarLayoutCollection>
 </LayoutModificationTemplate>'
 
-$mdmKey = 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start'
-New-Item $mdmKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $mdmKey 'ConfigureTaskbar' $xml -Type String -Force
+$dir = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
+New-Item -Path $dir -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText("$dir\\LayoutModification.xml", $xml, $utf8NoBom)
 `;
     const orderRef = { val: order };
     addBase64ScriptToSyncCmds(runSyncCmds, orderRef, taskbarPolicyScript.trim(), 'C:\\Windows\\Temp\\tbpolicy.b64', 'C:\\Windows\\Temp\\tbpolicy.ps1');
