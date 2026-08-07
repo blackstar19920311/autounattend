@@ -520,21 +520,7 @@ Set-Content -Path "$dir\\LayoutModification.json" -Value $json -Encoding UTF8
     order = orderRef.val;
   }
 
-  // --- Egérgyorsulás kikapcsolása (Default User profil módosítása) ---
-  if (config.disableMouseAcceleration) {
-    runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Egérgyorsítás kikapcsolása az alapértelmezett profilban -->');
-    const mouseScript = `
-reg load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f
-reg unload "HKU\\DefaultUser"
-`;
-    const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, mouseScript.trim(), 'C:\\Windows\\Temp\\mouse.b64', 'C:\\Windows\\Temp\\mouse.ps1');
-    order = orderRef.val;
-  }
+
 
   // --- Alvás letiltása és Maximális teljesítmény energiaséma (Specialize fázis) ---
   if (config.disableSleep) {
@@ -677,7 +663,12 @@ foreach ($pkg in $packagesToRemove) {
       defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
     }
 
-
+    // Egérgyorsítás kikapcsolása (Default User)
+    if (config.disableMouseAcceleration) {
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f');
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f');
+      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f');
+    }
 
     // Átlátszóság kikapcsolása (Default User)
     if (config.disableTransparency) {
