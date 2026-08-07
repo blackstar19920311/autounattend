@@ -42,7 +42,7 @@ function encodePowerShellBase64(script) {
  * Szétbont egy Base64 kódolt szkriptet kis darabokra (chunkokra), és a RunSynchronous
  * szekcióhoz adja őket cmd.exe echo segítségével. Így megkerülhető a 259 karakteres XML limit.
  */
-function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64Path, destPs1Path, runAsBackground = false) {
+function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64Path, destPs1Path) {
   const base64 = encodePowerShellBase64(scriptContent);
   const chunkSize = 200; // Biztonságosan a 259 karakteres Path limit alatt
 
@@ -62,11 +62,7 @@ function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64
 
   runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
   runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
-  if (runAsBackground) {
-    runSyncCmds.push(`          <Path>cmd.exe /c start /b powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}</Path>`);
-  } else {
-    runSyncCmds.push(`          <Path>powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}</Path>`);
-  }
+  runSyncCmds.push(`          <Path>powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}</Path>`);
   runSyncCmds.push('        </RunSynchronousCommand>');
 }
 
@@ -471,26 +467,16 @@ function buildSpecialize(config, componentAttrs) {
     }
 
     const psScript = `
-$ErrorActionPreference = 'SilentlyContinue'
+$ErrorActionPreference = 'Stop'
 
 $prefix = '${safePrefix.replace(/'/g, "''")}'
 $digits = '{0:D2}' -f (Get-Random -Minimum 0 -Maximum 100)
 $letters = -join (1..2 | ForEach-Object { [char](Get-Random -Minimum 65 -Maximum 91) })
 $newName = "$prefix-$digits$letters"
 
-$regKeys = @(
-    @{Path="HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName"; Name="ComputerName"},
-    @{Path="HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName"; Name="ComputerName"},
-    @{Path="HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters"; Name="Hostname"},
-    @{Path="HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\Parameters"; Name="NV Hostname"}
-)
-
-while ($true) {
-    foreach ($key in $regKeys) {
-        Set-ItemProperty -Path $key.Path -Name $key.Name -Value $newName -Force
-    }
-    Start-Sleep -Milliseconds 50
-}
+$script = "while(\`$true){ Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'Hostname' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'NV Hostname' '$newName' -Force; Start-Sleep -Milliseconds 50 }"
+Out-File -FilePath C:\\Windows\\Temp\\rename_loop.ps1 -InputObject $script -Encoding ascii
+Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File C:\\Windows\\Temp\\rename_loop.ps1'
 `;
 
     runSyncCmds.push('        <!-- Háttérben futó gépnév beállító végtelen ciklus -->');
@@ -501,8 +487,7 @@ while ($true) {
       orderRef,
       psScript.trim(),
       'C:\\Windows\\Temp\\rn.b64',
-      'C:\\Windows\\Temp\\rn.ps1',
-      true // Háttérben futtatjuk (cmd /c start /b)
+      'C:\\Windows\\Temp\\rn.ps1'
     );
 
     order = orderRef.val;
