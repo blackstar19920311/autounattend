@@ -640,7 +640,7 @@ foreach ($pkg in $packagesToRemove) {
       const searchModeValues = { full: 3, iconLabel: 2, iconOnly: 1, hidden: 0 };
       const value = searchModeValues[config.searchBoxMode];
       if (value !== undefined) {
-        hklmGpoCmds.push(`reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v ConfigureSearchOnTaskbarMode /t REG_DWORD /d ${value} /f`);
+        hklmGpoCmds.push(`reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v SearchOnTaskbarMode /t REG_DWORD /d ${value} /f`);
       }
     }
 
