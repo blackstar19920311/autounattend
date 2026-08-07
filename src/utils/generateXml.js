@@ -42,7 +42,7 @@ function encodePowerShellBase64(script) {
  * Szétbont egy Base64 kódolt szkriptet kis darabokra (chunkokra), és a RunSynchronous
  * szekcióhoz adja őket cmd.exe echo segítségével. Így megkerülhető a 259 karakteres XML limit.
  */
-function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64Path, destPs1Path) {
+function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64Path, destPs1Path, willReboot = false) {
   const base64 = encodePowerShellBase64(scriptContent);
   const chunkSize = 200; // Biztonságosan a 259 karakteres Path limit alatt
 
@@ -60,9 +60,15 @@ function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64
   runSyncCmds.push(`          <Path>certutil.exe -decode -f ${tempB64Path} ${destPs1Path}</Path>`);
   runSyncCmds.push('        </RunSynchronousCommand>');
 
+  const finalOrder = orderRef.val++;
   runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-  runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+  runSyncCmds.push(`          <Order>${finalOrder}</Order>`);
   runSyncCmds.push(`          <Path>powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}</Path>`);
+  
+  if (willReboot) {
+    runSyncCmds.push('          <WillReboot>Always</WillReboot>');
+  }
+  
   runSyncCmds.push('        </RunSynchronousCommand>');
 }
 
@@ -440,8 +446,8 @@ function buildSpecialize(config, componentAttrs) {
   // Shell-Setup — ComputerName
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Shell-Setup')}>`);
   if (useRandom) {
-    // Ideiglenes név — a végleges nevet a PowerShell szkript állítja be
-    lines.push('      <ComputerName>TEMPNAME</ComputerName>');
+    // Fallbackként is érvényes Windows-név maradjon, ha a script hibázik.
+    lines.push('      <ComputerName>*</ComputerName>');
   } else {
     // Fix név, nincs random utótag
     lines.push(`      <ComputerName>${escapeXml(prefix)}</ComputerName>`);
@@ -453,22 +459,72 @@ function buildSpecialize(config, componentAttrs) {
   const runSyncCmds = [];
 
   // Random számítógépnév generálás telepítéskor
-  // Minta: PREFIX-AB12 (2 nagybetű + 2 számjegy, fix hosszúságú)
+  // Formátum: PREFIX-23AB
+  // 2 szám + 2 nagybetű, egyszeri átnevezéssel.
   if (useRandom) {
-    // PowerShell szkript: generál egy nevet és egy háttérfolyamatban (loop) folyamatosan
-    // beírja a registry-be, mert a Windows specialize fázis felülírhatja.
+    const safePrefix = prefix
+      .toUpperCase()
+      .replace(/[^A-Z0-9-]/g, '');
+
+    if (!safePrefix || safePrefix.length > 10) {
+      throw new Error(
+        'A gépnév prefixe 1 és 10 karakter közötti A-Z, 0-9 vagy kötőjel lehet.'
+      );
+    }
+
     const psScript = `
-$letters = -join (1..2 | ForEach-Object { [char](Get-Random -Minimum 65 -Maximum 91) })
+$ErrorActionPreference = 'Stop'
+
+$prefix = '${safePrefix.replace(/'/g, "''")}'
+
+if ([string]::IsNullOrWhiteSpace($prefix) -or $prefix.Length -gt 10) {
+    throw "Érvénytelen gépnév-prefix: $prefix"
+}
+
 $digits = '{0:D2}' -f (Get-Random -Minimum 0 -Maximum 100)
-$newName = '${prefix.replace(/'/g, "''")}-' + $letters + $digits
-$script = "while(\`$true){ Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'Hostname' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'NV Hostname' '$newName' -Force; Start-Sleep -Milliseconds 50 }"
-$script | Out-File -FilePath 'C:\\Windows\\Temp\\rename_loop.ps1' -Encoding ascii
-Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File C:\\Windows\\Temp\\rename_loop.ps1'
+
+$letters = -join (1..2 | ForEach-Object {
+    [char](Get-Random -Minimum 65 -Maximum 91)
+})
+
+$newName = "$prefix-$digits$letters"
+
+if ($newName.Length -gt 15) {
+    throw "A generált gépnév túllépi a 15 karakteres Windows-limitet: $newName"
+}
+
+Rename-Computer \`
+    -NewName $newName \`
+    -Force \`
+    -ErrorAction Stop
+
+$pendingName = (
+    Get-ItemProperty \`
+        'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName'
+).ComputerName
+
+if ($pendingName -ne $newName) {
+    throw "A gépnév beállítása sikertelen. Elvárt: $newName, tényleges: $pendingName"
+}
+
+Set-Content \`
+    -Path 'C:\\Windows\\Temp\\FinalComputerName.txt' \`
+    -Value $newName \`
+    -Encoding ascii
 `;
-    
-    runSyncCmds.push('        <!-- Egyedi számítógépnév generálása telepítéskor (háttérfolyamattal) -->');
+
+    runSyncCmds.push('        <!-- Egyszeri gépnév-generálás és átnevezés -->');
     const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, psScript, 'C:\\Windows\\Temp\\rn.b64', 'C:\\Windows\\Temp\\rn.ps1');
+
+    addBase64ScriptToSyncCmds(
+      runSyncCmds,
+      orderRef,
+      psScript.trim(),
+      'C:\\Windows\\Temp\\rn.b64',
+      'C:\\Windows\\Temp\\rn.ps1',
+      true
+    );
+
     order = orderRef.val;
   }
 
