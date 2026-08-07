@@ -207,6 +207,9 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
   let order = 1;
 
   // --- Dinamikus gépnév generálás (WinPE On-The-Fly Patching) ---
+  const useRandom = config.computerNameType === 'random';
+  const prefix = config.computerNamePrefix || 'PC';
+
   if (useRandom) {
     const safePrefix = prefix
       .toUpperCase()
