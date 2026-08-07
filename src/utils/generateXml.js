@@ -42,7 +42,7 @@ function encodePowerShellBase64(script) {
  * Szétbont egy Base64 kódolt szkriptet kis darabokra (chunkokra), és a RunSynchronous
  * szekcióhoz adja őket cmd.exe echo segítségével. Így megkerülhető a 259 karakteres XML limit.
  */
-function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64Path, destPs1Path, willReboot = false) {
+function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64Path, destPs1Path) {
   const base64 = encodePowerShellBase64(scriptContent);
   const chunkSize = 200; // Biztonságosan a 259 karakteres Path limit alatt
 
@@ -60,15 +60,9 @@ function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64
   runSyncCmds.push(`          <Path>certutil.exe -decode -f ${tempB64Path} ${destPs1Path}</Path>`);
   runSyncCmds.push('        </RunSynchronousCommand>');
 
-  const finalOrder = orderRef.val++;
   runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-  runSyncCmds.push(`          <Order>${finalOrder}</Order>`);
+  runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
   runSyncCmds.push(`          <Path>powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}</Path>`);
-  
-  if (willReboot) {
-    runSyncCmds.push('          <WillReboot>Always</WillReboot>');
-  }
-  
   runSyncCmds.push('        </RunSynchronousCommand>');
 }
 
@@ -211,6 +205,58 @@ function buildWindowsPE(config, componentAttrs, inputLocale) {
 
   const runSyncCmds = [];
   let order = 1;
+
+  // --- Dinamikus gépnév generálás (WinPE On-The-Fly Patching) ---
+  if (useRandom) {
+    const safePrefix = prefix
+      .toUpperCase()
+      .replace(/[^A-Z0-9-]/g, '');
+
+    if (!safePrefix || safePrefix.length > 10) {
+      throw new Error(
+        'A gépnév prefixe 1 és 10 karakter közötti A-Z, 0-9 vagy kötőjel lehet.'
+      );
+    }
+
+    const renamePsScript = `
+$ErrorActionPreference = 'Stop'
+$prefix = '${safePrefix.replace(/'/g, "''")}'
+if ([string]::IsNullOrWhiteSpace($prefix) -or $prefix.Length -gt 10) { throw "Érvénytelen gépnév-prefix: $prefix" }
+$digits = '{0:D2}' -f (Get-Random -Minimum 0 -Maximum 100)
+$letters = -join (1..2 | ForEach-Object { [char](Get-Random -Minimum 65 -Maximum 91) })
+$newName = "$prefix-$digits$letters"
+if ($newName.Length -gt 15) { throw "A generált gépnév túllépi a 15 karakteres Windows-limitet: $newName" }
+
+$drives = Get-PSDrive -PSProvider FileSystem | Select-Object -ExpandProperty Root
+$unattendFiles = @()
+foreach ($drive in $drives) {
+    $unattendFiles += Join-Path $drive 'autounattend.xml'
+    $unattendFiles += Join-Path $drive 'unattend.xml'
+    $unattendFiles += Join-Path $drive 'Windows\\Panther\\unattend.xml'
+    $unattendFiles += Join-Path $drive 'Windows\\Panther\\autounattend.xml'
+}
+
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+foreach ($file in $unattendFiles) {
+    if (Test-Path -LiteralPath $file) {
+        try {
+            $content = [System.IO.File]::ReadAllText($file)
+            if ($content -match 'MACRO_COMPUTERNAME') {
+                $content = $content -replace 'MACRO_COMPUTERNAME', $newName
+                [System.IO.File]::WriteAllText($file, $content, $utf8NoBom)
+                Write-Host "Patched $file"
+            }
+        } catch {
+            Write-Warning "Failed to patch $file : $_"
+        }
+    }
+}
+`;
+    runSyncCmds.push('        <!-- Dinamikus gépnév injektálása az autounattend.xml fájlba (WinPE) -->');
+    const orderRef = { val: order };
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, renamePsScript.trim(), 'X:\\rn.b64', 'X:\\rn.ps1');
+    order = orderRef.val;
+  }
 
   // --- Hardverkövetelmények megkerülése (winPE fázisban kell!) ---
   if (config.bypassHardware) {
@@ -446,8 +492,8 @@ function buildSpecialize(config, componentAttrs) {
   // Shell-Setup — ComputerName
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Shell-Setup')}>`);
   if (useRandom) {
-    // Fallbackként is érvényes Windows-név maradjon, ha a script hibázik.
-    lines.push('      <ComputerName>*</ComputerName>');
+    // WinPE fázisban lévő szkript fogja lecserélni ezt a MACRO stringet a végleges, sorsolt névre
+    lines.push('      <ComputerName>MACRO_COMPUTERNAME</ComputerName>');
   } else {
     // Fix név, nincs random utótag
     lines.push(`      <ComputerName>${escapeXml(prefix)}</ComputerName>`);
@@ -458,75 +504,7 @@ function buildSpecialize(config, componentAttrs) {
   let order = 1;
   const runSyncCmds = [];
 
-  // Random számítógépnév generálás telepítéskor
-  // Formátum: PREFIX-23AB
-  // 2 szám + 2 nagybetű, egyszeri átnevezéssel.
-  if (useRandom) {
-    const safePrefix = prefix
-      .toUpperCase()
-      .replace(/[^A-Z0-9-]/g, '');
-
-    if (!safePrefix || safePrefix.length > 10) {
-      throw new Error(
-        'A gépnév prefixe 1 és 10 karakter közötti A-Z, 0-9 vagy kötőjel lehet.'
-      );
-    }
-
-    const psScript = `
-$ErrorActionPreference = 'Stop'
-
-$prefix = '${safePrefix.replace(/'/g, "''")}'
-
-if ([string]::IsNullOrWhiteSpace($prefix) -or $prefix.Length -gt 10) {
-    throw "Érvénytelen gépnév-prefix: $prefix"
-}
-
-$digits = '{0:D2}' -f (Get-Random -Minimum 0 -Maximum 100)
-
-$letters = -join (1..2 | ForEach-Object {
-    [char](Get-Random -Minimum 65 -Maximum 91)
-})
-
-$newName = "$prefix-$digits$letters"
-
-if ($newName.Length -gt 15) {
-    throw "A generált gépnév túllépi a 15 karakteres Windows-limitet: $newName"
-}
-
-Rename-Computer \`
-    -NewName $newName \`
-    -Force \`
-    -ErrorAction Stop
-
-$pendingName = (
-    Get-ItemProperty \`
-        'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName'
-).ComputerName
-
-if ($pendingName -ne $newName) {
-    throw "A gépnév beállítása sikertelen. Elvárt: $newName, tényleges: $pendingName"
-}
-
-Set-Content \`
-    -Path 'C:\\Windows\\Temp\\FinalComputerName.txt' \`
-    -Value $newName \`
-    -Encoding ascii
-`;
-
-    runSyncCmds.push('        <!-- Egyszeri gépnév-generálás és átnevezés -->');
-    const orderRef = { val: order };
-
-    addBase64ScriptToSyncCmds(
-      runSyncCmds,
-      orderRef,
-      psScript.trim(),
-      'C:\\Windows\\Temp\\rn.b64',
-      'C:\\Windows\\Temp\\rn.ps1',
-      true
-    );
-
-    order = orderRef.val;
-  }
+  // Random számítógépnév generálás átkerült a windowsPE fázisba!
 
 
   // --- Start menü takarítás (ConfigureStartPins registry GPO + MDM) ---
