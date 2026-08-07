@@ -650,7 +650,7 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
       quickAssist: 'MicrosoftCorporationII.QuickAssist',
       weather: 'Microsoft.BingWeather',
       camera: 'Microsoft.WindowsCamera',
-      bingNews: 'Microsoft.BingNews Microsoft.BingSearch',
+      bingNews: 'Microsoft.BingNews',
       clipchamp: 'Clipchamp.Clipchamp',
       clock: 'Microsoft.WindowsAlarms',
       outlook: 'Microsoft.OutlookForWindows',
