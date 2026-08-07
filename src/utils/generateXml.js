@@ -483,7 +483,8 @@ New-Item -Path $dir -ItemType Directory -Force | Out-Null
 
 $json = @'
 {
-  "pinnedList": [
+  "primaryOEMPins": [],
+  "secondaryOEMPins": [
     {
       "packagedAppId": "windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"
     }
