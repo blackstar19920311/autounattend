@@ -1,9 +1,15 @@
 [CmdletBinding()]
 param(
-    [string]$OutputPath = 'C:\StartMenuPrerequisites.log'
+    [ValidateSet('1','2')]
+    [string]$LogSuffix = '1',
+    [string]$OutputPath
 )
 
 $ErrorActionPreference = 'Continue'
+if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+    $OutputPath = "C:\StartMenuPrerequisites-$LogSuffix.log"
+}
+
 $lines = [System.Collections.Generic.List[string]]::new()
 function Log([string]$Message) {
     $line = "[$(Get-Date -Format s)] $Message"
@@ -11,7 +17,7 @@ function Log([string]$Message) {
     Write-Host $line
 }
 
-Log 'Windows 11 25H2 Start menu prerequisite check started.'
+Log "Windows 11 25H2 Start menu prerequisite check started. Log suffix: $LogSuffix"
 $os = Get-ComputerInfo -Property WindowsProductName,WindowsVersion,OsBuildNumber -ErrorAction SilentlyContinue
 if ($os) { Log ("OS: {0}, version {1}, build {2}" -f $os.WindowsProductName,$os.WindowsVersion,$os.OsBuildNumber) }
 
