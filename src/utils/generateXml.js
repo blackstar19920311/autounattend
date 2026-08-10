@@ -513,7 +513,8 @@ $json = @'
 }
 '@
 
-Set-Content -Path "$dir\\LayoutModification.json" -Value $json -Encoding UTF8
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText("$dir\\LayoutModification.json", $json, $utf8NoBom)
 `;
     const orderRef = { val: order };
     addBase64ScriptToSyncCmds(runSyncCmds, orderRef, layoutScript.trim(), 'C:\\Windows\\Temp\\layout.b64', 'C:\\Windows\\Temp\\layout.ps1');
