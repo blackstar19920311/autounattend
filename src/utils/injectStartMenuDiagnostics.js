@@ -87,43 +87,47 @@ function commandXml(order, command, description) {
   ].join('\n');
 }
 
-function createDiagnosticCommands(startOrder) {
+function createDiagnosticCommands() {
   const commands = [];
   const base64 = encodeUtf16Base64(DIAGNOSTIC_SCRIPT);
-  const path = 'C:\\Windows\\Setup\\Scripts\\Test-StartMenuPrerequisites.ps1';
+  const scriptPath = 'C:\\Windows\\Setup\\Scripts\\Test-StartMenuPrerequisites.ps1';
+  const b64Path = `${scriptPath}.b64`;
   const chunkSize = 180;
-  let order = startOrder;
+  let order = 1;
 
   for (let i = 0; i < base64.length; i += chunkSize) {
     const chunk = base64.substring(i, i + chunkSize);
     const redirect = i === 0 ? '>' : '>>';
-    commands.push(commandXml(order++, `cmd.exe /c ${redirect}${path}\.b64 echo ${chunk}`, 'Start menü diagnosztika telepítése'));
+    commands.push(commandXml(order++, `cmd.exe /c ${redirect}${b64Path} echo ${chunk}`, 'Start menü diagnosztika telepítése'));
   }
-  commands.push(commandXml(order++, `certutil.exe -decode -f ${path}\.b64 ${path}`, 'Start menü diagnosztika dekódolása'));
-  commands.push(commandXml(order++, `powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ${path} -LogSuffix 1`, 'Start menü diagnosztika 1. mérés'));
+  commands.push(commandXml(order++, `certutil.exe -decode -f ${b64Path} ${scriptPath}`, 'Start menü diagnosztika dekódolása'));
+  commands.push(commandXml(order++, `powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ${scriptPath} -LogSuffix 1`, 'Start menü diagnosztika 1. mérés'));
 
-  return { commands, nextOrder: order };
+  return { commands, count: order - 1, scriptPath };
 }
 
 export function injectStartMenuDiagnostics(xml) {
   if (!xml || !xml.includes('<FirstLogonCommands>')) return xml;
 
-  const firstClose = '</FirstLogonCommands>';
-  const firstIndex = xml.indexOf(firstClose);
-  const firstBlockStart = xml.lastIndexOf('<FirstLogonCommands>', firstIndex);
-  if (firstBlockStart < 0) return xml;
+  const closeTag = '</FirstLogonCommands>';
+  const firstClose = xml.indexOf(closeTag);
+  const firstOpen = xml.lastIndexOf('<FirstLogonCommands>', firstClose);
+  if (firstOpen < 0) return xml;
 
-  const existingOrders = [...xml.slice(firstBlockStart, firstIndex).matchAll(/<Order>(\d+)<\/Order>/g)]
-    .map(match => Number(match[1]));
-  const firstOrder = existingOrders.length ? Math.min(...existingOrders) : 1;
-  const first = createDiagnosticCommands(firstOrder);
-  const firstXml = first.commands.join('\n');
+  const firstEnd = firstClose;
+  const firstBlock = xml.slice(firstOpen, firstEnd);
+  const firstOrderMatches = [...firstBlock.matchAll(/<Order>(\d+)<\/Order>/g)];
+  const shift = createDiagnosticCommands().count;
+  const shiftedExisting = firstBlock.replace(/<Order>(\d+)<\/Order>/g, (_, value) => `<Order>${Number(value) + shift}</Order>`);
+  const diagnostic = createDiagnosticCommands().commands.join('\n');
 
-  let updated = xml.slice(0, firstBlockStart) + '<FirstLogonCommands>\n' + firstXml + '\n' + xml.slice(firstBlockStart + '<FirstLogonCommands>'.length);
+  let updated = xml.slice(0, firstOpen) + shiftedExisting.replace('<FirstLogonCommands>', `<FirstLogonCommands>\n${diagnostic}`) + xml.slice(firstEnd);
 
-  const lastClose = '</FirstLogonCommands>';
-  const lastIndex = updated.lastIndexOf(lastClose);
-  const lastCommand = commandXml(first.nextOrder + 10000, 'powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File C:\\Windows\\Setup\\Scripts\\Test-StartMenuPrerequisites.ps1 -LogSuffix 2', 'Start menü diagnosztika 2. mérés');
-  updated = updated.slice(0, lastIndex) + lastCommand + '\n' + updated.slice(lastIndex);
+  const lastIndex = updated.lastIndexOf(closeTag);
+  const scriptPath = 'C:\\Windows\\Setup\\Scripts\\Test-StartMenuPrerequisites.ps1';
+  const lastOrderMatches = [...updated.slice(updated.lastIndexOf('<FirstLogonCommands>', lastIndex), lastIndex).matchAll(/<Order>(\d+)<\/Order>/g)].map(m => Number(m[1]));
+  const lastOrder = lastOrderMatches.length ? Math.max(...lastOrderMatches) + 1 : 1;
+  const finalCommand = commandXml(lastOrder, `powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ${scriptPath} -LogSuffix 2`, 'Start menü diagnosztika 2. mérés');
+  updated = updated.slice(0, lastIndex) + finalCommand + '\n' + updated.slice(lastIndex);
   return updated;
 }
