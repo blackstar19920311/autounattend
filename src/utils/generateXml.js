@@ -470,9 +470,9 @@ function buildSpecialize(config, componentAttrs) {
 $ErrorActionPreference = 'Stop'
 
 $prefix = '${safePrefix.replace(/'/g, "''")}'
-$digits = '{0:D2}' -f (Get-Random -Minimum 0 -Maximum 100)
-$letters = -join (1..2 | ForEach-Object { [char](Get-Random -Minimum 65 -Maximum 91) })
-$newName = "$prefix-$digits$letters"
+$letters = -join (1..3 | ForEach-Object { [char](Get-Random -Minimum 65 -Maximum 91) })
+$digits = '{0:D3}' -f (Get-Random -Minimum 0 -Maximum 1000)
+$newName = "$prefix-$letters$digits"
 
 $script = "while(\`$true){ Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName' 'ComputerName' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'Hostname' '$newName' -Force; Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' 'NV Hostname' '$newName' -Force; Start-Sleep -Milliseconds 50 }"
 Out-File -FilePath C:\\Windows\\Temp\\rename_loop.ps1 -InputObject $script -Encoding ascii
