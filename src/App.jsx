@@ -23,6 +23,7 @@ import ThemeLanguageSwitcher from './components/ThemeLanguageSwitcher'
 
 // Segédeszközök
 import { generateXml } from './utils/generateXml'
+import { injectStartMenuDiagnostics } from './utils/injectStartMenuDiagnostics'
 import { validateConfig } from './utils/validation'
 import { SECTIONS } from './data/sections'
 
@@ -78,7 +79,7 @@ export default function App() {
       return
     }
     try {
-      const generatedXml = generateXml(config, language)
+      const generatedXml = injectStartMenuDiagnostics(generateXml(config, language))
       setXml(generatedXml)
       setErrors({})
       showStatus('success', t('app.status.success'))
@@ -115,22 +116,18 @@ export default function App() {
   const handleSectionClick = useCallback((sectionId) => {
     const el = document.getElementById(sectionId)
     if (el) {
-      // Csak görgetünk, a highlight-ot rábízzuk az IntersectionObserver-re és a handleMainScroll-ra
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [])
 
-  /* --- Gördítés figyelése (aljára érés és legfelső szakasz) --- */
+  /* --- Gördítés figyelése --- */
   const handleMainScroll = useCallback((e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    
-    // Ha a görgetés a presets szekciónál vagy feljebb van, mindenképp a presets az aktív
     const presetsEl = document.getElementById('presets');
     if (presetsEl && scrollTop <= presetsEl.offsetTop + 10) {
       setActiveSection('presets');
       return;
     }
-
     if (Math.ceil(scrollTop + clientHeight) >= scrollHeight) {
       setActiveSection(SECTIONS[SECTIONS.length - 1].id);
     } else if (observerActiveRef.current) {
@@ -138,23 +135,18 @@ export default function App() {
     }
   }, []);
 
-  /* --- Aktív szekció figyelése (IntersectionObserver) --- */
+  /* --- Aktív szekció figyelése --- */
   const visibleSectionsRef = useRef(new Set())
   const observerActiveRef = useRef(null)
 
   useEffect(() => {
-
     const sectionIds = SECTIONS.map(s => s.id)
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            visibleSectionsRef.current.add(entry.target.id)
-          } else {
-            visibleSectionsRef.current.delete(entry.target.id)
-          }
+          if (entry.isIntersecting) visibleSectionsRef.current.add(entry.target.id)
+          else visibleSectionsRef.current.delete(entry.target.id)
         }
-        
         const scrollContainer = document.querySelector('.scrollable-sections');
         const presetsEl = document.getElementById('presets');
         if (scrollContainer && presetsEl && scrollContainer.scrollTop <= presetsEl.offsetTop + 10) {
@@ -162,7 +154,6 @@ export default function App() {
           setActiveSection('presets');
           return;
         }
-
         const firstVisible = sectionIds.find(id => visibleSectionsRef.current.has(id))
         if (firstVisible) {
           observerActiveRef.current = firstVisible;
@@ -171,14 +162,12 @@ export default function App() {
       },
       { root: document.querySelector('.scrollable-sections'), rootMargin: '-20% 0px -60% 0px', threshold: 0 }
     )
-
     const timer = setTimeout(() => {
       sectionIds.forEach(id => {
         const el = document.getElementById(id)
         if (el) observer.observe(el)
       })
     }, 100)
-
     return () => {
       clearTimeout(timer)
       observer.disconnect()
@@ -191,36 +180,19 @@ export default function App() {
       <header className="app-header">
         <div className="app-header-title">
           <div>
-            <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {t('app.title')}
-            </h1>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>{t('app.title')}</h1>
             <p>{t('app.subtitle')}</p>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '15px' }}>
-          <div style={{
-            fontSize: '1rem',
-            backgroundColor: 'var(--accent-subtle)',
-            padding: '4px 12px',
-            borderRadius: '12px',
-            fontWeight: '600',
-            letterSpacing: '0.5px',
-            color: 'var(--accent)'
-          }}>
+          <div style={{ fontSize: '1rem', backgroundColor: 'var(--accent-subtle)', padding: '4px 12px', borderRadius: '12px', fontWeight: '600', letterSpacing: '0.5px', color: 'var(--accent)' }}>
             {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'v20260630-1031'}
           </div>
         </div>
       </header>
 
       <div className="app-layout">
-        <aside className="nav-column">
-          <SectionNav
-            activeSection={activeSection}
-            onSectionClick={handleSectionClick}
-            
-          />
-        </aside>
-
+        <aside className="nav-column"><SectionNav activeSection={activeSection} onSectionClick={handleSectionClick} /></aside>
         <main className="main-content">
           {status && (
             <div className={`status-${status.type}`}>
@@ -231,41 +203,31 @@ export default function App() {
                   {status.type === 'error' && <XCircle size={16} />}
                   <span>{status.message}</span>
                 </div>
-                {status.type === 'success' && (
-                  <div style={{ marginTop: 4, fontSize: 12, opacity: 0.85, display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-                    <Info size={12} />{t('app.status.success.sub')}
-                  </div>
-                )}
+                {status.type === 'success' && <div style={{ marginTop: 4, fontSize: 12, opacity: 0.85, display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}><Info size={12} />{t('app.status.success.sub')}</div>}
               </div>
             </div>
           )}
           <div className="scrollable-sections" onScroll={handleMainScroll}>
-          <ThemeLanguageSwitcher className="mobile-switcher" />
-          <UserManual />
-          <div id="presets"><PresetsSection config={config} setConfig={updateConfig} resetPresetRef={resetPresetRef} /></div>
-          <div id="system-info"><SystemInfoSection config={config} setConfig={updateConfig} errors={errors} /></div>
-          <div id="partitioning"><PartitionSection config={config} setConfig={updateConfig} errors={errors} /></div>
-          <div id="bypasses"><BypassSection config={config} setConfig={updateConfig} /></div>
-          <div id="wifi"><WifiSection config={config} setConfig={updateConfig} errors={errors} /></div>
-          <div id="user-account"><UserAccountSection config={config} setConfig={updateConfig} errors={errors} /></div>
-          <div id="personalization"><PersonalizationSection config={config} setConfig={updateConfig} /></div>
-          <div id="privacy"><PrivacySection config={config} setConfig={updateConfig} /></div>
-          <div id="performance"><PerformanceSection config={config} setConfig={updateConfig} /></div>
-          <div id="bloatware"><BloatwareSection config={config} setConfig={updateConfig} /></div>
-          <div id="custom-scripts"><CustomScriptsSection config={config} setConfig={updateConfig} errors={errors} /></div>
+            <ThemeLanguageSwitcher className="mobile-switcher" />
+            <UserManual />
+            <div id="presets"><PresetsSection config={config} setConfig={updateConfig} resetPresetRef={resetPresetRef} /></div>
+            <div id="system-info"><SystemInfoSection config={config} setConfig={updateConfig} errors={errors} /></div>
+            <div id="partitioning"><PartitionSection config={config} setConfig={updateConfig} errors={errors} /></div>
+            <div id="bypasses"><BypassSection config={config} setConfig={updateConfig} /></div>
+            <div id="wifi"><WifiSection config={config} setConfig={updateConfig} errors={errors} /></div>
+            <div id="user-account"><UserAccountSection config={config} setConfig={updateConfig} errors={errors} /></div>
+            <div id="personalization"><PersonalizationSection config={config} setConfig={updateConfig} /></div>
+            <div id="privacy"><PrivacySection config={config} setConfig={updateConfig} /></div>
+            <div id="performance"><PerformanceSection config={config} setConfig={updateConfig} /></div>
+            <div id="bloatware"><BloatwareSection config={config} setConfig={updateConfig} /></div>
+            <div id="custom-scripts"><CustomScriptsSection config={config} setConfig={updateConfig} errors={errors} /></div>
           </div>
-
           <div className="action-bar">
-            <button className="btn btn-secondary" onClick={handleReset}>
-              <RotateCcw size={16} />{t('app.reset.btn')}</button>
-            <button className="btn btn-primary" onClick={handleGenerate}>
-              <Play size={16} fill="currentColor" />{t('app.generate.btn')}</button>
+            <button className="btn btn-secondary" onClick={handleReset}><RotateCcw size={16} />{t('app.reset.btn')}</button>
+            <button className="btn btn-primary" onClick={handleGenerate}><Play size={16} fill="currentColor" />{t('app.generate.btn')}</button>
           </div>
         </main>
-
-        <aside className="preview-column">
-          <XmlPreview xml={xml} onCopy={handleCopy} onDownload={handleDownload} />
-        </aside>
+        <aside className="preview-column"><XmlPreview xml={xml} onCopy={handleCopy} onDownload={handleDownload} /></aside>
       </div>
     </div>
   )
