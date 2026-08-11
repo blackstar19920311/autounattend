@@ -39,6 +39,18 @@ function encodePowerShellBase64(script) {
 }
 
 /**
+ * Egyszerű ASCII/ANSI Base64 kódoló. A .cmd fájlokhoz kell, mert a cmd.exe
+ * nem tudja értelmezni az UTF-16LE + BOM tartalmat (ezt hívtuk el a v1.4 előtt).
+ */
+function encodeAsciiBase64(text) {
+  let binary = '';
+  for (let i = 0; i < text.length; i++) {
+    binary += String.fromCharCode(text.charCodeAt(i) & 0xff);
+  }
+  return btoa(binary);
+}
+
+/**
  * Szétbont egy Base64 kódolt szkriptet kis darabokra (chunkokra), és a RunSynchronous
  * szekcióhoz adja őket cmd.exe echo segítségével. Így megkerülhető a 259 karakteres XML limit.
  */
@@ -63,6 +75,33 @@ function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64
   runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
   runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
   runSyncCmds.push(`          <Path>powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ${destPs1Path}</Path>`);
+  runSyncCmds.push('        </RunSynchronousCommand>');
+}
+
+/**
+ * Ugyanaz, mint az addBase64ScriptToSyncCmds, DE nem futtatja le a fájlt,
+ * csak lerakja a lemezre. A SetupComplete.cmd és a hozzá tartozó .ps1
+ * elhelyezéséhez kell a specialize fázisban.
+ * @param {string} encoding - 'utf16' (.ps1) vagy 'ascii' (.cmd)
+ */
+function addBase64FileToSyncCmds(runSyncCmds, orderRef, content, tempB64Path, destPath, encoding = 'utf16') {
+  const base64 = encoding === 'ascii'
+    ? encodeAsciiBase64(content)
+    : encodePowerShellBase64(content);
+  const chunkSize = 200;
+
+  for (let i = 0; i < base64.length; i += chunkSize) {
+    const chunk = base64.substring(i, i + chunkSize);
+    const redir = i === 0 ? '>' : '>>';
+    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+    runSyncCmds.push(`          <Path>cmd.exe /c ${redir === '>' ? '&gt;' : '&gt;&gt;'}${tempB64Path} echo ${chunk}</Path>`);
+    runSyncCmds.push('        </RunSynchronousCommand>');
+  }
+
+  runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+  runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+  runSyncCmds.push(`          <Path>certutil.exe -decode -f ${tempB64Path} ${destPath}</Path>`);
   runSyncCmds.push('        </RunSynchronousCommand>');
 }
 
@@ -137,7 +176,7 @@ export function generateXml(config, uiLanguage = 'hu') {
   const windowsPE = buildWindowsPE(config, componentAttrs, inputLocale);
 
   // --- specialize pass ---
-  const specialize = buildSpecialize(config, componentAttrs);
+  const specialize = buildSpecialize(config, componentAttrs, uiLanguage);
 
   // --- oobeSystem pass ---
   const oobe = buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage);
@@ -429,7 +468,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
 // ---------------------------------------------------------------------------
 // specialize pass
 // ---------------------------------------------------------------------------
-function buildSpecialize(config, componentAttrs) {
+function buildSpecialize(config, componentAttrs, uiLanguage = 'hu') {
   const lines = [];
   lines.push('  <!-- specialize – Számítógépnév és hardver-megkerülés -->');
   lines.push('  <settings pass="specialize">');
@@ -722,6 +761,62 @@ foreach ($pkg in $packagesToRemove) {
     }
   }
 
+  // --- Office telepítés SetupComplete fázisban ---
+  // Az ODT-t SYSTEM-ként, OOBE ELŐTT futtatjuk, amikor még nincs felhasználói
+  // profil és nem épül a Start menü adatbázisa. Ez oldja meg azt a hibát,
+  // hogy Office telepítés után a Start menü soha többé nem nyílt meg.
+  if (config.customScripts && (config.customScripts.office === 'versionA' || config.customScripts.office === 'versionB')) {
+    runSyncCmds.push('');
+    runSyncCmds.push('        <!-- Office telepites elokeszitese SetupComplete fazisra -->');
+    const orderRef = { val: order };
+
+    // 1) Célkönyvtár (hibatűrően, hogy ne akassza meg a Setupot, ha már létezik)
+    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+    runSyncCmds.push('          <Description>SetupComplete konyvtar letrehozasa</Description>');
+    runSyncCmds.push('          <Path>cmd.exe /c if not exist C:\\Windows\\Setup\\Scripts md C:\\Windows\\Setup\\Scripts</Path>');
+    runSyncCmds.push('        </RunSynchronousCommand>');
+
+    // 2) Az Office telepítő PowerShell szkript (UTF-16LE, mert ékezetes szöveget naplóz)
+    let officeScript = '';
+    if (config.customScripts.office === 'versionA') {
+      officeScript = SCRIPTS.officeA
+        .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu');
+    } else {
+      officeScript = SCRIPTS.officeB
+        .replace('##OFFICE_MAK_KEY##', (config.customScripts.officeKey || '').replace(/'/g, "''"))
+        .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu');
+    }
+
+    addBase64FileToSyncCmds(
+      runSyncCmds,
+      orderRef,
+      officeScript.trim(),
+      'C:\\Windows\\Temp\\office.b64',
+      'C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1',
+      'utf16'
+    );
+
+    // 3) SetupComplete.cmd – KÖTELEZŐEN ASCII, különben a cmd.exe nem olvassa
+    const setupCompleteCmd = [
+      '@echo off',
+      'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1" >> C:\\Windows\\Temp\\SetupComplete.log 2>&1',
+      'exit /b 0',
+      ''
+    ].join('\r\n');
+
+    addBase64FileToSyncCmds(
+      runSyncCmds,
+      orderRef,
+      setupCompleteCmd,
+      'C:\\Windows\\Temp\\setupc.b64',
+      'C:\\Windows\\Setup\\Scripts\\SetupComplete.cmd',
+      'ascii'
+    );
+
+    order = orderRef.val;
+  }
+
   lines.push('');
   lines.push(`    <component ${componentAttrs('Microsoft-Windows-Deployment')}>`);
   if (runSyncCmds.length > 0) {
@@ -838,7 +933,7 @@ function buildFirstLogonCommands(config, uiLanguage) {
   // --- 1 perces globális várakozás ---
   // A felhasználó kérésére az összes FirstLogon szkript előtt várunk 1 percet (60 másodperc).
   const cs = config.customScripts || {};
-  const needsWait = cs.windowsUpdate || (cs.wingetApps && cs.wingetApps !== 'none') || (cs.office && cs.office !== 'none') || cs.pcManager || cs.domainJoin;
+  const needsWait = cs.windowsUpdate || (cs.wingetApps && cs.wingetApps !== 'none') || cs.pcManager || cs.domainJoin;
   if (needsWait) {
     commands.push({
       command: 'powershell.exe -WindowStyle Hidden -Command "Start-Sleep -Seconds 60"',
@@ -1180,28 +1275,8 @@ if($ok){
       scriptCounter++;
     }
 
-    // 3. Office
-    if (config.customScripts.office === 'versionA') {
-      scriptPaths.push(addBase64ScriptToFirstLogon(
-        commands,
-        SCRIPTS.officeA.replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
-        `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
-        `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
-        'Egyéni Szkript: Microsoft Office telepítése (A verzió)'
-      ));
-      scriptCounter++;
-    } else if (config.customScripts.office === 'versionB') {
-      scriptPaths.push(addBase64ScriptToFirstLogon(
-        commands,
-        SCRIPTS.officeB
-          .replace('##OFFICE_MAK_KEY##', (config.customScripts.officeKey || '').replace(/'/g, "''"))
-          .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
-        `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
-        `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
-        'Egyéni Szkript: Microsoft Office telepítése (B verzió)'
-      ));
-      scriptCounter++;
-    }
+    // 3. Az Office telepítés átkerült a specialize fázisba (SetupComplete.cmd),
+    // mert a FirstLogon során tönkretette a Start menü inicializálását.
 
     // 4. PC Manager
     if (config.customScripts.pcManager) {
