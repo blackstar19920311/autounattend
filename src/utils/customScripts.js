@@ -163,19 +163,53 @@ if($ok){
   officeA: `$ErrorActionPreference="Stop"
 $ProgressPreference = 'SilentlyContinue'
 
+function Show-PopupAsync($text,$title=""){
+  $t=$text.Replace("'","''")
+  $ti=$title.Replace("'","''")
+  $cmd="Add-Type -AssemblyName PresentationFramework;[System.Windows.MessageBox]::Show('$t','$ti')|Out-Null"
+  $enc=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+  Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $enc" | Out-Null
+}
+
+function Wait-ForWinget {
+  $maxAttempts = 60
+  $attempt = 0
+  while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
+    Start-Sleep -Seconds 5
+    $attempt++
+  }
+  if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) { throw "A winget nem lett elerheto." }
+}
+
 try {
+  Wait-ForWinget
+
+  winget install -e --id Microsoft.OfficeDeploymentTool --source winget --silent --accept-package-agreements --accept-source-agreements
+  if ($LASTEXITCODE -ne 0) { throw "Az Office Deployment Tool telepitese nem sikerult." }
+
+  $odtSetup = $null
+  $searchRoots = @()
+  if ($env:ProgramFiles) { $searchRoots += $env:ProgramFiles }
+  if (\${env:ProgramFiles(x86)}) { $searchRoots += \${env:ProgramFiles(x86)} }
+  if ($env:LocalAppData) { $searchRoots += $env:LocalAppData }
+
+  foreach ($root in $searchRoots) {
+    if (Test-Path -LiteralPath $root) {
+      $found = Get-ChildItem -Path $root -Filter "setup.exe" -Recurse -ErrorAction SilentlyContinue |
+        Where-Object {
+          $_.FullName -match 'Office Deployment Tool' -or
+          $_.FullName -match 'OfficeDeploymentTool' -or
+          $_.FullName -match 'Microsoft\\.OfficeDeploymentTool'
+        } | Select-Object -First 1
+      if ($found) { $odtSetup = $found.FullName; break }
+    }
+  }
+
+  if (-not $odtSetup) { throw "Nem talalom az ODT setup.exe fajlt." }
+
   $odtFolder = Join-Path $env:TEMP "ODT-HUHU-Teams"
   New-Item -ItemType Directory -Path $odtFolder -Force | Out-Null
   $xmlPath = Join-Path $odtFolder "configuration.xml"
-
-  $odtExe = Join-Path $odtFolder "odtsetup.exe"
-  Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkID=626065" -OutFile $odtExe
-  
-  $extractProcess = Start-Process -FilePath $odtExe -ArgumentList "/extract:\`"$odtFolder\`" /quiet" -Wait -PassThru
-  if ($extractProcess.ExitCode -ne 0) { throw "ODT kicsomagolasa sikertelen." }
-  
-  $odtSetup = Join-Path $odtFolder "setup.exe"
-  if (-not (Test-Path -LiteralPath $odtSetup)) { throw "Nem talalom az ODT setup.exe fajlt." }
 
 @'
 <Configuration>
@@ -194,10 +228,11 @@ try {
   $p = Start-Process -FilePath $odtSetup -ArgumentList "/configure \`"$xmlPath\`"" -Wait -PassThru
   if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { throw "ODT telepites sikertelen (ExitCode: $($p.ExitCode))." }
 
-  Add-Content -Path 'C:\\InstallFull.log' -Value "Office 365 telepites sikeresen befejezodott (SetupComplete)." -Encoding utf8 -ErrorAction SilentlyContinue
+  Show-PopupAsync "Az Office telepítése sikeresen megtörtént!" "Telepítés"
 }
 catch {
-  Add-Content -Path 'C:\\InstallFull.log' -Value "Office telepitési hiba: $($_.Exception.Message)" -Encoding utf8 -ErrorAction SilentlyContinue
+  Show-PopupAsync "Az Office telepítése során hiba lépett fel!" "Telepítés"
+  throw "Office telepítési hiba!"
 }`,
 
   officeB: `$ErrorActionPreference = "Stop"
@@ -206,7 +241,16 @@ $ProgressPreference = 'SilentlyContinue'
 # *** IDE ÍRD BE A MAK KULCSOT ***
 $MAK_KEY = '##OFFICE_MAK_KEY##'
 
+function Show-PopupAsync($text, $title = "") {
+    $t   = $text.Replace("'", "''")
+    $ti  = $title.Replace("'", "''")
+    $cmd = "Add-Type -AssemblyName PresentationFramework;[System.Windows.MessageBox]::Show('$t','$ti')|Out-Null"
+    $enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+    Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $enc" | Out-Null
+}
+
 function Invoke-OfficeActivation($key) {
+    # ospp.vbs keresése – Office16 mappa alatt
     $osspPaths = @(
         (Join-Path $env:ProgramFiles        "Microsoft Office\\Office16\\ospp.vbs"),
         (Join-Path \${env:ProgramFiles(x86)} "Microsoft Office\\Office16\\ospp.vbs")
@@ -220,6 +264,7 @@ function Invoke-OfficeActivation($key) {
 
     Write-Host "ospp.vbs megtalálva: $osppVbs"
 
+    # 1. lépés: MAK kulcs bejegyzése
     $inpkey = Start-Process -FilePath "cscript.exe" \`
         -ArgumentList "//NoLogo \`"$osppVbs\`" /inpkey:$key" \`
         -Wait -PassThru -WindowStyle Hidden
@@ -227,6 +272,7 @@ function Invoke-OfficeActivation($key) {
         throw "MAK kulcs bejegyzese sikertelen (ExitCode: $($inpkey.ExitCode))."
     }
 
+    # 2. lépés: Online aktiválás
     $act = Start-Process -FilePath "cscript.exe" \`
         -ArgumentList "//NoLogo \`"$osppVbs\`" /act" \`
         -Wait -PassThru -WindowStyle Hidden
@@ -237,20 +283,57 @@ function Invoke-OfficeActivation($key) {
     Write-Host "Aktiválás sikeres."
 }
 
+function Wait-ForWinget {
+    $maxAttempts = 60
+    $attempt = 0
+    while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
+        Start-Sleep -Seconds 5
+        $attempt++
+    }
+    if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+        throw "A winget nem lett elerheto."
+    }
+}
+
 try {
+    Wait-ForWinget
+
+    winget install -e --id Microsoft.OfficeDeploymentTool --source winget --silent --accept-package-agreements --accept-source-agreements
+
+    # FIX: 3010 = sikeres telepítés, újraindítás szükséges – ez nem hiba
+    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 3010) {
+        throw "Az Office Deployment Tool telepitese nem sikerult. (ExitCode: $LASTEXITCODE)"
+    }
+
+    $odtSetup = $null
+    $searchRoots = @()
+    if ($env:ProgramFiles)          { $searchRoots += $env:ProgramFiles }
+    if (\${env:ProgramFiles(x86)})   { $searchRoots += \${env:ProgramFiles(x86)} }
+    if ($env:LocalAppData)          { $searchRoots += $env:LocalAppData }
+
+    foreach ($root in $searchRoots) {
+        if (Test-Path -LiteralPath $root) {
+            # FIX: $.FullName → $_.FullName (mindhárom helyen)
+            $found = Get-ChildItem -Path $root -Filter "setup.exe" -Recurse -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $_.FullName -match 'Office Deployment Tool' -or
+                    $_.FullName -match 'OfficeDeploymentTool' -or
+                    $_.FullName -match 'Microsoft\\.OfficeDeploymentTool'
+                } | Select-Object -First 1
+            if ($found) { $odtSetup = $found.FullName; break }
+        }
+    }
+
+    if (-not $odtSetup) {
+        throw "Nem talalom az ODT setup.exe fajlt."
+    }
+
     $odtFolder = Join-Path $env:TEMP "ODT-OfficePP2021"
     New-Item -ItemType Directory -Path $odtFolder -Force | Out-Null
     $xmlPath = Join-Path $odtFolder "configuration.xml"
 
-    $odtExe = Join-Path $odtFolder "odtsetup.exe"
-    Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkID=626065" -OutFile $odtExe
-    
-    $extractProcess = Start-Process -FilePath $odtExe -ArgumentList "/extract:\`"$odtFolder\`" /quiet" -Wait -PassThru
-    if ($extractProcess.ExitCode -ne 0) { throw "ODT kicsomagolasa sikertelen." }
-    
-    $odtSetup = Join-Path $odtFolder "setup.exe"
-    if (-not (Test-Path -LiteralPath $odtSetup)) { throw "Nem talalom az ODT setup.exe fajlt." }
-
+    # FIX: érvényes XML konfiguráció – Office Professional Plus 2021
+    # A MAK kulcsot és aktiválást az ospp.vbs kezeli (megbízhatóbb az AUTOACTIVATE-nél)
     @"
 <Configuration>
   <Add OfficeClientEdition="64" Channel="PerpetualVL2021">
@@ -268,19 +351,21 @@ try {
 "@ | Out-File -FilePath $xmlPath -Encoding utf8 -Force
 
     $p = Start-Process -FilePath $odtSetup -ArgumentList "/configure \`"$xmlPath\`"" -Wait -PassThru
-    if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) {
+    if ($p.ExitCode -ne 0) {
         throw "ODT telepites sikertelen (ExitCode: $($p.ExitCode))."
     }
 
+    # Aktiválás ospp.vbs-en keresztül – megbízhatóbb mint az AUTOACTIVATE XML property
     if ([string]::IsNullOrWhiteSpace($MAK_KEY) -eq $false) {
         Invoke-OfficeActivation -key $MAK_KEY
-        Add-Content -Path 'C:\\InstallFull.log' -Value "Office 2021 telepites es aktivalas sikeres (SetupComplete)." -Encoding utf8 -ErrorAction SilentlyContinue
+        Show-PopupAsync "Az Office Professional Plus 2021 telepítése és aktiválása sikeresen megtörtént!" "Telepítés"
     } else {
-        Add-Content -Path 'C:\\InstallFull.log' -Value "Office 2021 telepites sikeres, aktivalas hianyzik (SetupComplete)." -Encoding utf8 -ErrorAction SilentlyContinue
+        Show-PopupAsync "Az Office Professional Plus 2021 telepítése sikeresen megtörtént! (Aktiválás később szükséges)" "Telepítés"
     }
 
 } catch {
-    Add-Content -Path 'C:\\InstallFull.log' -Value "Office telepitési hiba: $($_.Exception.Message)" -Encoding utf8 -ErrorAction SilentlyContinue
+    Show-PopupAsync "Az Office telepítése során hiba lépett fel!\`n\`nRészletek: $($_.Exception.Message)" "Telepítés"
+    throw "Office telepítési hiba!"
 }`,
 
   pcManager: `$ErrorActionPreference="Stop"
