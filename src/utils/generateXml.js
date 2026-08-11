@@ -66,6 +66,25 @@ function addBase64ScriptToSyncCmds(runSyncCmds, orderRef, scriptContent, tempB64
   runSyncCmds.push('        </RunSynchronousCommand>');
 }
 
+function addBase64FileToSyncCmds(runSyncCmds, orderRef, fileContent, tempB64Path, destFilePath) {
+  const base64 = encodePowerShellBase64(fileContent);
+  const chunkSize = 200;
+
+  for (let i = 0; i < base64.length; i += chunkSize) {
+    const chunk = base64.substring(i, i + chunkSize);
+    const redir = i === 0 ? '>' : '>>';
+    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+    runSyncCmds.push(`          <Path>cmd.exe /c ${redir === '>' ? '&gt;' : '&gt;&gt;'}${tempB64Path} echo ${chunk}</Path>`);
+    runSyncCmds.push('        </RunSynchronousCommand>');
+  }
+
+  runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+  runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+  runSyncCmds.push(`          <Path>certutil.exe -decode -f ${tempB64Path} ${destFilePath}</Path>`);
+  runSyncCmds.push('        </RunSynchronousCommand>');
+}
+
 /**
  * Szétbont egy Base64 kódolt szkriptet FirstLogonCommands formátumban.
  * A szkriptet Base64-be kódolja, darabokra bontja, majd certutil-lal dekódolja.
@@ -411,6 +430,49 @@ GPT ATTRIBUTES=0x8000000000000001`;
       lines.push('        </OSImage>');
       lines.push('      </ImageInstall>');
     }
+  }
+
+  // --- SetupComplete.cmd és Office telepítő ---
+  if (config.customScripts.office === 'versionA' || config.customScripts.office === 'versionB') {
+    runSyncCmds.push('');
+    runSyncCmds.push('        <!-- Office letoltes es telepites SetupComplete fazisban -->');
+    const orderRef = { val: order };
+    
+    // Könyvtár létrehozása a szkripteknek
+    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
+    runSyncCmds.push(`          <Path>cmd.exe /c mkdir C:\\Windows\\Setup\\Scripts</Path>`);
+    runSyncCmds.push('        </RunSynchronousCommand>');
+
+    let officeScript = '';
+    if (config.customScripts.office === 'versionA') {
+      officeScript = SCRIPTS.officeA.replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu');
+    } else {
+      officeScript = SCRIPTS.officeB
+        .replace('##OFFICE_MAK_KEY##', (config.customScripts.officeKey || '').replace(/'/g, "''"))
+        .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu');
+    }
+
+    // PowerShell fájl lerakása decode-dal
+    addBase64FileToSyncCmds(
+      runSyncCmds,
+      orderRef,
+      officeScript.trim(),
+      'C:\\Windows\\Temp\\office.b64',
+      'C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1'
+    );
+
+    // SetupComplete.cmd létrehozása, ami meghívja a PS1-et
+    const setupCompleteCmd = `@echo off\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1"\n`;
+    addBase64FileToSyncCmds(
+      runSyncCmds,
+      orderRef,
+      setupCompleteCmd,
+      'C:\\Windows\\Temp\\setupc.b64',
+      'C:\\Windows\\Setup\\Scripts\\SetupComplete.cmd'
+    );
+
+    order = orderRef.val;
   }
 
   if (runSyncCmds.length > 0) {
@@ -1180,28 +1242,8 @@ if($ok){
       scriptCounter++;
     }
 
-    // 3. Office
-    if (config.customScripts.office === 'versionA') {
-      scriptPaths.push(addBase64ScriptToFirstLogon(
-        commands,
-        SCRIPTS.officeA.replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
-        `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
-        `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
-        'Egyéni Szkript: Microsoft Office telepítése (A verzió)'
-      ));
-      scriptCounter++;
-    } else if (config.customScripts.office === 'versionB') {
-      scriptPaths.push(addBase64ScriptToFirstLogon(
-        commands,
-        SCRIPTS.officeB
-          .replace('##OFFICE_MAK_KEY##', (config.customScripts.officeKey || '').replace(/'/g, "''"))
-          .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu'),
-        `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
-        `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
-        'Egyéni Szkript: Microsoft Office telepítése (B verzió)'
-      ));
-      scriptCounter++;
-    }
+    // 3. Office - Áthelyezve a SetupComplete fázisba! (Lásd: buildSpecialize)
+
 
     // 4. PC Manager
     if (config.customScripts.pcManager) {
