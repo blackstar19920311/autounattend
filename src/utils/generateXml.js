@@ -156,7 +156,7 @@ export function generateXml(config, uiLanguage = 'hu') {
   const windowsPE = buildWindowsPE(config, componentAttrs, inputLocale);
 
   // --- specialize pass ---
-  const specialize = buildSpecialize(config, componentAttrs);
+  const specialize = buildSpecialize(config, componentAttrs, uiLanguage);
 
   // --- oobeSystem pass ---
   const oobe = buildOobeSystem(config, componentAttrs, inputLocale, uiLanguage);
@@ -432,55 +432,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
     }
   }
 
-  // --- SetupComplete.cmd és Office telepítő ---
-  if (config.customScripts.office === 'versionA' || config.customScripts.office === 'versionB') {
-    runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Office letoltes es telepites SetupComplete fazisban -->');
-    const orderRef = { val: order };
-    
-    // Könyvtár létrehozása a szkripteknek
-    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
-    runSyncCmds.push(`          <Path>cmd.exe /c mkdir C:\\Windows\\Setup\\Scripts</Path>`);
-    runSyncCmds.push('        </RunSynchronousCommand>');
 
-    let officeScript = '';
-    if (config.customScripts.office === 'versionA') {
-      officeScript = SCRIPTS.officeA.replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu');
-    } else {
-      officeScript = SCRIPTS.officeB
-        .replace('##OFFICE_MAK_KEY##', (config.customScripts.officeKey || '').replace(/'/g, "''"))
-        .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu');
-    }
-
-    // PowerShell fájl lerakása decode-dal
-    addBase64FileToSyncCmds(
-      runSyncCmds,
-      orderRef,
-      officeScript.trim(),
-      'C:\\Windows\\Temp\\office.b64',
-      'C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1'
-    );
-
-    // SetupComplete.cmd létrehozása, ami meghívja a PS1-et
-    const setupCompleteCmd = `@echo off\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1"\n`;
-    addBase64FileToSyncCmds(
-      runSyncCmds,
-      orderRef,
-      setupCompleteCmd,
-      'C:\\Windows\\Temp\\setupc.b64',
-      'C:\\Windows\\Setup\\Scripts\\SetupComplete.cmd'
-    );
-
-    order = orderRef.val;
-  }
-
-  if (runSyncCmds.length > 0) {
-    lines.push('');
-    lines.push('      <RunSynchronous>');
-    lines.push(...runSyncCmds);
-    lines.push('      </RunSynchronous>');
-  }
 
   lines.push('    </component>');
 
@@ -491,7 +443,7 @@ GPT ATTRIBUTES=0x8000000000000001`;
 // ---------------------------------------------------------------------------
 // specialize pass
 // ---------------------------------------------------------------------------
-function buildSpecialize(config, componentAttrs) {
+function buildSpecialize(config, componentAttrs, uiLanguage) {
   const lines = [];
   lines.push('  <!-- specialize – Számítógépnév és hardver-megkerülés -->');
   lines.push('  <settings pass="specialize">');
