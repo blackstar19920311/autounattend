@@ -524,144 +524,12 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
     addBase64ScriptToSyncCmds(
       runSyncCmds,
       orderRef,
-      psScript.trim(),
-      'C:\\Windows\\Temp\\rn.b64',
+      psScript.trim(),      'C:\\Windows\\Temp\\rn.b64',
       'C:\\Windows\\Temp\\rn.ps1'
     );
 
     order = orderRef.val;
   }
-
-
-  // --- Windows 11 25H2 offline Start menü és reklámtiltás ---
-  if (config.cleanStartPins || config.disableStartAds) {
-    runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Windows 11 25H2 offline Start menu customization -->');
-
-    const startMenuScript = `
-$ErrorActionPreference = 'Stop'
-
-$log = 'C:\\Windows\\Temp\\StartMenuSetup.log'
-
-function Write-StartLog($message) {
-  Add-Content -Path $log -Value (
-    ('[' + (Get-Date).ToString('yyyy-MM-dd HH:mm:ss') + '] ' + $message)
-  ) -Encoding utf8 -ErrorAction SilentlyContinue
-}
-
-Write-StartLog 'Start menu customization started.'
-
-$defaultShellDir = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
-New-Item -Path $defaultShellDir -ItemType Directory -Force | Out-Null
-
-if (${config.cleanStartPins ? '$true' : '$false'}) {
-  Write-StartLog 'Writing LayoutModification.json.'
-
-  $layoutJson = @'
-{
-  "primaryOEMPins": [
-    {
-      "packagedAppId": "windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"
-    }
-  ],
-  "secondaryOEMPins": [],
-  "firstRunOEMPins": []
-}
-'@
-
-  $utf8NoBom = New-Object System.Text.UTF8Encoding $false
-  [System.IO.File]::WriteAllText(
-    (Join-Path $defaultShellDir 'LayoutModification.json'),
-    $layoutJson,
-    $utf8NoBom
-  )
-}
-
-$defaultUserHive = 'C:\\Users\\Default\\NTUSER.DAT'
-$defaultUserLoaded = $false
-
-try {
-  Write-StartLog 'Loading Default User hive.'
-  reg.exe load 'HKU\\DefaultUser' $defaultUserHive | Out-Null
-  if ($LASTEXITCODE -ne 0) {
-    throw 'Default User hive could not be loaded.'
-  }
-  $defaultUserLoaded = $true
-
-  $defaultContentDelivery =
-    'HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager'
-
-  $defaultStart =
-    'HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start'
-
-  $defaultExplorerAdvanced =
-    'HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'
-
-  New-Item -Path ('Registry::' + $defaultContentDelivery) -Force | Out-Null
-  New-Item -Path ('Registry::' + $defaultStart) -Force | Out-Null
-  New-Item -Path ('Registry::' + $defaultExplorerAdvanced) -Force | Out-Null
-
-  if (${config.hideRecentApps ? '$true' : '$false'}) {
-    reg.exe add $defaultStart /v ShowRecentList /t REG_DWORD /d 0 /f | Out-Null
-  }
-
-  if (${config.hideMostUsedApps ? '$true' : '$false'}) {
-    reg.exe add $defaultStart /v ShowFrequentList /t REG_DWORD /d 0 /f | Out-Null
-  }
-
-  if (${config.hideRecommendedFiles ? '$true' : '$false'}) {
-    reg.exe add $defaultExplorerAdvanced /v Start_TrackDocs /t REG_DWORD /d 0 /f | Out-Null
-  }
-
-  if (${config.disableStartAds ? '$true' : '$false'}) {
-    Write-StartLog 'Disabling Default User consumer content.'
-
-    reg.exe add $defaultContentDelivery /v ContentDeliveryAllowed /t REG_DWORD /d 0 /f | Out-Null
-    reg.exe add $defaultContentDelivery /v OemPreInstalledAppsEnabled /t REG_DWORD /d 0 /f | Out-Null
-    reg.exe add $defaultContentDelivery /v PreInstalledAppsEnabled /t REG_DWORD /d 0 /f | Out-Null
-    reg.exe add $defaultContentDelivery /v SilentInstalledAppsEnabled /t REG_DWORD /d 0 /f | Out-Null
-    reg.exe add $defaultContentDelivery /v SystemPaneSuggestionsEnabled /t REG_DWORD /d 0 /f | Out-Null
-    reg.exe add $defaultContentDelivery /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f | Out-Null
-    reg.exe add $defaultContentDelivery /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f | Out-Null
-    reg.exe add $defaultContentDelivery /v SubscribedContent-353694Enabled /t REG_DWORD /d 0 /f | Out-Null
-    reg.exe add $defaultContentDelivery /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f | Out-Null
-  }
-}
-finally {
-  if ($defaultUserLoaded) {
-    reg.exe unload 'HKU\\DefaultUser' | Out-Null
-  }
-}
-
-if (${config.disableStartAds ? '$true' : '$false'}) {
-  Write-StartLog 'Writing machine-wide consumer content policies.'
-
-  $cloudContentPolicy =
-    'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent'
-
-  reg.exe add $cloudContentPolicy /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f | Out-Null
-  reg.exe add $cloudContentPolicy /v DisableConsumerAccountStateContent /t REG_DWORD /d 1 /f | Out-Null
-  reg.exe add $cloudContentPolicy /v DisableCloudOptimizedContent /t REG_DWORD /d 1 /f | Out-Null
-}
-
-Write-StartLog 'Start menu customization finished.'
-`;
-
-    const orderRef = { val: order };
-
-    addBase64ScriptToSyncCmds(
-      runSyncCmds,
-      orderRef,
-      startMenuScript.trim(),
-      'C:\\Windows\\Temp\\startmenu25h2.b64',
-      'C:\\Windows\\Temp\\startmenu25h2.ps1'
-    );
-
-    order = orderRef.val;
-  }
-
-
-
   // --- Alvás letiltása és Maximális teljesítmény energiaséma (Specialize fázis) ---
   if (config.disableSleep) {
     runSyncCmds.push('');
@@ -690,6 +558,8 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t R
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Chat" /v ChatIcon /t REG_DWORD /d 3 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v NoPinningStoreToTaskbar /t REG_DWORD /d 1 /f
 
+# FIGYELEM: ebbe a mappaba NE keruljon LayoutModification.json,
+# mert az letiltja a Start menube pinelest Windows 11 alatt.
 $xml = '<?xml version="1.0" encoding="utf-8"?>
 <LayoutModificationTemplate xmlns="http://schemas.microsoft.com/Start/2014/LayoutModification" xmlns:taskbar="http://schemas.microsoft.com/Start/2014/TaskbarLayout" Version="1">
   <CustomTaskbarLayoutCollection PinListPlacement="Replace">
@@ -779,100 +649,238 @@ foreach ($pkg in $packagesToRemove) {
     }
   }
 
-  // --- Start menü és személyre szabási beállítások (Default User profil + HKLM GPO házirendek) ---
+  // ------------------------------------------------------------------
+  // Windows 11 25H2 - HKLM hazirendek + Start pins + Default User profil
+  // Egyetlen szkript, EGY hive load/unload. Sorrend: HKLM -> StartPins -> hive.
+  // ------------------------------------------------------------------
   {
-    const defaultUserRegCmds = [];
-    const hklmGpoCmds = [];
+    const hklmCmds = [];          // reg.exe add "HKLM\..." sorok
+    const defUserCmds = [];       // reg.exe add "HKU\AU_DEFAULT\..." sorok
+    let startPinsJson = null;     // ConfigureStartPins ertek vagy null
+    let removeLegacyLayoutJson = false;
 
-    // Keresőmező mód (HKLM GPO - minden felhasználóra érvényes)
+    // ---------- 1) HKLM hazirendek ----------
     if (config.searchBoxMode) {
       const searchModeValues = { full: 3, iconLabel: 2, iconOnly: 1, hidden: 0 };
       const value = searchModeValues[config.searchBoxMode];
       if (value !== undefined) {
-        hklmGpoCmds.push(`reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v SearchOnTaskbarMode /t REG_DWORD /d ${value} /f`);
+        hklmCmds.push(`reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v SearchOnTaskbarMode /t REG_DWORD /d \${value} /f`);
       }
     }
-
-    // Háttérkép módosításának tiltása (HKLM GPO)
     if (config.disableWallpaperChange) {
-      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\ActiveDesktop" /v NoChangingWallPaper /t REG_DWORD /d 1 /f');
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\ActiveDesktop" /v NoChangingWallPaper /t REG_DWORD /d 1 /f');
     }
-
-    // Feladatnézet gomb elrejtése (Default User)
-    if (config.hideTaskbarIcons) {
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
-    }
-
-    // Egérgyorsítás kikapcsolása (Default User)
-    if (config.disableMouseAcceleration) {
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f');
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f');
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f');
-    }
-
-    // Átlátszóság kikapcsolása (Default User)
-    if (config.disableTransparency) {
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
-    }
-
-    // A Start menü registrybeállításait a Windows 11 25H2 startMenuScript kezeli.
-
-    // Tippek és javaslatok kikapcsolása (HKLM GPO - minden felhasználóra érvényes)
     if (config.hideTipsAndSuggestions) {
-      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f');
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f');
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableSoftLanding /t REG_DWORD /d 1 /f');
     }
-
-    // Webes keresés letiltása (HKLM GPO - minden felhasználóra érvényes)
     if (config.disableWebSearch) {
-      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
+    }
+    if (config.disableStartAds) {
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f');
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableConsumerAccountStateContent /t REG_DWORD /d 1 /f');
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableCloudOptimizedContent /t REG_DWORD /d 1 /f');
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableSoftLanding /t REG_DWORD /d 1 /f');
+      hklmCmds.push('reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightFeatures /t REG_DWORD /d 1 /f');
     }
 
-    if (defaultUserRegCmds.length > 0 || hklmGpoCmds.length > 0) {
+    // ---------- 2) Start pins (25H2: ConfigureStartPins) ----------
+    if (config.cleanStartPins) {
+      startPinsJson = JSON.stringify({
+        applyOnce: true,
+        pinnedList: [
+          { packagedAppId: 'windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel' }
+        ]
+      });
+      removeLegacyLayoutJson = true;
+    }
+
+    // ---------- 3) Default User (HKU\AU_DEFAULT) ----------
+    if (config.hideRecentApps) {
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
+    }
+    if (config.hideMostUsedApps) {
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackProgs /t REG_DWORD /d 0 /f');
+    }
+    if (config.hideRecommendedFiles) {
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
+    }
+    if (config.hideTaskbarIcons) {
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
+    }
+    if (config.disableMouseAcceleration) {
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f');
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f');
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f');
+    }
+    if (config.disableTransparency) {
+      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
+    }
+    if (config.disableStartAds) {
+      const cdm = 'HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager';
+      const cdmValues = [
+        'ContentDeliveryAllowed', 'OemPreInstalledAppsEnabled', 'PreInstalledAppsEnabled',
+        'SilentInstalledAppsEnabled', 'SystemPaneSuggestionsEnabled', 'SoftLandingEnabled',
+        'RotatingLockScreenOverlayEnabled', 'SubscribedContentEnabled',
+        'SubscribedContent-338387Enabled', 'SubscribedContent-338388Enabled',
+        'SubscribedContent-338389Enabled', 'SubscribedContent-338393Enabled',
+        'SubscribedContent-353694Enabled', 'SubscribedContent-353696Enabled',
+        'SubscribedContent-353698Enabled'
+      ];
+      for (const v of cdmValues) {
+        defUserCmds.push(`reg.exe add "\${cdm}" /v \${v} /t REG_DWORD /d 0 /f`);
+      }
+    }
+
+    if (hklmCmds.length > 0 || defUserCmds.length > 0 || startPinsJson || removeLegacyLayoutJson) {
       runSyncCmds.push('');
-      runSyncCmds.push('        <!-- Start menü és személyre szabási beállítások (Default User + GPO) -->');
-      let settingsScript = '';
+      runSyncCmds.push('        <!-- 25H2: HKLM hazirendek + ConfigureStartPins + Default User profil (EGY hive load) -->');
 
-      if (defaultUserRegCmds.length > 0) {
-        settingsScript += 'reg load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"\n';
-        settingsScript += defaultUserRegCmds.join('\n') + '\n';
-        settingsScript += 'reg unload "HKU\\DefaultUser"\n';
-      }
+      const startPinsBlock = startPinsJson
+        ? `try {
+  $pinsKey = 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start'
+  if (-not (Test-Path $pinsKey)) { New-Item -Path $pinsKey -Force | Out-Null }
+  $pinsJson = '\${startPinsJson.replace(/'/g, "''")}'
+  New-ItemProperty -Path $pinsKey -Name 'ConfigureStartPins' -Value $pinsJson -PropertyType String -Force | Out-Null
+  Write-AuLog ('ConfigureStartPins beirva: ' + $pinsJson)
+} catch {
+  Write-AuLog ('[HIBA] ConfigureStartPins: ' + $_.Exception.Message)
+}`
+        : '';
 
-      if (hklmGpoCmds.length > 0) {
-        settingsScript += hklmGpoCmds.join('\n') + '\n';
-      }
+      const legacyJsonBlock = removeLegacyLayoutJson
+        ? `try {
+  $legacyJson = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell\\LayoutModification.json'
+  if (Test-Path $legacyJson) {
+    Remove-Item -Path $legacyJson -Force -ErrorAction SilentlyContinue
+    Write-AuLog 'Regi LayoutModification.json torolve (utkozott a ConfigureStartPins-szel).'
+  }
+} catch { }`
+        : '';
+
+      const hklmBlock = hklmCmds.length > 0
+        ? `try {
+\${hklmCmds.map(c => '  ' + c + ' | Out-Null').join('\n')}
+  Write-AuLog 'HKLM hazirendek kiirva.'
+} catch {
+  Write-AuLog ('[HIBA] HKLM hazirendek: ' + $_.Exception.Message)
+}`
+        : '';
+
+      const hiveBlock = defUserCmds.length > 0
+        ? `$hiveKey  = 'AU_DEFAULT'
+$hivePath = 'C:\\Users\\Default\\NTUSER.DAT'
+$loaded = $false
+try {
+  for ($i = 1; $i -le 5; $i++) {
+    reg.exe load "HKU\\$hiveKey" $hivePath | Out-Null
+    if ($LASTEXITCODE -eq 0) { $loaded = $true; break }
+    Write-AuLog ('Hive load ' + $i + '. probalkozas sikertelen (exit ' + $LASTEXITCODE + ').')
+    Start-Sleep -Seconds 3
+  }
+  if (-not $loaded) {
+    Write-AuLog '[HIBA] Az NTUSER.DAT nem toltheto be, a Default User beallitasok kimaradnak.'
+  } else {
+    Write-AuLog 'Default User hive betoltve (HKU\\AU_DEFAULT).'
+\${defUserCmds.map(c => '    ' + c + ' | Out-Null').join('\n')}
+    Write-AuLog 'Default User kulcsok kiirva.'
+  }
+} catch {
+  Write-AuLog ('[HIBA] Default User blokk: ' + $_.Exception.Message)
+} finally {
+  if ($loaded) {
+    [gc]::Collect()
+    [gc]::WaitForPendingFinalizers()
+    Start-Sleep -Seconds 1
+    $unloaded = $false
+    for ($i = 1; $i -le 10; $i++) {
+      reg.exe unload "HKU\\$hiveKey" | Out-Null
+      if ($LASTEXITCODE -eq 0) { $unloaded = $true; break }
+      Write-AuLog ('Hive unload ' + $i + '. probalkozas sikertelen (exit ' + $LASTEXITCODE + '), ujra.')
+      [gc]::Collect()
+      Start-Sleep -Seconds 2
+    }
+    if ($unloaded) {
+      Write-AuLog 'Default User hive lecsatolva.'
+    } else {
+      Write-AuLog '[KRITIKUS] A hive lecsatolasa NEM sikerult. Az NTUSER.DAT serulhetett.'
+    }
+  }
+}`
+        : '';
+
+      const settingsScript = `$ErrorActionPreference = 'Continue'
+$ProgressPreference = 'SilentlyContinue'
+$auLogDir = 'C:\\ProgramData\\AutoUnattend\\Logs'
+$auLog = 'C:\\ProgramData\\AutoUnattend\\Logs\\StartMenuSetup.log'
+New-Item -ItemType Directory -Path $auLogDir -Force | Out-Null
+function Write-AuLog($msg) {
+  Add-Content -Path $auLog -Value ('[' + (Get-Date).ToString('yyyy-MM-dd HH:mm:ss') + '] ' + $msg) -Encoding utf8 -ErrorAction SilentlyContinue
+}
+Write-AuLog 'START: 25H2 Start menu / Default User konfiguracio'
+
+\${hklmBlock}
+
+\${startPinsBlock}
+
+\${legacyJsonBlock}
+
+\${hiveBlock}
+
+Write-AuLog 'FINISH: 25H2 Start menu / Default User konfiguracio'`;
 
       const orderRef = { val: order };
-      addBase64ScriptToSyncCmds(runSyncCmds, orderRef, settingsScript.trim(), 'C:\\Windows\\Temp\\startmenu.b64', 'C:\\Windows\\Temp\\startmenu.ps1');
+      addBase64ScriptToSyncCmds(
+        runSyncCmds,
+        orderRef,
+        settingsScript.trim(),
+        'C:\\Windows\\Temp\\aupers.b64',
+        'C:\\Windows\\Temp\\aupers.ps1'
+      );
       order = orderRef.val;
     }
   }
 
-  // --- Office telepítés SetupComplete fázisban ---
-  // Az ODT-t SYSTEM-ként, OOBE ELŐTT futtatjuk, amikor még nincs felhasználói
-  // profil és nem épül a Start menü adatbázisa. Ez oldja meg azt a hibát,
-  // hogy Office telepítés után a Start menü soha többé nem nyílt meg.
+  // --- Office telepites: SetupComplete.cmd (elsodleges) + SYSTEM task (fallback) ---
+  // A SetupComplete.cmd a Windows Setup vegen fut, SYSTEM joggal:
+  //   - az OOBE es a fiok letrehozasa UTAN,
+  //   - de az ELSO INTERAKTIV BEJELENTKEZES ELOTT.
+  // Ezert az ODT nem verseng a per-user Start menu adatbazis (start2.bin)
+  // elso felepitesevel, ami a FirstLogon-os valtozatban a Start menu
+  // osszeomlasat okozta (kiemelten domain-be leptetett gepeken).
+  // FIGYELEM: OEM licenc (BIOS/DigitalProductId) + nem-Enterprise edition
+  // eseten a windeploy.exe NEM futtatja a SetupComplete.cmd-t, ezert
+  // regisztralunk egy AU-OfficeInstallFallback nevu SYSTEM Scheduled Taskot is.
   if (config.customScripts && (config.customScripts.office === 'versionA' || config.customScripts.office === 'versionB')) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Office telepites elokeszitese SetupComplete fazisra -->');
+    runSyncCmds.push('        <!-- Office: InstallOffice.ps1 + SetupComplete.cmd kihelyezese + fallback task -->');
     const orderRef = { val: order };
 
-    // 1) Célkönyvtár (hibatűrően, hogy ne akassza meg a Setupot, ha már létezik)
+    // 1) Konyvtarak (hibaturoen)
     runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
-    runSyncCmds.push('          <Description>SetupComplete konyvtar letrehozasa</Description>');
+    runSyncCmds.push(`          <Order>\${orderRef.val++}</Order>`);
+    runSyncCmds.push('          <Description>Setup Scripts konyvtar letrehozasa</Description>');
     runSyncCmds.push('          <Path>cmd.exe /c if not exist C:\\Windows\\Setup\\Scripts md C:\\Windows\\Setup\\Scripts</Path>');
     runSyncCmds.push('        </RunSynchronousCommand>');
 
-    // 2) Az Office telepítő PowerShell szkript (UTF-16LE, mert ékezetes szöveget naplóz)
+    runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
+    runSyncCmds.push(`          <Order>\${orderRef.val++}</Order>`);
+    runSyncCmds.push('          <Description>AutoUnattend allapot- es log konyvtar</Description>');
+    runSyncCmds.push('          <Path>cmd.exe /c if not exist C:\\ProgramData\\AutoUnattend\\Logs md C:\\ProgramData\\AutoUnattend\\Logs</Path>');
+    runSyncCmds.push('        </RunSynchronousCommand>');
+
+    // 2) InstallOffice.ps1 kihelyezese (UTF-16LE, mert PowerShell -File olvassa)
     let officeScript = '';
     if (config.customScripts.office === 'versionA') {
       officeScript = SCRIPTS.officeA
-        .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu');
+        .replace(/##OFFICE_LANG##/g, uiLanguage === 'en' ? 'en-us' : 'hu-hu');
     } else {
       officeScript = SCRIPTS.officeB
-        .replace('##OFFICE_MAK_KEY##', (config.customScripts.officeKey || '').replace(/'/g, "''"))
-        .replace('##OFFICE_LANG##', uiLanguage === 'en' ? 'en-us' : 'hu-hu');
+        .replace(/##OFFICE_MAK_KEY##/g, (config.customScripts.officeKey || '').trim().replace(/'/g, "''"))
+        .replace(/##OFFICE_LANG##/g, uiLanguage === 'en' ? 'en-us' : 'hu-hu');
     }
 
     addBase64FileToSyncCmds(
@@ -884,13 +892,24 @@ foreach ($pkg in $packagesToRemove) {
       'utf16'
     );
 
-    // 3) SetupComplete.cmd – KÖTELEZŐEN ASCII, különben a cmd.exe nem olvassa
+    // 3) SetupComplete.cmd - KOTELEZOEN ASCII (a cmd.exe nem eszi az UTF-16+BOM-ot),
+    //    a vegen SAJAT MAGAT torli. Az InstallOffice.ps1-et NEM torli!
     const setupCompleteCmd = [
       '@echo off',
-      'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1" >> C:\\Windows\\Temp\\SetupComplete.log 2>&1',
-      'exit /b 0',
+      'set "AUDIR=C:\\ProgramData\\AutoUnattend"',
+      'if not exist "%AUDIR%\\Logs" md "%AUDIR%\\Logs"',
+      '>> "%AUDIR%\\Logs\\SetupComplete.log" echo [SetupComplete] start %DATE% %TIME%',
+      '> "%AUDIR%\\SetupCompleteRan.tag" echo ran',
+      'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1" >> "%AUDIR%\\Logs\\SetupComplete.log" 2>&1',
+      '>> "%AUDIR%\\Logs\\SetupComplete.log" echo [SetupComplete] end %DATE% %TIME%',
+      '(goto) 2>nul & del /f /q "%~f0"',
       ''
     ].join('\r\n');
+
+    // Vedelem: ekezetes karakter tonkretenne az ASCII base64 kodolast
+    if (/[^\x00-\x7F]/.test(setupCompleteCmd)) {
+      throw new Error('SetupComplete.cmd csak ASCII karaktereket tartalmazhat.');
+    }
 
     addBase64FileToSyncCmds(
       runSyncCmds,
@@ -899,6 +918,31 @@ foreach ($pkg in $packagesToRemove) {
       'C:\\Windows\\Temp\\setupc.b64',
       'C:\\Windows\\Setup\\Scripts\\SetupComplete.cmd',
       'ascii'
+    );
+
+    // 4) Fallback SYSTEM Scheduled Task (OEM licenc / halozathiany esetere)
+    const officeFallbackTaskScript = `
+$ErrorActionPreference = 'Continue'
+$taskName = 'AU-OfficeInstallFallback'
+$ps1 = 'C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1'
+try {
+  $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $ps1 + '"')
+  $trigger   = New-ScheduledTaskTrigger -AtStartup
+  $trigger.Delay = 'PT3M'
+  $principal = New-ScheduledTaskPrincipal -UserId 'S-1-5-18' -RunLevel Highest
+  $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 3)
+  Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
+} catch {
+  New-Item -ItemType Directory -Path 'C:\\ProgramData\\AutoUnattend\\Logs' -Force | Out-Null
+  Add-Content -Path 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallFull.log' -Value ('[HIBA] Fallback task regisztralas: ' + $_.Exception.Message) -Encoding utf8 -ErrorAction SilentlyContinue
+}
+`;
+    addBase64ScriptToSyncCmds(
+      runSyncCmds,
+      orderRef,
+      officeFallbackTaskScript.trim(),
+      'C:\\Windows\\Temp\\officetask.b64',
+      'C:\\Windows\\Temp\\officetask.ps1'
     );
 
     order = orderRef.val;
@@ -1362,8 +1406,39 @@ if($ok){
       scriptCounter++;
     }
 
-    // 3. Az Office telepítés átkerült a specialize fázisba (SetupComplete.cmd),
-    // mert a FirstLogon során tönkretette a Start menü inicializálását.
+    // 3. Office: a telepites a specialize fazisban kihelyezett SetupComplete.cmd-bol
+    //    (elso bejelentkezes ELOTT), illetve az AU-OfficeInstallFallback taskbol fut.
+    //    Itt csak az allapot-visszajelzes (popup) marad.
+    if (config.customScripts.office === 'versionA' || config.customScripts.office === 'versionB') {
+      const officeNotifyScript = `$state = 'C:\\ProgramData\\AutoUnattend'
+$logPath = 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallFull.log'
+
+function Show-PopupAsync($text,$title){
+  $t = $text.Replace("'","''")
+  $ti = $title.Replace("'","''")
+  $cmd = "Add-Type -AssemblyName PresentationFramework;[System.Windows.MessageBox]::Show('$t','$ti')|Out-Null"
+  $enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+  Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $enc" | Out-Null
+}
+
+if (Test-Path (Join-Path $state 'Office.done')) {
+  Show-PopupAsync 'Az Office telepitese sikeresen megtortent.' 'Telepites'
+} elseif (Test-Path (Join-Path $state 'Office.failed')) {
+  Show-PopupAsync ('Az Office telepitese NEM sikerult. Reszletek: ' + $logPath) 'Telepites'
+} elseif (Test-Path (Join-Path $state 'Office.running')) {
+  Show-PopupAsync 'Az Office telepitese meg folyamatban van a hatterben. Ne kapcsold ki a gepet.' 'Telepites'
+} else {
+  Show-PopupAsync ('Az Office telepitese nem indult el (valoszinuleg OEM licenc miatt kimaradt a SetupComplete). Ujrainditas utan automatikusan ujraprobalja. Log: ' + $logPath) 'Telepites'
+}`;
+      scriptPaths.push(addBase64ScriptToFirstLogon(
+        commands,
+        officeNotifyScript,
+        'C:\\Windows\\Temp\\officenotify.b64',
+        'C:\\Windows\\Temp\\officenotify.ps1',
+        'Office telepites allapotanak jelzese'
+      ));
+      scriptCounter++;
+    }
 
     // 4. PC Manager
     if (config.customScripts.pcManager) {
@@ -1407,6 +1482,7 @@ if($ok){
 
   // --- Végső takarítás ---
   const cleanupScript = `
+# A C:\\ProgramData\\AutoUnattend\\Logs NEM torlodik (hibakereseshez kell).
 Remove-Item -Path C:\\Windows\\Temp\\* -Recurse -Force -ErrorAction SilentlyContinue
   `.trim();
 

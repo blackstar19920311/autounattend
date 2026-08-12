@@ -171,7 +171,7 @@ export const translations = {
     'pers.startMenu.disableWebSearch': 'Webes keresés letiltása',
     'pers.startMenu.disableWebSearch.desc': 'Webes keresés letiltása a Start menüben.',
     'pers.startMenu.cleanPins': 'Csak a Gépház kitűzése',
-    'pers.startMenu.cleanPins.desc': 'Windows 11 25H2 alatt a Default User Start layoutot megpróbálja csak a Gépházra korlátozni. Offline módban ez kísérleti beállítás.',
+    'pers.startMenu.cleanPins.desc': 'Windows 11 25H2: a Start menü kitűzött elemeit egyetlen elemre (Gépház) állítja a ConfigureStartPins házirenddel. Egyszer érvényesül, utána szabadon átrendezhető.',
     'pers.startMenu.disableAds': 'Reklámok és fogyasztói ajánlások tiltása',
     'pers.startMenu.disableAds.desc': 'Megpróbálja letiltani a TikTok-, LinkedIn- és más promóciós alkalmazásajánlásokat a Start menüben.',
 
@@ -435,7 +435,7 @@ export const translations = {
     'pers.startMenu.disableWebSearch': 'Disable Web Search',
     'pers.startMenu.disableWebSearch.desc': 'Disable web search in the Start menu.',
     'pers.startMenu.cleanPins': 'Pin only Settings',
-    'pers.startMenu.cleanPins.desc': 'Attempts to limit the Windows 11 25H2 Default User Start layout to Settings. This is experimental in offline mode.',
+    'pers.startMenu.cleanPins.desc': 'Windows 11 25H2: sets the Start menu pins to a single item (Settings) via the ConfigureStartPins policy. Applied once, the user can re-pin afterwards.',
     'pers.startMenu.disableAds': 'Disable ads and consumer suggestions',
     'pers.startMenu.disableAds.desc': 'Attempts to disable TikTok, LinkedIn, and other promotional app suggestions in the Start menu.',
 
