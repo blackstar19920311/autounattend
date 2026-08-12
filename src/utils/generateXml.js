@@ -844,16 +844,12 @@ Write-AuLog 'FINISH: 25H2 Start menu / Default User konfiguracio'`;
     }
   }
 
-  // --- Office telepites: SetupComplete.cmd (elsodleges) + SYSTEM task (fallback) ---
-  // A SetupComplete.cmd a Windows Setup vegen fut, SYSTEM joggal:
-  //   - az OOBE es a fiok letrehozasa UTAN,
-  //   - de az ELSO INTERAKTIV BEJELENTKEZES ELOTT.
-  // Ezert az ODT nem verseng a per-user Start menu adatbazis (start2.bin)
-  // elso felepitesevel, ami a FirstLogon-os valtozatban a Start menu
-  // osszeomlasat okozta (kiemelten domain-be leptetett gepeken).
-  // FIGYELEM: OEM licenc (BIOS/DigitalProductId) + nem-Enterprise edition
-  // eseten a windeploy.exe NEM futtatja a SetupComplete.cmd-t, ezert
-  // regisztralunk egy AU-OfficeInstallFallback nevu SYSTEM Scheduled Taskot is.
+  // --- Office telepites: SetupComplete.cmd ---
+  // A specialize pass alatt az Office PowerShell-szkript és a
+  // SetupComplete.cmd kihelyezésre kerül.
+  // A tényleges Office-telepítést kizárólag a Windows Setup által
+  // meghívott SetupComplete.cmd végzi SYSTEM jogosultsággal.
+  // Az Office nem fut FirstLogonCommands alatt.
   if (config.customScripts && (config.customScripts.office === 'versionA' || config.customScripts.office === 'versionB')) {
     runSyncCmds.push('');
     runSyncCmds.push('        <!-- Office: InstallOffice.ps1 + SetupComplete.cmd kihelyezese -->');
@@ -1381,8 +1377,9 @@ if($ok){
       scriptCounter++;
     }
 
-    // 3. Office: a telepites a specialize fazisban kihelyezett SetupComplete.cmd-bol
-    //    (elso bejelentkezes ELOTT), illetve az AU-OfficeInstallFallback taskbol fut.
+    // Office: a telepites kizarolag a specialize fazisban kihelyezett
+    // SetupComplete.cmd fajlbol fut.
+    // A FirstLogonCommands blokk Office-telepitest nem vegez.
     //    Itt csak az allapot-visszajelzes (popup) marad.
     if (config.customScripts.office === 'versionA' || config.customScripts.office === 'versionB') {
       const officeNotifyScript = `$state = 'C:\\ProgramData\\AutoUnattend'
