@@ -1440,7 +1440,9 @@ if (Test-Path (Join-Path $state 'Office.done')) {
 } elseif (Test-Path (Join-Path $state 'Office.running')) {
   Show-PopupAsync 'Az Office telepitese meg folyamatban van a hatterben. Ne kapcsold ki a gepet.' 'Telepites'
 } else {
-  Show-PopupAsync ('Az Office telepitese nem indult el (valoszinuleg OEM licenc miatt kimaradt a SetupComplete). Ujrainditas utan automatikusan ujraprobalja. Log: ' + $logPath) 'Telepites'
+  Show-PopupAsync (
+    'Az Office telepitese nem indult el. Ellenorizd, hogy a SetupComplete.cmd lefutott-e. Reszletek: ' + $logPath
+  ) 'Telepites'
 }`;
       scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
