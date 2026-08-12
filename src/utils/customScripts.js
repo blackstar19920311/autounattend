@@ -164,14 +164,14 @@ if($ok){
 \$ProgressPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-\$LogDir    = 'C:\\ProgramData\\AutoUnattend\\Logs'
-\$FullLog   = 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallFull.log'
-\$ShortLog  = 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallSummary.log'
-\$DoneFlag  = 'C:\\ProgramData\\AutoUnattend\\Office.done'
-\$FailFlag  = 'C:\\ProgramData\\AutoUnattend\\Office.failed'
-\$RunFlag   = 'C:\\ProgramData\\AutoUnattend\\Office.running'
-\$WorkDir   = 'C:\\Windows\\Temp\\ODT'
-\$ScriptName = 'Microsoft 365 telepitese (ODT)'
+\$LogDir      = 'C:\\ProgramData\\AutoUnattend\\Logs'
+\$FullLog     = 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallFull.log'
+\$ShortLog    = 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallSummary.log'
+\$DoneFlag    = 'C:\\ProgramData\\AutoUnattend\\Office.done'
+\$FailFlag    = 'C:\\ProgramData\\AutoUnattend\\Office.failed'
+\$RunFlag     = 'C:\\ProgramData\\AutoUnattend\\Office.running'
+\$WorkDir     = 'C:\\Windows\\Temp\\ODT'
+\$ScriptName  = 'Office 365 (O365ProPlusRetail) telepitese (ODT)'
 
 New-Item -ItemType Directory -Path \$LogDir -Force | Out-Null
 
@@ -191,45 +191,25 @@ function Write-Summary(\$msg) {
 
 function Test-OfficeInstalled {
   \$cfg = 'HKLM:\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\Configuration'
-
   if (Test-Path \$cfg) {
     \$ids = (Get-ItemProperty -Path \$cfg -ErrorAction SilentlyContinue).ProductReleaseIds
-    if (\$ids) {
-      return \$true
-    }
+    if (\$ids) { return \$true }
   }
-
-  return (Test-Path (
-    \$env:ProgramFiles + '\\Microsoft Office\\root\\Office16\\WINWORD.EXE'
-  ))
+  return (Test-Path (\$env:ProgramFiles + '\\Microsoft Office\\root\\Office16\\WINWORD.EXE'))
 }
 
 function Wait-ForNetwork([int]\$TimeoutSec = 120) {
   \$deadline = (Get-Date).AddSeconds(\$TimeoutSec)
-
   while ((Get-Date) -lt \$deadline) {
     try {
       \$client = New-Object System.Net.Sockets.TcpClient
-      \$async = \$client.BeginConnect(
-        'officecdn.microsoft.com',
-        443,
-        \$null,
-        \$null
-      )
-
+      \$async = \$client.BeginConnect('officecdn.microsoft.com', 443, \$null, \$null)
       \$ok = \$async.AsyncWaitHandle.WaitOne(3000, \$false)
-
-      if (\$ok -and \$client.Connected) {
-        \$client.Close()
-        return \$true
-      }
-
+      if (\$ok -and \$client.Connected) { \$client.Close(); return \$true }
       \$client.Close()
     } catch { }
-
     Start-Sleep -Seconds 5
   }
-
   return \$false
 }
 
@@ -264,12 +244,18 @@ if (Test-Path \$DoneFlag) {
 }
 
 if (Test-OfficeInstalled) {
-  Write-Log 'Az Office mar telepitve van, done jelzo kiirasa.'
-  Set-Content -Path \$DoneFlag -Value ((Get-Date).ToString('s')) -Encoding ascii
+  Write-Log 'Az Office mar telepitve van.'
+  Set-Content \`
+    -Path \$DoneFlag \`
+    -Value ((Get-Date).ToString('s')) \`
+    -Encoding ascii
   exit 0
 }
 
-Set-Content -Path \$RunFlag -Value ((Get-Date).ToString('s')) -Encoding ascii
+Set-Content \`
+  -Path \$RunFlag \`
+  -Value ((Get-Date).ToString('s')) \`
+  -Encoding ascii
 
 \$success = \$false
 try {
@@ -287,16 +273,16 @@ try {
   <Add OfficeClientEdition="64" Channel="Current">
     <Product ID="O365ProPlusRetail">
       <Language ID="##OFFICE_LANG##" />
+      <ExcludeApp ID="Teams" />
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="Bing" />
     </Product>
   </Add>
   <RemoveMSI />
   <Display Level="None" AcceptEULA="TRUE" />
-  <Updates Enabled="TRUE" />
   <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
   <Property Name="PinIconsToTaskbar" Value="FALSE" />
-  <Property Name="SharedComputerLicensing" Value="0" />
   <Logging Level="Standard" Path="C:\\ProgramData\\AutoUnattend\\Logs" />
 </Configuration>
 '@
@@ -312,10 +298,20 @@ try {
     if (\$exitCode -eq 0 -or \$exitCode -eq 3010) { break }
     Start-Sleep -Seconds 20
   }
-  if (\$exitCode -ne 0 -and \$exitCode -ne 3010) { throw ('ODT telepites sikertelen (ExitCode: ' + \$exitCode + ').') }
-  if (-not (Test-OfficeInstalled)) { throw 'Az ODT 0-t adott vissza, de az Office nem talalhato a rendszerben.' }
 
-  Set-Content -Path \$DoneFlag -Value ((Get-Date).ToString('s')) -Encoding ascii
+  if (\$exitCode -ne 0 -and \$exitCode -ne 3010) {
+    throw ('ODT telepites sikertelen (ExitCode: ' + \$exitCode + ').')
+  }
+
+  if (-not (Test-OfficeInstalled)) {
+    throw 'Az ODT 0-t adott vissza, de az Office nem talalhato a rendszerben.'
+  }
+
+  Set-Content \`
+    -Path \$DoneFlag \`
+    -Value ((Get-Date).ToString('s')) \`
+    -Encoding ascii
+  
   Remove-Item -Path \$FailFlag -Force -ErrorAction SilentlyContinue
   \$success = \$true
   Write-Log 'Office telepites kesz.'
@@ -323,9 +319,6 @@ try {
 }
 catch {
   Write-Log ('[HIBA] ' + \$_.Exception.Message)
-  Write-Summary (
-    'HIBAS: ' + \$ScriptName + ' - ' + \$_.Exception.Message
-  )
 
   Set-Content \`
     -Path \$FailFlag \`
@@ -466,14 +459,10 @@ function Get-OsppPath {
   return \$null
 }
 
-function Invoke-Ospp(\$OsppPath, \$Arguments, \$LogLabel) {
-  \$outFile = Join-Path \$env:TEMP ('ospp_' + [guid]::NewGuid().ToString('N') + '.txt')
-  \$p = Start-Process -FilePath 'cscript.exe' -ArgumentList ('//NoLogo "' + \$OsppPath + '" ' + \$Arguments) -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput \$outFile
-  \$text = ''
-  if (Test-Path \$outFile) { \$text = (Get-Content -Path \$outFile -Raw -ErrorAction SilentlyContinue) }
-  Remove-Item -Path \$outFile -Force -ErrorAction SilentlyContinue
-  Write-Log ('ospp ' + \$LogLabel + ' exit=' + \$p.ExitCode)
-  if (\$text) { Write-Log ('ospp ' + \$LogLabel + ' kimenet: ' + (\$text -replace '\\s+', ' ')) }
+function Invoke-Ospp(\$ScriptPath, \$Args, \$ActionName) {
+  Write-Log ("OSPP.VBS (\$ActionName) futtatasa...")
+  \$p = Start-Process -FilePath "cscript.exe" -ArgumentList "//nologo \`"\$ScriptPath\`" \$Args" -Wait -PassThru -WindowStyle Hidden
+  Write-Log ("OSPP.VBS (\$ActionName) kesz. ExitCode: " + \$p.ExitCode)
   return \$p.ExitCode
 }
 
@@ -503,6 +492,15 @@ if (Test-Path \$DoneFlag) {
   exit 0
 }
 
+if (Test-OfficeInstalled) {
+  Write-Log 'Az Office mar telepitve van.'
+  Set-Content \`
+    -Path \$DoneFlag \`
+    -Value ((Get-Date).ToString('s')) \`
+    -Encoding ascii
+  exit 0
+}
+
 Set-Content \`
   -Path \$RunFlag \`
   -Value ((Get-Date).ToString('s')) \`
@@ -510,17 +508,16 @@ Set-Content \`
 
 \$success = \$false
 try {
-  if (-not (Test-OfficeInstalled)) {
-    if (-not (Wait-ForNetwork 120)) { throw 'Nincs halozati kapcsolat 120 masodpercen belul.' }
-    Write-Log 'Halozat OK.'
+  if (-not (Wait-ForNetwork 120)) { throw 'Nincs halozati kapcsolat 120 masodpercen belul.' }
+  Write-Log 'Halozat OK.'
 
-    New-Item -ItemType Directory -Path \$WorkDir -Force | Out-Null
-    \$setupExe = Join-Path \$WorkDir 'setup.exe'
-    if (-not (Get-OdtSetup \$setupExe)) { throw 'Az ODT setup.exe letoltese nem sikerult.' }
-    Write-Log 'ODT setup.exe letoltve.'
+  New-Item -ItemType Directory -Path \$WorkDir -Force | Out-Null
+  \$setupExe = Join-Path \$WorkDir 'setup.exe'
+  if (-not (Get-OdtSetup \$setupExe)) { throw 'Az ODT setup.exe letoltese nem sikerult.' }
+  Write-Log 'ODT setup.exe letoltve.'
 
-    \$xmlPath = Join-Path \$WorkDir 'configuration.xml'
-    \$cfg = @'
+  \$xmlPath = Join-Path \$WorkDir 'configuration.xml'
+  \$cfg = @'
 <Configuration>
   <Add OfficeClientEdition="64" Channel="PerpetualVL2021">
     <Product ID="ProPlus2021Volume">
@@ -537,24 +534,28 @@ try {
   <Logging Level="Standard" Path="C:\\ProgramData\\AutoUnattend\\Logs" />
 </Configuration>
 '@
-    \$utf8NoBom = New-Object System.Text.UTF8Encoding \$false
-    [System.IO.File]::WriteAllText(\$xmlPath, \$cfg, \$utf8NoBom)
-    Write-Log 'configuration.xml kiirva.'
+  \$utf8NoBom = New-Object System.Text.UTF8Encoding \$false
+  [System.IO.File]::WriteAllText(\$xmlPath, \$cfg, \$utf8NoBom)
+  Write-Log 'configuration.xml kiirva.'
 
-    \$exitCode = -1
-    for (\$run = 1; \$run -le 2; \$run++) {
-      \$p = Start-Process -FilePath \$setupExe -ArgumentList ('/configure "' + \$xmlPath + '"') -Wait -PassThru -WindowStyle Hidden
-      \$exitCode = \$p.ExitCode
-      Write-Log ('ODT futas ' + \$run + ', ExitCode: ' + \$exitCode)
-      if (\$exitCode -eq 0 -or \$exitCode -eq 3010) { break }
-      Start-Sleep -Seconds 20
-    }
-    if (\$exitCode -ne 0 -and \$exitCode -ne 3010) { throw ('ODT telepites sikertelen (ExitCode: ' + \$exitCode + ').') }
-    if (-not (Test-OfficeInstalled)) { throw 'Az ODT 0-t adott vissza, de az Office nem talalhato a rendszerben.' }
-    Write-Log 'Office telepites kesz.'
-  } else {
-    Write-Log 'Az Office mar telepitve van, csak az aktivalas kovetkezik.'
+  \$exitCode = -1
+  for (\$run = 1; \$run -le 2; \$run++) {
+    \$p = Start-Process -FilePath \$setupExe -ArgumentList ('/configure "' + \$xmlPath + '"') -Wait -PassThru -WindowStyle Hidden
+    \$exitCode = \$p.ExitCode
+    Write-Log ('ODT futas ' + \$run + ', ExitCode: ' + \$exitCode)
+    if (\$exitCode -eq 0 -or \$exitCode -eq 3010) { break }
+    Start-Sleep -Seconds 20
   }
+  
+  if (\$exitCode -ne 0 -and \$exitCode -ne 3010) { 
+    throw ('ODT telepites sikertelen (ExitCode: ' + \$exitCode + ').') 
+  }
+  
+  if (-not (Test-OfficeInstalled)) { 
+    throw 'Az ODT 0-t adott vissza, de az Office nem talalhato a rendszerben.' 
+  }
+  
+  Write-Log 'Office telepites kesz.'
 
   if (-not [string]::IsNullOrWhiteSpace(\$MAK_KEY)) {
     if (Test-OfficeActivated) {
@@ -583,16 +584,17 @@ try {
     Write-Log 'Nincs MAK kulcs megadva, aktivalas kihagyva.'
   }
 
-  Set-Content -Path \$DoneFlag -Value ((Get-Date).ToString('s')) -Encoding ascii
+  Set-Content \`
+    -Path \$DoneFlag \`
+    -Value ((Get-Date).ToString('s')) \`
+    -Encoding ascii
+  
   Remove-Item -Path \$FailFlag -Force -ErrorAction SilentlyContinue
   \$success = \$true
   Write-Summary ('SIKERES: ' + \$ScriptName)
 }
 catch {
   Write-Log ('[HIBA] ' + \$_.Exception.Message)
-  Write-Summary (
-    'HIBAS: ' + \$ScriptName + ' - ' + \$_.Exception.Message
-  )
 
   Set-Content \`
     -Path \$FailFlag \`

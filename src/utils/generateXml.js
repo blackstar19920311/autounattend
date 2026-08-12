@@ -699,11 +699,9 @@ foreach ($pkg in $packagesToRemove) {
     // ---------- 3) Default User (HKU\AU_DEFAULT) ----------
     if (config.hideRecentApps) {
       defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
-      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
     }
     if (config.hideMostUsedApps) {
       defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
-      defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackProgs /t REG_DWORD /d 0 /f');
     }
     if (config.hideRecommendedFiles) {
       defUserCmds.push('reg.exe add "HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
@@ -722,16 +720,24 @@ foreach ($pkg in $packagesToRemove) {
     if (config.disableStartAds) {
       const cdm = 'HKU\\AU_DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager';
       const cdmValues = [
-        'ContentDeliveryAllowed', 'OemPreInstalledAppsEnabled', 'PreInstalledAppsEnabled',
-        'SilentInstalledAppsEnabled', 'SystemPaneSuggestionsEnabled', 'SoftLandingEnabled',
-        'RotatingLockScreenOverlayEnabled', 'SubscribedContentEnabled',
-        'SubscribedContent-338387Enabled', 'SubscribedContent-338388Enabled',
-        'SubscribedContent-338389Enabled', 'SubscribedContent-338393Enabled',
-        'SubscribedContent-353694Enabled', 'SubscribedContent-353696Enabled',
-        'SubscribedContent-353698Enabled'
+        'ContentDeliveryAllowed',
+        'OemPreInstalledAppsEnabled',
+        'PreInstalledAppsEnabled',
+        'SilentInstalledAppsEnabled',
+        'SystemPaneSuggestionsEnabled',
+        'SoftLandingEnabled',
+        'RotatingLockScreenOverlayEnabled',
+        'SubscribedContentEnabled',
+        'SubscribedContent-338387Enabled',
+        'SubscribedContent-338388Enabled',
+        'SubscribedContent-338389Enabled',
+        'SubscribedContent-338393Enabled',
+        'SubscribedContent-353694Enabled',
+        'SubscribedContent-353696Enabled',
+        'SubscribedContent-353698Enabled',
       ];
-      for (const v of cdmValues) {
-        defUserCmds.push(`reg.exe add "${cdm}" /v ${v} /t REG_DWORD /d 0 /f`);
+      for (const valueName of cdmValues) {
+        defUserCmds.push(`reg.exe add "${cdm}" /v ${valueName} /t REG_DWORD /d 0 /f`);
       }
     }
 
@@ -771,42 +777,76 @@ ${hklmCmds.map(c => '  ' + c + ' | Out-Null').join('\n')}
         : '';
 
       const hiveBlock = defUserCmds.length > 0
-        ? `$hiveKey  = 'AU_DEFAULT'
+        ? `$hiveKey = 'AU_DEFAULT'
 $hivePath = 'C:\\Users\\Default\\NTUSER.DAT'
 $loaded = $false
+
 try {
   for ($i = 1; $i -le 5; $i++) {
     reg.exe load "HKU\\$hiveKey" $hivePath | Out-Null
-    if ($LASTEXITCODE -eq 0) { $loaded = $true; break }
-    Write-AuLog ('Hive load ' + $i + '. probalkozas sikertelen (exit ' + $LASTEXITCODE + ').')
+
+    if ($LASTEXITCODE -eq 0) {
+      $loaded = $true
+      break
+    }
+
+    Write-AuLog (
+      'Hive load ' + $i +
+      '. probalkozas sikertelen, exit=' +
+      $LASTEXITCODE
+    )
+
     Start-Sleep -Seconds 3
   }
+
   if (-not $loaded) {
-    Write-AuLog '[HIBA] Az NTUSER.DAT nem toltheto be, a Default User beallitasok kimaradnak.'
-  } else {
-    Write-AuLog 'Default User hive betoltve (HKU\\AU_DEFAULT).'
+    Write-AuLog '[HIBA] A Default User hive nem toltheto be.'
+  }
+  else {
+    Write-AuLog 'Default User hive betoltve.'
+
 ${defUserCmds.map(c => '    ' + c + ' | Out-Null').join('\n')}
+
     Write-AuLog 'Default User kulcsok kiirva.'
   }
-} catch {
-  Write-AuLog ('[HIBA] Default User blokk: ' + $_.Exception.Message)
-} finally {
+}
+catch {
+  Write-AuLog (
+    '[HIBA] Default User blokk: ' +
+    $_.Exception.Message
+  )
+}
+finally {
   if ($loaded) {
     [gc]::Collect()
     [gc]::WaitForPendingFinalizers()
     Start-Sleep -Seconds 1
+
     $unloaded = $false
+
     for ($i = 1; $i -le 10; $i++) {
       reg.exe unload "HKU\\$hiveKey" | Out-Null
-      if ($LASTEXITCODE -eq 0) { $unloaded = $true; break }
-      Write-AuLog ('Hive unload ' + $i + '. probalkozas sikertelen (exit ' + $LASTEXITCODE + '), ujra.')
+
+      if ($LASTEXITCODE -eq 0) {
+        $unloaded = $true
+        break
+      }
+
+      Write-AuLog (
+        'Hive unload ' + $i +
+        '. probalkozas sikertelen, exit=' +
+        $LASTEXITCODE
+      )
+
       [gc]::Collect()
       Start-Sleep -Seconds 2
     }
+
     if ($unloaded) {
       Write-AuLog 'Default User hive lecsatolva.'
-    } else {
-      Write-AuLog '[KRITIKUS] A hive lecsatolasa NEM sikerult. Az NTUSER.DAT serulhetett.'
+    }
+    else {
+      Write-AuLog '[KRITIKUS] A hive lecsatolasa sikertelen.'
     }
   }
 }`
