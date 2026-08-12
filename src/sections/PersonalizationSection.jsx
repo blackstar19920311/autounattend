@@ -145,6 +145,13 @@ export default function PersonalizationSection({ config, setConfig }) {
         onChange={handleToggle('cleanStartPins')}
         id="cleanStartPins"
       />
+      <Toggle
+        label={t('pers.startMenu.disableAds')}
+        description={t('pers.startMenu.disableAds.desc')}
+        checked={config.disableStartAds}
+        onChange={handleToggle('disableStartAds')}
+        id="disableStartAds"
+      />
     </Card>
   );
 }

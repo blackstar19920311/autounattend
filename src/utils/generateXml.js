@@ -533,30 +533,130 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
   }
 
 
-  // --- Start menü takarítás (ConfigureStartPins registry GPO + MDM) ---
-  if (config.cleanStartPins) {
+  // --- Windows 11 25H2 offline Start menü és reklámtiltás ---
+  if (config.cleanStartPins || config.disableStartAds) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Start menü kitűzött elemeinek törlése (csak Gépház) -->');
-    const layoutScript = `
-$dir = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
-New-Item -Path $dir -ItemType Directory -Force | Out-Null
+    runSyncCmds.push('        <!-- Windows 11 25H2 offline Start menu customization -->');
 
-$json = @'
+    const startMenuScript = `
+$ErrorActionPreference = 'Stop'
+
+$log = 'C:\\Windows\\Temp\\StartMenuSetup.log'
+
+function Write-StartLog($message) {
+  Add-Content -Path $log -Value (
+    ('[' + (Get-Date).ToString('yyyy-MM-dd HH:mm:ss') + '] ' + $message)
+  ) -Encoding utf8 -ErrorAction SilentlyContinue
+}
+
+Write-StartLog 'Start menu customization started.'
+
+$defaultShellDir = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
+New-Item -Path $defaultShellDir -ItemType Directory -Force | Out-Null
+
+if (${config.cleanStartPins ? '$true' : '$false'}) {
+  Write-StartLog 'Writing LayoutModification.json.'
+
+  $layoutJson = @'
 {
-  "primaryOEMPins": [],
-  "secondaryOEMPins": [
+  "primaryOEMPins": [
     {
       "packagedAppId": "windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"
     }
-  ]
+  ],
+  "secondaryOEMPins": [],
+  "firstRunOEMPins": []
 }
 '@
 
-$utf8NoBom = New-Object System.Text.UTF8Encoding $false
-[System.IO.File]::WriteAllText("$dir\\LayoutModification.json", $json, $utf8NoBom)
+  $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+  [System.IO.File]::WriteAllText(
+    (Join-Path $defaultShellDir 'LayoutModification.json'),
+    $layoutJson,
+    $utf8NoBom
+  )
+}
+
+$defaultUserHive = 'C:\\Users\\Default\\NTUSER.DAT'
+$defaultUserLoaded = $false
+
+try {
+  Write-StartLog 'Loading Default User hive.'
+  reg.exe load 'HKU\\DefaultUser' $defaultUserHive | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Default User hive could not be loaded.'
+  }
+  $defaultUserLoaded = $true
+
+  $defaultContentDelivery =
+    'HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager'
+
+  $defaultStart =
+    'HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start'
+
+  $defaultExplorerAdvanced =
+    'HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'
+
+  New-Item -Path ('Registry::' + $defaultContentDelivery) -Force | Out-Null
+  New-Item -Path ('Registry::' + $defaultStart) -Force | Out-Null
+  New-Item -Path ('Registry::' + $defaultExplorerAdvanced) -Force | Out-Null
+
+  if (${config.hideRecentApps ? '$true' : '$false'}) {
+    reg.exe add $defaultStart /v ShowRecentList /t REG_DWORD /d 0 /f | Out-Null
+  }
+
+  if (${config.hideMostUsedApps ? '$true' : '$false'}) {
+    reg.exe add $defaultStart /v ShowFrequentList /t REG_DWORD /d 0 /f | Out-Null
+  }
+
+  if (${config.hideRecommendedFiles ? '$true' : '$false'}) {
+    reg.exe add $defaultExplorerAdvanced /v Start_TrackDocs /t REG_DWORD /d 0 /f | Out-Null
+  }
+
+  if (${config.disableStartAds ? '$true' : '$false'}) {
+    Write-StartLog 'Disabling Default User consumer content.'
+
+    reg.exe add $defaultContentDelivery /v ContentDeliveryAllowed /t REG_DWORD /d 0 /f | Out-Null
+    reg.exe add $defaultContentDelivery /v OemPreInstalledAppsEnabled /t REG_DWORD /d 0 /f | Out-Null
+    reg.exe add $defaultContentDelivery /v PreInstalledAppsEnabled /t REG_DWORD /d 0 /f | Out-Null
+    reg.exe add $defaultContentDelivery /v SilentInstalledAppsEnabled /t REG_DWORD /d 0 /f | Out-Null
+    reg.exe add $defaultContentDelivery /v SystemPaneSuggestionsEnabled /t REG_DWORD /d 0 /f | Out-Null
+    reg.exe add $defaultContentDelivery /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f | Out-Null
+    reg.exe add $defaultContentDelivery /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f | Out-Null
+    reg.exe add $defaultContentDelivery /v SubscribedContent-353694Enabled /t REG_DWORD /d 0 /f | Out-Null
+    reg.exe add $defaultContentDelivery /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f | Out-Null
+  }
+}
+finally {
+  if ($defaultUserLoaded) {
+    reg.exe unload 'HKU\\DefaultUser' | Out-Null
+  }
+}
+
+if (${config.disableStartAds ? '$true' : '$false'}) {
+  Write-StartLog 'Writing machine-wide consumer content policies.'
+
+  $cloudContentPolicy =
+    'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent'
+
+  reg.exe add $cloudContentPolicy /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f | Out-Null
+  reg.exe add $cloudContentPolicy /v DisableConsumerAccountStateContent /t REG_DWORD /d 1 /f | Out-Null
+  reg.exe add $cloudContentPolicy /v DisableCloudOptimizedContent /t REG_DWORD /d 1 /f | Out-Null
+}
+
+Write-StartLog 'Start menu customization finished.'
 `;
+
     const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, layoutScript.trim(), 'C:\\Windows\\Temp\\layout.b64', 'C:\\Windows\\Temp\\layout.ps1');
+
+    addBase64ScriptToSyncCmds(
+      runSyncCmds,
+      orderRef,
+      startMenuScript.trim(),
+      'C:\\Windows\\Temp\\startmenu25h2.b64',
+      'C:\\Windows\\Temp\\startmenu25h2.ps1'
+    );
+
     order = orderRef.val;
   }
 
@@ -715,20 +815,7 @@ foreach ($pkg in $packagesToRemove) {
       defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f');
     }
 
-    // Start menü: legutóbbi alkalmazások elrejtése (Default User)
-    if (config.hideRecentApps) {
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f');
-    }
-
-    // Start menü: leggyakrabban használt alkalmazások elrejtése (Default User)
-    if (config.hideMostUsedApps) {
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f');
-    }
-
-    // Start menü: ajánlott fájlok elrejtése (Default User)
-    if (config.hideRecommendedFiles) {
-      defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f');
-    }
+    // A Start menü registrybeállításait a Windows 11 25H2 startMenuScript kezeli.
 
     // Tippek és javaslatok kikapcsolása (HKLM GPO - minden felhasználóra érvényes)
     if (config.hideTipsAndSuggestions) {

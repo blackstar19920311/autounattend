@@ -73,6 +73,7 @@ GPT ATTRIBUTES=0x8000000000000001`,
     hideTipsAndSuggestions: false,
     disableWebSearch: false,
     cleanStartPins: false,
+    disableStartAds: false,
 
     // 7. Adatvédelem
     disableTelemetry: false,
