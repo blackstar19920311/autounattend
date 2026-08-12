@@ -856,18 +856,18 @@ Write-AuLog 'FINISH: 25H2 Start menu / Default User konfiguracio'`;
   // regisztralunk egy AU-OfficeInstallFallback nevu SYSTEM Scheduled Taskot is.
   if (config.customScripts && (config.customScripts.office === 'versionA' || config.customScripts.office === 'versionB')) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Office: InstallOffice.ps1 + SetupComplete.cmd kihelyezese + fallback task -->');
+    runSyncCmds.push('        <!-- Office: InstallOffice.ps1 + SetupComplete.cmd kihelyezese -->');
     const orderRef = { val: order };
 
     // 1) Konyvtarak (hibaturoen)
     runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-    runSyncCmds.push(`          <Order>\${orderRef.val++}</Order>`);
+    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
     runSyncCmds.push('          <Description>Setup Scripts konyvtar letrehozasa</Description>');
     runSyncCmds.push('          <Path>cmd.exe /c if not exist C:\\Windows\\Setup\\Scripts md C:\\Windows\\Setup\\Scripts</Path>');
     runSyncCmds.push('        </RunSynchronousCommand>');
 
     runSyncCmds.push('        <RunSynchronousCommand wcm:action="add">');
-    runSyncCmds.push(`          <Order>\${orderRef.val++}</Order>`);
+    runSyncCmds.push(`          <Order>${orderRef.val++}</Order>`);
     runSyncCmds.push('          <Description>AutoUnattend allapot- es log konyvtar</Description>');
     runSyncCmds.push('          <Path>cmd.exe /c if not exist C:\\ProgramData\\AutoUnattend\\Logs md C:\\ProgramData\\AutoUnattend\\Logs</Path>');
     runSyncCmds.push('        </RunSynchronousCommand>');
@@ -918,31 +918,6 @@ Write-AuLog 'FINISH: 25H2 Start menu / Default User konfiguracio'`;
       'C:\\Windows\\Temp\\setupc.b64',
       'C:\\Windows\\Setup\\Scripts\\SetupComplete.cmd',
       'ascii'
-    );
-
-    // 4) Fallback SYSTEM Scheduled Task (OEM licenc / halozathiany esetere)
-    const officeFallbackTaskScript = `
-$ErrorActionPreference = 'Continue'
-$taskName = 'AU-OfficeInstallFallback'
-$ps1 = 'C:\\Windows\\Setup\\Scripts\\InstallOffice.ps1'
-try {
-  $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $ps1 + '"')
-  $trigger   = New-ScheduledTaskTrigger -AtStartup
-  $trigger.Delay = 'PT3M'
-  $principal = New-ScheduledTaskPrincipal -UserId 'S-1-5-18' -RunLevel Highest
-  $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 3)
-  Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
-} catch {
-  New-Item -ItemType Directory -Path 'C:\\ProgramData\\AutoUnattend\\Logs' -Force | Out-Null
-  Add-Content -Path 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallFull.log' -Value ('[HIBA] Fallback task regisztralas: ' + $_.Exception.Message) -Encoding utf8 -ErrorAction SilentlyContinue
-}
-`;
-    addBase64ScriptToSyncCmds(
-      runSyncCmds,
-      orderRef,
-      officeFallbackTaskScript.trim(),
-      'C:\\Windows\\Temp\\officetask.b64',
-      'C:\\Windows\\Temp\\officetask.ps1'
     );
 
     order = orderRef.val;

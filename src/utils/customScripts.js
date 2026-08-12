@@ -17,10 +17,7 @@ function Show-PopupAsync($text,$title=""){
 }
 function Wait-ForWinget {
   $maxAttempts = 60
-  $attempt = 0
-  while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
     Start-Sleep -Seconds 5
-    $attempt++
   }
   if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
     Show-PopupAsync "Az Appok telepítése során hiba lépett fel (Winget nem található)!" "Telepítés"
@@ -101,10 +98,7 @@ function Show-PopupAsync($text,$title=""){
 
 function Wait-ForWinget {
   $maxAttempts = 60
-  $attempt = 0
-  while (-not (Get-Command winget.exe -ErrorAction SilentlyContinue) -and $attempt -lt $maxAttempts) {
     Start-Sleep -Seconds 5
-    $attempt++
   }
   if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
     Show-PopupAsync "Az Appok telepítése során hiba lépett fel (Winget nem található)!" "Telepítés"
@@ -170,11 +164,8 @@ $ShortLog    = 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallSummary.log'
 $DoneFlag    = 'C:\\ProgramData\\AutoUnattend\\Office.done'
 $FailFlag    = 'C:\\ProgramData\\AutoUnattend\\Office.failed'
 $RunFlag     = 'C:\\ProgramData\\AutoUnattend\\Office.running'
-$AttemptFlag = 'C:\\ProgramData\\AutoUnattend\\Office.attempts'
 $WorkDir     = 'C:\\Windows\\Temp\\ODT'
-$TaskName    = 'AU-OfficeInstallFallback'
 $ScriptName  = 'Microsoft 365 telepitese (ODT)'
-$MaxAttempts = 3
 
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 
@@ -184,9 +175,6 @@ function Write-Log($msg) {
 function Write-Summary($msg) {
   Add-Content -Path $ShortLog -Value ('[' + (Get-Date).ToString('HH:mm:ss') + '] ' + $msg) -Encoding utf8 -ErrorAction SilentlyContinue
 }
-function Remove-FallbackTask {
-  try { Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue } catch { }
-  try { & schtasks.exe /Delete /TN $TaskName /F | Out-Null } catch { }
 }
 function Test-OfficeInstalled {
   $cfg = 'HKLM:\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\Configuration'
@@ -235,11 +223,10 @@ Write-Log ('# ' + $ScriptName)
 Write-Log ('# Futtato: ' + [Security.Principal.WindowsIdentity]::GetCurrent().Name)
 Write-Log '============================================================'
 
-if (Test-Path $DoneFlag) { Write-Log 'Office.done letezik, nincs mit tenni.'; Remove-FallbackTask; exit 0 }
+  exit 0
 if (Test-OfficeInstalled) {
   Write-Log 'Az Office mar telepitve van, done jelzo kiirasa.'
   Set-Content -Path $DoneFlag -Value ((Get-Date).ToString('s')) -Encoding ascii
-  Remove-FallbackTask
   exit 0
 }
 if (Test-Path $RunFlag) {
@@ -248,14 +235,8 @@ if (Test-Path $RunFlag) {
   Write-Log 'Elavult Office.running jelzo, folytatas.'
 }
 
-$attempt = 0
-if (Test-Path $AttemptFlag) {
-  try { $attempt = [int]((Get-Content -Path $AttemptFlag -ErrorAction SilentlyContinue | Select-Object -First 1)) } catch { $attempt = 0 }
 }
-$attempt++
-Set-Content -Path $AttemptFlag -Value $attempt -Encoding ascii
 Set-Content -Path $RunFlag -Value ((Get-Date).ToString('s')) -Encoding ascii
-Write-Log ('Probalkozas: ' + $attempt + ' / ' + $MaxAttempts)
 
 $success = $false
 try {
@@ -310,16 +291,12 @@ try {
 catch {
   Write-Log ('[HIBA] ' + $_.Exception.Message)
   Write-Summary ('HIBAS: ' + $ScriptName + ' - ' + $_.Exception.Message)
-  if ($attempt -ge $MaxAttempts) {
     Set-Content -Path $FailFlag -Value ($_.Exception.Message) -Encoding utf8
-    Write-Log ('Elertuk a maximum ' + $MaxAttempts + ' probalkozast, feladom.')
   }
 }
 finally {
   Remove-Item -Path $RunFlag -Force -ErrorAction SilentlyContinue
   Remove-Item -Path $WorkDir -Recurse -Force -ErrorAction SilentlyContinue
-  if ($success -or $attempt -ge $MaxAttempts) {
-    Remove-FallbackTask
     if ($success -and $PSCommandPath) {
       Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
     }
@@ -340,11 +317,8 @@ $ShortLog    = 'C:\\ProgramData\\AutoUnattend\\Logs\\InstallSummary.log'
 $DoneFlag    = 'C:\\ProgramData\\AutoUnattend\\Office.done'
 $FailFlag    = 'C:\\ProgramData\\AutoUnattend\\Office.failed'
 $RunFlag     = 'C:\\ProgramData\\AutoUnattend\\Office.running'
-$AttemptFlag = 'C:\\ProgramData\\AutoUnattend\\Office.attempts'
 $WorkDir     = 'C:\\Windows\\Temp\\ODT'
-$TaskName    = 'AU-OfficeInstallFallback'
 $ScriptName  = 'Office Professional Plus 2021 VL telepitese (ODT)'
-$MaxAttempts = 3
 
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 
@@ -354,9 +328,6 @@ function Write-Log($msg) {
 function Write-Summary($msg) {
   Add-Content -Path $ShortLog -Value ('[' + (Get-Date).ToString('HH:mm:ss') + '] ' + $msg) -Encoding utf8 -ErrorAction SilentlyContinue
 }
-function Remove-FallbackTask {
-  try { Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue } catch { }
-  try { & schtasks.exe /Delete /TN $TaskName /F | Out-Null } catch { }
 }
 function Test-OfficeInstalled {
   $cfg = 'HKLM:\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\Configuration'
@@ -447,20 +418,14 @@ Write-Log ('# ' + $ScriptName)
 Write-Log ('# Futtato: ' + [Security.Principal.WindowsIdentity]::GetCurrent().Name)
 Write-Log '============================================================'
 
-if (Test-Path $DoneFlag) { Write-Log 'Office.done letezik, nincs mit tenni.'; Remove-FallbackTask; exit 0 }
+  exit 0
 if (Test-Path $RunFlag) {
   $ageMin = ((Get-Date) - (Get-Item $RunFlag).LastWriteTime).TotalMinutes
   if ($ageMin -lt 90) { Write-Log 'Mar fut egy Office telepites, kilepes.'; exit 0 }
 }
 
-$attempt = 0
-if (Test-Path $AttemptFlag) {
-  try { $attempt = [int]((Get-Content -Path $AttemptFlag -ErrorAction SilentlyContinue | Select-Object -First 1)) } catch { $attempt = 0 }
 }
-$attempt++
-Set-Content -Path $AttemptFlag -Value $attempt -Encoding ascii
 Set-Content -Path $RunFlag -Value ((Get-Date).ToString('s')) -Encoding ascii
-Write-Log ('Probalkozas: ' + $attempt + ' / ' + $MaxAttempts)
 
 $success = $false
 try {
@@ -545,16 +510,12 @@ try {
 catch {
   Write-Log ('[HIBA] ' + $_.Exception.Message)
   Write-Summary ('HIBAS: ' + $ScriptName + ' - ' + $_.Exception.Message)
-  if ($attempt -ge $MaxAttempts) {
     Set-Content -Path $FailFlag -Value ($_.Exception.Message) -Encoding utf8
-    Write-Log ('Elertuk a maximum ' + $MaxAttempts + ' probalkozast, feladom.')
   }
 }
 finally {
   Remove-Item -Path $RunFlag -Force -ErrorAction SilentlyContinue
   Remove-Item -Path $WorkDir -Recurse -Force -ErrorAction SilentlyContinue
-  if ($success -or $attempt -ge $MaxAttempts) {
-    Remove-FallbackTask
     if ($success -and $PSCommandPath) {
       Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
     }
