@@ -664,7 +664,7 @@ foreach ($pkg in $packagesToRemove) {
       const searchModeValues = { full: 3, iconLabel: 2, iconOnly: 1, hidden: 0 };
       const value = searchModeValues[config.searchBoxMode];
       if (value !== undefined) {
-        hklmCmds.push(`reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v SearchOnTaskbarMode /t REG_DWORD /d \${value} /f`);
+        hklmCmds.push(`reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v SearchOnTaskbarMode /t REG_DWORD /d ${value} /f`);
       }
     }
     if (config.disableWallpaperChange) {
@@ -731,7 +731,7 @@ foreach ($pkg in $packagesToRemove) {
         'SubscribedContent-353698Enabled'
       ];
       for (const v of cdmValues) {
-        defUserCmds.push(`reg.exe add "\${cdm}" /v \${v} /t REG_DWORD /d 0 /f`);
+        defUserCmds.push(`reg.exe add "${cdm}" /v ${v} /t REG_DWORD /d 0 /f`);
       }
     }
 
@@ -743,7 +743,7 @@ foreach ($pkg in $packagesToRemove) {
         ? `try {
   $pinsKey = 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start'
   if (-not (Test-Path $pinsKey)) { New-Item -Path $pinsKey -Force | Out-Null }
-  $pinsJson = '\${startPinsJson.replace(/'/g, "''")}'
+  $pinsJson = '${startPinsJson.replace(/'/g, "''")}'
   New-ItemProperty -Path $pinsKey -Name 'ConfigureStartPins' -Value $pinsJson -PropertyType String -Force | Out-Null
   Write-AuLog ('ConfigureStartPins beirva: ' + $pinsJson)
 } catch {
@@ -763,7 +763,7 @@ foreach ($pkg in $packagesToRemove) {
 
       const hklmBlock = hklmCmds.length > 0
         ? `try {
-\${hklmCmds.map(c => '  ' + c + ' | Out-Null').join('\n')}
+${hklmCmds.map(c => '  ' + c + ' | Out-Null').join('\n')}
   Write-AuLog 'HKLM hazirendek kiirva.'
 } catch {
   Write-AuLog ('[HIBA] HKLM hazirendek: ' + $_.Exception.Message)
@@ -785,7 +785,7 @@ try {
     Write-AuLog '[HIBA] Az NTUSER.DAT nem toltheto be, a Default User beallitasok kimaradnak.'
   } else {
     Write-AuLog 'Default User hive betoltve (HKU\\AU_DEFAULT).'
-\${defUserCmds.map(c => '    ' + c + ' | Out-Null').join('\n')}
+${defUserCmds.map(c => '    ' + c + ' | Out-Null').join('\n')}
     Write-AuLog 'Default User kulcsok kiirva.'
   }
 } catch {
@@ -822,13 +822,13 @@ function Write-AuLog($msg) {
 }
 Write-AuLog 'START: 25H2 Start menu / Default User konfiguracio'
 
-\${hklmBlock}
+${hklmBlock}
 
-\${startPinsBlock}
+${startPinsBlock}
 
-\${legacyJsonBlock}
+${legacyJsonBlock}
 
-\${hiveBlock}
+${hiveBlock}
 
 Write-AuLog 'FINISH: 25H2 Start menu / Default User konfiguracio'`;
 
