@@ -473,39 +473,98 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList '-WindowStyle Hidden -NoP
   }
 
 
-  // --- Start menü takarítás (ConfigureStartPins registry GPO + MDM) ---
+  // --- Start menü takarítás (LayoutModification.json - Zárolásmentes Default User megoldás) ---
   if (config.cleanStartPins) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Start menü kitűzött elemeinek törlése (csak Gépház) -->');
-    const layoutScript = `
-$json = '{"pinnedList":[{"packagedAppId":"windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"}]}'
-
-$mdmKey = 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start'
-New-Item $mdmKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $mdmKey 'ConfigureStartPins' $json -Type String -Force
-
-$gpoKey = 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer'
-New-Item $gpoKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $gpoKey 'ConfigureStartPins' $json -Type String -Force
+    runSyncCmds.push('        <!-- Start menü kitűzött elemeinek törlése (csak Gépház marad - Zárolásmentes) -->');
+    const startMenuScript = `
+$json = '{"primaryOEMPins":[{"packagedAppId":"windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"}]}'
+$dir = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
+New-Item -Path $dir -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText("$dir\\LayoutModification.json", $json, $utf8NoBom)
 `;
     const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, layoutScript.trim(), 'C:\\Windows\\Temp\\layout.b64', 'C:\\Windows\\Temp\\layout.ps1');
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, startMenuScript.trim(), 'C:\\Windows\\Temp\\startlayout.b64', 'C:\\Windows\\Temp\\startlayout.ps1');
     order = orderRef.val;
   }
 
-  // --- Egérgyorsulás kikapcsolása (Default User profil módosítása) ---
-  if (config.disableMouseAcceleration) {
+  // --- Globális felhasználói beállítások (Default User Hive - NTUSER.DAT) ---
+  const iconMap = {
+    thisPc: '{20D04FE0-3AEA-1069-A2D8-08002B30309D}',
+    recycleBin: '{645FF040-5081-101B-9F08-00AA002F954E}',
+    userFiles: '{59031a47-3f72-44a7-89c5-5595fe6b30ee}',
+    controlPanel: '{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}',
+    network: '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}',
+  };
+
+  let hasDefaultUserSettings = config.disableMouseAcceleration || config.desktopIcons || config.searchBoxMode || config.hideTaskbarIcons || config.showAllTrayIcons || config.disableTransparency || config.hideRecentApps || config.hideMostUsedApps || config.hideRecommendedFiles || config.hideTipsAndSuggestions || config.disableWebSearch;
+
+  if (hasDefaultUserSettings) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Egérgyorsítás kikapcsolása az alapértelmezett profilban -->');
-    const mouseScript = `
-reg load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f
-reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f
-reg unload "HKU\\DefaultUser"
-`;
+    runSyncCmds.push('        <!-- Globális felhasználói beállítások az alapértelmezett profilban -->');
+    let defaultUserScript = `reg load "HKU\\DefaultUser" "C:\\Users\\Default\\NTUSER.DAT"`;
+    
+    if (config.disableMouseAcceleration) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f`;
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f`;
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f`;
+    }
+
+    if (config.desktopIcons) {
+      for (const [key, clsid] of Object.entries(iconMap)) {
+        if (config.desktopIcons[key]) {
+          defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v ${clsid} /t REG_DWORD /d 0 /f`;
+        }
+      }
+    }
+
+    if (config.searchBoxMode && config.searchBoxMode !== 'full') {
+      const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
+      const value = searchModeValues[config.searchBoxMode];
+      if (value !== undefined) {
+        defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`;
+      }
+    }
+
+    if (config.hideTaskbarIcons) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f`;
+    }
+
+    if (config.showAllTrayIcons) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f`;
+    }
+
+    if (config.disableTransparency) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f`;
+    }
+
+    if (config.hideRecentApps) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f`;
+    }
+
+    if (config.hideMostUsedApps) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f`;
+    }
+
+    if (config.hideRecommendedFiles) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f`;
+    }
+
+    if (config.hideTipsAndSuggestions) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f`;
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f`;
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 0 /f`;
+    }
+
+    if (config.disableWebSearch) {
+      defaultUserScript += `\nreg add "HKU\\DefaultUser\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f`;
+    }
+
+    defaultUserScript += `\nreg unload "HKU\\DefaultUser"\n`;
+
     const orderRef = { val: order };
-    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, mouseScript.trim(), 'C:\\Windows\\Temp\\mouse.b64', 'C:\\Windows\\Temp\\mouse.ps1');
+    addBase64ScriptToSyncCmds(runSyncCmds, orderRef, defaultUserScript.trim(), 'C:\\Windows\\Temp\\defuser.b64', 'C:\\Windows\\Temp\\defuser.ps1');
     order = orderRef.val;
   }
 
@@ -528,10 +587,10 @@ powercfg /change monitor-timeout-dc 0
     order = orderRef.val;
   }
 
-  // --- Tálca ikonok (HKLM Házirendek a Specialize fázisban) ---
+  // --- Tálca ikonok (LayoutModification.xml - Zárolásmentes Default User megoldás) ---
   if (config.hideTaskbarIcons) {
     runSyncCmds.push('');
-    runSyncCmds.push('        <!-- Tálca Widgets és Chat kikapcsolása (HKLM Házirendek) -->');
+    runSyncCmds.push('        <!-- Tálca Widgets és Chat kikapcsolása (HKLM Házirendek) és Fájlkezelő kitűzése (Zárolásmentes) -->');
     let taskbarPolicyScript = `
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Chat" /v ChatIcon /t REG_DWORD /d 3 /f
@@ -542,15 +601,16 @@ $xml = '<?xml version="1.0" encoding="utf-8"?>
   <CustomTaskbarLayoutCollection PinListPlacement="Replace">
     <defaultlayout:TaskbarLayout xmlns:defaultlayout="http://schemas.microsoft.com/Start/2014/FullDefaultLayout">
       <taskbar:TaskbarPinList>
-        <taskbar:DesktopApp DesktopApplicationLinkPath="%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\System Tools\\File Explorer.lnk" />
+        <taskbar:DesktopApp DesktopApplicationID="Microsoft.Windows.Explorer" />
       </taskbar:TaskbarPinList>
     </defaultlayout:TaskbarLayout>
   </CustomTaskbarLayoutCollection>
 </LayoutModificationTemplate>'
 
-$mdmKey = 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start'
-New-Item $mdmKey -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-Set-ItemProperty $mdmKey 'ConfigureTaskbar' $xml -Type String -Force
+$dir = 'C:\\Users\\Default\\AppData\\Local\\Microsoft\\Windows\\Shell'
+New-Item -Path $dir -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText("$dir\\LayoutModification.xml", $xml, $utf8NoBom)
 `;
     const orderRef = { val: order };
     addBase64ScriptToSyncCmds(runSyncCmds, orderRef, taskbarPolicyScript.trim(), 'C:\\Windows\\Temp\\tbpolicy.b64', 'C:\\Windows\\Temp\\tbpolicy.ps1');
@@ -776,127 +836,6 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     }
   }
 
-  // --- Asztali ikonok ---
-  const iconMap = {
-    computer:     '{20D04FE0-3AEA-1069-A2D8-08002B30309D}',
-    recycleBin:   '{645FF040-5081-101B-9F08-00AA002F954E}',
-    userFiles:    '{59031a47-3f72-44a7-89c5-5595fe6b30ee}',
-    controlPanel: '{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}',
-    network:      '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}',
-  };
-
-  const iconNames = {
-    computer: 'Számítógép',
-    recycleBin: 'Lomtár',
-    userFiles: 'Felhasználói fájlok',
-    controlPanel: 'Vezérlőpult',
-    network: 'Hálózat',
-  };
-
-  if (config.desktopIcons) {
-    for (const [key, clsid] of Object.entries(iconMap)) {
-      if (config.desktopIcons[key]) {
-        commands.push({
-          command: `cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v ${clsid} /t REG_DWORD /d 0 /f`,
-          description: `${iconNames[key]} ikon megjelenítése az asztalon`,
-        });
-      }
-    }
-  }
-
-  // --- Keresőmező mód ---
-  if (config.searchBoxMode && config.searchBoxMode !== 'full') {
-    const searchModeValues = { full: 2, iconLabel: 3, iconOnly: 1, hidden: 0 };
-    const value = searchModeValues[config.searchBoxMode];
-    if (value !== undefined) {
-      commands.push({
-        command: `cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d ${value} /f`,
-        description: 'Keresőmező mód beállítása a tálcán',
-      });
-    }
-  }
-
-  // --- Tálca ikonok elrejtése (TaskView) ---
-  if (config.hideTaskbarIcons) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f',
-      description: 'Feladatnézet gomb elrejtése',
-    });
-  }
-
-  // --- Minden tálcaikon megjelenítése ---
-  if (config.showAllTrayIcons) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v EnableAutoTray /t REG_DWORD /d 0 /f',
-      description: 'Minden tálcaikon megjelenítése (Windows 10)',
-    });
-  }
-
-  // --- Explorer újraindítása, hogy a tálca beállítások azonnal érvénybe lépjenek ---
-  if (config.hideTaskbarIcons || (config.searchBoxMode && config.searchBoxMode !== 'full') || config.showAllTrayIcons) {
-    commands.push({
-      command: 'cmd /c taskkill /f /im explorer.exe & start explorer.exe',
-      description: 'Windows Intéző újraindítása a tálca frissítéséhez',
-    });
-  }
-
-  // --- Átlátszóság kikapcsolása ---
-  if (config.disableTransparency) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f',
-      description: 'Átlátszósági effektusok kikapcsolása',
-    });
-  }
-
-  // --- Start menü: legutóbbi alkalmazások elrejtése ---
-  if (config.hideRecentApps) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowRecentList /t REG_DWORD /d 0 /f',
-      description: 'Legutóbbi alkalmazások elrejtése a Start menüből',
-    });
-  }
-
-  // --- Start menü: leggyakrabban használt alkalmazások elrejtése ---
-  if (config.hideMostUsedApps) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Start" /v ShowFrequentList /t REG_DWORD /d 0 /f',
-      description: 'Leggyakrabban használt alkalmazások elrejtése',
-    });
-  }
-
-  // --- Start menü: ajánlott fájlok elrejtése ---
-  if (config.hideRecommendedFiles) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f',
-      description: 'Ajánlott fájlok elrejtése a Start menüből',
-    });
-  }
-
-  // --- Tippek és javaslatok kikapcsolása ---
-  if (config.hideTipsAndSuggestions) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f',
-      description: 'Tippek és javaslatok kikapcsolása (1/3)',
-    });
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f',
-      description: 'Tippek és javaslatok kikapcsolása (2/3)',
-    });
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 0 /f',
-      description: 'Tippek és javaslatok kikapcsolása (3/3)',
-    });
-  }
-
-  // --- Webes keresés letiltása ---
-  if (config.disableWebSearch) {
-    commands.push({
-      command: 'cmd /c reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f',
-      description: 'Webes keresési javaslatok letiltása',
-    });
-  }
-
-  // Start menü takarítás kikerült innen, most a specialize fázisban van (LayoutModification.json)
 
   if (config.disableTelemetry) {
     commands.push({
