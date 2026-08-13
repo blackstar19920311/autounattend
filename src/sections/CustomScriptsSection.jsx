@@ -10,7 +10,7 @@ import CustomSelect from '../components/CustomSelect';
 import AnimatedCollapse from '../components/AnimatedCollapse';
 import { WINGET_APPS } from '../data/wingetAppsList';
 
-function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCustomAppLocationChange, isAutoCd }) {
+function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCustomAppLocationChange, partitioningMode }) {
   const { t } = useLanguage();
     const isSelected = (data.wingetCustomApps || []).some(a => a.id === app.id);
   const appData = (data.wingetCustomApps || []).find(a => a.id === app.id) || {};
@@ -23,9 +23,9 @@ function CustomAppRow({ app, data, handleWingetCustomAppToggle, handleWingetCust
   const isCustomApps = appData.location === appsPath;
   const isCustomGames = appData.location === gamesPath;
   
-  // Ha a particionálás nem "C és D", egyetlen alkalmazásnál sincs értelme egyedi útvonalat megadni,
-  // mert nem garantált a D: meghajtó, ahova telepíthetnénk.
-  const forceDefaultLocation = app.forceDefaultLocation || !isAutoCd;
+  // Ha a particionálás automatikus, egyetlen alkalmazásnál sincs értelme egyedi útvonalat megadni,
+  // mert nem lesz D: meghajtó, ahova telepíthetnénk.
+  const forceDefaultLocation = app.forceDefaultLocation || partitioningMode === 'auto';
   
   const [forceCustom, setForceCustom] = React.useState(false);
   
@@ -252,7 +252,7 @@ export default function CustomScriptsSection({ config, setConfig, errors = {} })
                     data={data}
                     handleWingetCustomAppToggle={handleWingetCustomAppToggle}
                     handleWingetCustomAppLocationChange={handleWingetCustomAppLocationChange}
-                    isAutoCd={config.partitioning?.enabled && config.partitioning?.mode === 'autocd'}
+                    partitioningMode={config.partitioning?.mode}
                   />
                 ))}
               </div>
