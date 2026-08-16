@@ -1,102 +1,35 @@
-/**
- * Konfiguráció validálása a Windows 11 Autounattend generátorhoz.
- * Támogatja az i18n fordításokat.
- */
-
-/**
- * Validates the autounattend configuration object.
- * @param {Object} config - The configuration object to validate.
- * @param {Function} t - The translation function.
- * @returns {{ isValid: boolean, errors: Object.<string, string> }}
- */
+/** Validates the complete generator configuration before XML generation. */
 export function validateConfig(config, t) {
   const errors = {};
+  const tr = (key, fallback) => { const value = t(key); return value === key ? fallback : value };
+  const username = String(config.username || '').trim();
+  if (!username) errors.username = tr('val.username.req', 'Username is required.');
+  else if (username.length > 20) errors.username = tr('val.username.max', 'Username is too long.');
+  else if (/^[ .]|[ .]$|[\\/\[\]:|<>+=;,?*\"]/.test(username)) errors.username = tr('val.username.invalidChars', 'Username contains invalid characters.');
+  else if (/^(administrator|guest|defaultaccount|system|localservice|networkservice)$/i.test(username)) errors.username = 'This Windows account name is reserved.';
 
-  // 1. Felhasználónév - kötelező
-  if (!config.username || config.username.trim() === '') {
-    errors.username = t('val.username.req');
-  } else if (config.username.length > 20) {
-    errors.username = t('val.username.max');
-  } else if (/[\/\\\[\]:|<>+=;,?*"]/.test(config.username)) {
-    errors.username = t('val.username.invalidChars');
+  const name = String(config.computerName || '').trim();
+  if (config.randomSuffix && !name) errors.computerName = tr('val.computerName.prefixReq', 'Computer name prefix is required.');
+  else if (name.length > (config.randomSuffix ? 8 : 15)) errors.computerName = tr('val.computerName.maxLength', 'Computer name prefix is too long.');
+  else if (name && /[^a-zA-Z0-9-]/.test(name)) errors.computerName = tr('val.computerName.invalidChars', 'Computer name contains invalid characters.');
+
+  if (config.productKey?.trim() && !/^[A-Za-z0-9]{5}(-[A-Za-z0-9]{5}){4}$/.test(config.productKey.trim())) errors.productKey = tr('val.productKey.format', 'Invalid product key format.');
+  if (config.partitioning?.enabled && ['auto', 'autocd'].includes(config.partitioning.mode) && (config.partitioning.diskNumber === '' || config.partitioning.diskNumber == null || Number(config.partitioning.diskNumber) < 0)) errors['disk-number'] = 'Disk number is required.';
+  if (config.partitioning?.enabled && config.partitioning.mode === 'custom') {
+    if (!config.partitioning.customDiskpartScript?.trim()) errors.customDiskpartScript = tr('val.part.scriptReq', 'DISKPART script is required.');
+    if (!Number.isInteger(Number(config.partitioning.installPartitionId)) || Number(config.partitioning.installPartitionId) < 1) errors.installPartitionId = tr('val.part.idReq', 'Installation partition must be at least 1.');
   }
-
-  // 2. Számítógépnév
-  const name = (config.computerName || '').trim();
-  if (config.randomSuffix && !name) {
-    errors.computerName = t('val.computerName.prefixReq');
-  } else if (name.length > 0) {
-    const maxLen = config.randomSuffix ? 8 : 15;
-    if (name.length > maxLen) {
-      errors.computerName = t('val.computerName.maxLength');
-    } else if (/[^a-zA-Z0-9-]/.test(name)) {
-      errors.computerName = t('val.computerName.invalidChars');
-    }
+  if (config.wifi?.mode === 'auto') {
+    if (!config.wifi.ssid?.trim()) errors['wifi.ssid'] = tr('val.wifi.ssidReq', 'SSID is required.');
+    if (!config.wifi.password?.trim()) errors['wifi.password'] = tr('val.wifi.passReq', 'Wi-Fi password is required.');
+    else if (config.wifi.password.length < 8) errors['wifi.password'] = 'WPA/WPA2 passwords must contain at least 8 characters.';
   }
-
-  // 3. Termékkulcs
-  if (config.productKey && config.productKey.trim() !== '') {
-    const productKeyPattern = /^[A-Za-z0-9]{5}-[A-Za-z0-9]{5}-[A-Za-z0-9]{5}-[A-Za-z0-9]{5}-[A-Za-z0-9]{5}$/;
-    if (!productKeyPattern.test(config.productKey.trim())) {
-      errors.productKey = t('val.productKey.format');
-    }
+  const cs = config.customScripts || {};
+  if (cs.domainJoin) {
+    if (!cs.domainName?.trim()) errors.domainName = tr('val.domain.nameReq', 'Domain name is required.');
+    if (!cs.domainUser?.trim()) errors.domainUser = tr('val.domain.userReq', 'Domain username is required.');
+    if (!cs.domainPass) errors.domainPass = tr('val.domain.passReq', 'Domain password is required.');
   }
-
-  // 4. Automatikus bejelentkezés
-  if (config.autoLogin && (!config.username || config.username.trim() === '')) {
-    errors.username = errors.username || t('val.autoLogin.usernameReq');
-  }
-
-  // 5. Particionálás
-  if (config.partitioning && config.partitioning.enabled) {
-    if ((config.partitioning.mode === 'auto' || config.partitioning.mode === 'autocd') && (config.partitioning.diskNumber === '' || config.partitioning.diskNumber == null)) {
-      errors.diskNumber = t('val.part.diskReq');
-    }
-    if (config.partitioning.mode === 'custom') {
-      if (!config.partitioning.customDiskpartScript || config.partitioning.customDiskpartScript.trim() === '') {
-        errors.customDiskpartScript = t('val.part.scriptReq');
-      }
-      if (!config.partitioning.installPartitionId || config.partitioning.installPartitionId < 1) {
-        errors.installPartitionId = t('val.part.idReq');
-      }
-    }
-  }
-
-  // 6. Wi-Fi beállítások
-  if (config.wifi && config.wifi.mode === 'auto') {
-    if (!config.wifi.ssid || config.wifi.ssid.trim() === '') {
-      errors['wifi.ssid'] = t('val.wifi.ssidReq');
-    }
-    if (!config.wifi.password || config.wifi.password.trim() === '') {
-      errors['wifi.password'] = t('val.wifi.passReq');
-    }
-  }
-
-  // 7. Domain Join
-  if (config.customScripts && config.customScripts.domainJoin) {
-    if (!config.customScripts.domainName || config.customScripts.domainName.trim() === '') {
-      errors.domainName = t('val.domain.nameReq');
-    }
-    if (!config.customScripts.domainUser || config.customScripts.domainUser.trim() === '') {
-      errors.domainUser = t('val.domain.userReq');
-    }
-    if (!config.customScripts.domainPass || config.customScripts.domainPass.trim() === '') {
-      errors.domainPass = t('val.domain.passReq');
-    }
-  }
-
-  // 8. Office Key Validáció
-  if (config.customScripts && config.customScripts.office === 'versionB') {
-    if (config.customScripts.officeKey && config.customScripts.officeKey.trim() !== '') {
-      const officeKeyPattern = /^[A-Za-z0-9]{5}-[A-Za-z0-9]{5}-[A-Za-z0-9]{5}-[A-Za-z0-9]{5}-[A-Za-z0-9]{5}$/;
-      if (!officeKeyPattern.test(config.customScripts.officeKey.trim())) {
-        errors.officeKey = t('val.officeKey.format');
-      }
-    }
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors,
-  };
+  if (cs.office === 'versionB' && cs.officeKey?.trim() && !/^[A-Za-z0-9]{5}(-[A-Za-z0-9]{5}){4}$/.test(cs.officeKey.trim())) errors.officeKey = tr('val.officeKey.format', 'Invalid Office key format.');
+  return { isValid: Object.keys(errors).length === 0, errors };
 }
