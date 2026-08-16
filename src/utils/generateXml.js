@@ -646,7 +646,6 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
       outlook: 'Microsoft.OutlookForWindows',
       powerAutomate: 'Microsoft.PowerAutomateDesktop',
       solitaire: 'Microsoft.MicrosoftSolitaireCollection',
-      terminal: 'Microsoft.WindowsTerminal',
       feedbackHub: 'Microsoft.WindowsFeedbackHub',
     };
 

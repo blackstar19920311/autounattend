@@ -18,7 +18,6 @@ export default function BloatwareSection({ config, setConfig }) {
     { key: 'outlook', label: t('bloat.item.outlook') },
     { key: 'powerAutomate', label: t('bloat.item.powerAutomate') },
     { key: 'solitaire', label: t('bloat.item.solitaire') },
-    { key: 'terminal', label: t('bloat.item.terminal') },
     { key: 'feedbackHub', label: t('bloat.item.feedbackHub') },
   ];
 

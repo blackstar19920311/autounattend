@@ -48,7 +48,7 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
         todo: true, stickyNotes: true, quickAssist: true,
         weather: true, camera: true, bingNews: true, clipchamp: true,
         clock: true, outlook: true, powerAutomate: true, solitaire: true,
-        terminal: true, feedbackHub: true,
+        feedbackHub: true,
       };
       // Privacy/Performance alapok minden presetnél
       // disableSearchBoxSuggestions eltávolítva — a disableWebSearch (65. sor) kezeli

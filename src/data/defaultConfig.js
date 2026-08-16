@@ -97,7 +97,6 @@ GPT ATTRIBUTES=0x8000000000000001`,
       outlook: false,
       powerAutomate: false,
       solitaire: false,
-      terminal: false,
       feedbackHub: false,
     },
     

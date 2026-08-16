@@ -62,7 +62,6 @@ export const translations = {
     'bloat.item.outlook': 'Outlook for Windows',
     'bloat.item.powerAutomate': 'Power Automate',
     'bloat.item.solitaire': 'Microsoft Solitaire Collection',
-    'bloat.item.terminal': 'Windows Terminal',
     'bloat.item.feedbackHub': 'Feedback Hub (Visszajelzési központ)',
 
     'cs.office.365': 'Microsoft 365 (O365)',
@@ -323,7 +322,6 @@ export const translations = {
     'bloat.item.outlook': 'Outlook for Windows',
     'bloat.item.powerAutomate': 'Power Automate',
     'bloat.item.solitaire': 'Microsoft Solitaire Collection',
-    'bloat.item.terminal': 'Windows Terminal',
     'bloat.item.feedbackHub': 'Feedback Hub',
 
     'cs.office.365': 'Microsoft 365 (O365)',
