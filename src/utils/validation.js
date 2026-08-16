@@ -10,8 +10,7 @@ export function validateConfig(config, t = key => key) {
   if (config.productKey?.trim() && !KEY.test(config.productKey.trim())) errors.productKey = tr('val.productKey.format', 'Invalid product key format.');
   if (username && !config.password) errors.password = 'A non-empty password is required for the local account.';
   if (config.password && CONTROL.test(config.password)) errors.password = 'Password contains control characters.';
-  if (config.autoLogin && !config.password) errors.password = 'AutoLogon requires a non-empty password.';
-  if (config.autoLogin && config.randomSuffix) errors.autoLogin = 'AutoLogon is not supported with generated machine names.';
+  if (config.autoLogin) errors.autoLogin = 'AutoLogon is disabled in the hardened 25H2 generator.';
   const wifi = config.wifi || {};
   if (wifi.mode === 'auto') errors.wifi = 'Automatic Wi-Fi profile generation is disabled. Provision Wi-Fi with Intune or managed deployment.';
   if (wifi.ssid && CONTROL.test(wifi.ssid)) errors['wifi.ssid'] = 'SSID contains control characters.';
@@ -21,5 +20,6 @@ export function validateConfig(config, t = key => key) {
   if (unsupportedPersonalization) errors.personalization = 'This personalization or app-removal option is not emitted by the hardened answer file. Use Intune policy or a supported provisioning package instead.';
   if (config.bypassHardware || config.bypassNetwork || config.disableUAC || config.disableTelemetry || config.disableSleep || config.disableFastStartup || cs.domainJoin || cs.office || (cs.wingetApps && cs.wingetApps !== 'none') || cs.pcManager || cs.windowsUpdate) errors.security = 'This configuration contains unsupported or unsafe deployment actions. Remove them before generating.';
   if (p.fullWipe) errors.fullWipe = 'Full-disk wipe is disabled in the hardened generator.';
+  if (config.autoAcceptEula === false) errors.autoAcceptEula = 'EULA acceptance must be enabled for unattended deployment.';
   return { isValid: Object.keys(errors).length === 0, errors };
 }
