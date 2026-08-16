@@ -20,7 +20,7 @@ export function validateConfig(config, t) {
   if (config.partitioning?.enabled && config.partitioning.mode === 'custom') {
     const script = String(config.partitioning.customDiskpartScript || '').trim();
     if (!script) errors.customDiskpartScript = tr('val.part.scriptReq', 'DISKPART script is required.');
-    else if (!/^\s*select\s+disk\s*=\s*\d+/im.test(script)) errors.customDiskpartScript = 'DISKPART script must start with a SELECT DISK command.';
+    else if (!/^\s*select\s+disk(?:\s*=\s*|\s+)\d+/im.test(script)) errors.customDiskpartScript = 'DISKPART script must start with a SELECT DISK command.';
     if (!Number.isInteger(Number(config.partitioning.installPartitionId)) || Number(config.partitioning.installPartitionId) < 1) errors.installPartitionId = tr('val.part.idReq', 'Installation partition must be at least 1.');
   }
   if (config.wifi?.mode === 'auto') {
