@@ -1,11 +1,21 @@
 import { assertUnattendStructure } from './unattendSchema.js';
 
 const XML_ILLEGAL = /[-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/;
-const XML_SURROGATE = /[\uD800-\uDFFF]/;
+function hasUnpairedSurrogate(text) {
+  for (let i = 0; i < text.length; i += 1) {
+    const code = text.charCodeAt(i);
+    if (code >= 0xD800 && code <= 0xDBFF) {
+      const next = text.charCodeAt(i + 1);
+      if (next < 0xDC00 || next > 0xDFFF) return true;
+      i += 1;
+    } else if (code >= 0xDC00 && code <= 0xDFFF) return true;
+  }
+  return false;
+}
 
 export function escapeXml(value) {
   const text = String(value ?? '');
-  if (XML_ILLEGAL.test(text) || XML_SURROGATE.test(text)) throw new Error('Input contains characters that are illegal in XML 1.0.');
+  if (XML_ILLEGAL.test(text) || hasUnpairedSurrogate(text)) throw new Error('Input contains characters that are illegal in XML 1.0.');
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 function tag(name, value, indent = 0) { if (value === undefined || value === null || value === '') return ''; return `${' '.repeat(indent)}<${name}>${escapeXml(value)}</${name}>`; }
