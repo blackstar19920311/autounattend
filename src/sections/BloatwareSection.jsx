@@ -6,9 +6,8 @@ import Checkbox from '../components/Checkbox';
 export default function BloatwareSection({ config, setConfig }) {
   const { t } = useLanguage();
 
-  const bloatwareItems = [
+    const bloatwareItems = [
     { key: 'todo', label: t('bloat.item.todo') },
-    { key: 'experiencesApp', label: t('bloat.item.experiencesApp') },
     { key: 'stickyNotes', label: t('bloat.item.stickyNotes') },
     { key: 'quickAssist', label: t('bloat.item.quickAssist') },
     { key: 'weather', label: t('bloat.item.weather') },

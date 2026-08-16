@@ -636,7 +636,6 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
   if (config.bloatware) {
     const bloatwarePackages = {
       todo: 'Microsoft.Todos',
-      experiencesApp: 'MicrosoftWindows.CrossDevice',
       stickyNotes: 'Microsoft.MicrosoftStickyNotes',
       quickAssist: 'MicrosoftCorporationII.QuickAssist',
       weather: 'Microsoft.BingWeather',

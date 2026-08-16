@@ -45,7 +45,7 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
       };
       // Teljes bloatware tiltás minden presetnél
       base.bloatware = {
-        todo: true, experiencesApp: true, stickyNotes: true, quickAssist: true,
+        todo: true, stickyNotes: true, quickAssist: true,
         weather: true, camera: true, bingNews: true, clipchamp: true,
         clock: true, outlook: true, powerAutomate: true, solitaire: true,
         terminal: true, feedbackHub: true,
