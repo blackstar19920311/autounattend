@@ -7,7 +7,7 @@ export function escapeXml(value) {
 }
 function tag(name, value, indent = 0) { if (value === undefined || value === null || value === '') return ''; return `${' '.repeat(indent)}<${name}>${escapeXml(value)}</${name}>`; }
 function component(name, arch, body, indent = 4) { const attrs = `name="${name}" processorArchitecture="${arch}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"`; return [`${' '.repeat(indent)}<component ${attrs}>`, body, `${' '.repeat(indent)}</component>`].filter(Boolean).join('\n'); }
-function utf16leBase64(text) { const bytes = []; for (let i = 0; i < String(text).length; i += 1) { const c = String(text).charCodeAt(i); bytes.push(c & 255, c >> 8); } let binary = ''; for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.slice(i, i + 0x8000)); return btoa(binary); }
+function utf16leBase64(text) { const value = String(text); const bytes = []; for (let i = 0; i < value.length; i += 1) { const c = value.charCodeAt(i); bytes.push(c & 255, c >> 8); } let binary = ''; for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.slice(i, i + 0x8000)); return btoa(binary); }
 function encodedPassword(password) { return utf16leBase64(`${password}Password`); }
 function archOf(config) { return config.architecture === 'arm64' ? 'arm64' : 'amd64'; }
 function localeOf(config) { return config.installLanguage === 'en' ? 'en-US' : 'hu-HU'; }
@@ -16,8 +16,9 @@ function computerName(config) { const raw = String(config.computerName || 'PC').
 function windowsPe(config, arch, locale) {
   const lines = ['  <settings pass="windowsPE">'];
   lines.push(component('Microsoft-Windows-International-Core-WinPE', arch, ['      <SetupUILanguage>', tag('UILanguage', locale, 8), '      </SetupUILanguage>', tag('InputLocale', config.addEnglishKeyboard && locale === 'hu-HU' ? '040e:0000040e;0409:00000409' : locale === 'hu-HU' ? '040e:0000040e' : '0409:00000409', 6), tag('SystemLocale', locale, 6), tag('UILanguage', locale, 6), tag('UserLocale', locale, 6)].join('\n')));
-  const setup = ['      <UserData>', '        <AcceptEula>true</AcceptEula>', '      </UserData>'];
-  if (config.productKey?.trim()) setup.push('      <ProductKey>', tag('Key', config.productKey.trim(), 8), '      </ProductKey>');
+  const userData = ['        <AcceptEula>true</AcceptEula>'];
+  if (config.productKey?.trim()) userData.push('        <ProductKey>', tag('Key', config.productKey.trim(), 10), '        </ProductKey>');
+  const setup = ['      <UserData>', ...userData, '      </UserData>'];
   // Automatic disk layouts are intentionally not emitted. Windows 11 25H2 WinRE/ESP sizing
   // is media- and device-dependent; managed imaging or Setup UI must choose the target safely.
   lines.push(component('Microsoft-Windows-Setup', arch, setup.join('\n')), '  </settings>'); return lines.join('\n');
