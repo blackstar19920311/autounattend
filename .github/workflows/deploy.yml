@@ -21,9 +21,9 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
       - name: Run regression tests
-        run: npm test
+        run: npm test -- --test-reporter=spec
       - name: Build
         run: npm run build
       - name: Scan production generators for forbidden deployment primitives
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
