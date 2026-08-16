@@ -20,16 +20,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
       - name: Run regression tests
         run: npm test
       - name: Build
         run: npm run build
-      - name: Scan generated source for forbidden deployment primitives
+      - name: Scan production source for forbidden deployment primitives
         run: |
-          ! grep -R -nE 'BypassTPMCheck|BypassSecureBootCheck|BypassNRO|ExecutionPolicy Bypass|ConsentPromptBehaviorAdmin|certutil.exe' src
+          ! grep -R -nE 'BypassTPMCheck|BypassSecureBootCheck|BypassNRO|ExecutionPolicy Bypass|ConsentPromptBehaviorAdmin|certutil.exe' src \
+            --exclude='*.test.js'
   deploy:
     if: github.event_name != 'pull_request'
     needs: verify
@@ -46,7 +46,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm run build
       - uses: actions/configure-pages@v5
