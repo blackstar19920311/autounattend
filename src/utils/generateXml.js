@@ -636,7 +636,6 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
   if (config.bloatware) {
     const bloatwarePackages = {
       todo: 'Microsoft.Todos',
-      experiencesApp: 'MicrosoftWindows.CrossDevice',
       stickyNotes: 'Microsoft.MicrosoftStickyNotes',
       quickAssist: 'MicrosoftCorporationII.QuickAssist',
       weather: 'Microsoft.BingWeather',
@@ -1066,10 +1065,6 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     commands.push({
       command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f',
       description: 'UAC (Felhasználói fiókok felügyelete) kikapcsolása',
-    });
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v PromptOnSecureDesktop /t REG_DWORD /d 0 /f',
-      description: 'UAC: Sötétített asztal prompt letiltása',
     });
   }
 

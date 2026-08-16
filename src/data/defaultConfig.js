@@ -87,7 +87,6 @@ GPT ATTRIBUTES=0x8000000000000001`,
     // 9. Bloatware
     bloatware: {
       todo: false,
-      experiencesApp: false,
       stickyNotes: false,
       quickAssist: false,
       weather: false,
