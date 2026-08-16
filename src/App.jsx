@@ -22,15 +22,29 @@ import { validateConfig } from './utils/validation';
 import { SECTIONS } from './data/sections';
 import { getDefaultConfig } from './data/defaultConfig';
 
+const STORAGE_KEY = 'autounattend.config.v2';
+function secretFreeConfig(config) {
+  const safe = structuredClone(config);
+  safe.password = '';
+  if (safe.wifi) safe.wifi.password = '';
+  if (safe.customScripts) { safe.customScripts.domainPass = ''; safe.customScripts.officeKey = ''; }
+  return safe;
+}
+function loadConfig(language) {
+  const defaults = getDefaultConfig();
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    return saved && typeof saved === 'object' ? { ...defaults, ...saved, installLanguage: saved.installLanguage || language, partitioning: { ...defaults.partitioning, ...saved.partitioning }, wifi: { ...defaults.wifi, ...saved.wifi }, customScripts: { ...defaults.customScripts, ...saved.customScripts } } : { ...defaults, installLanguage: language };
+  } catch { return { ...defaults, installLanguage: language }; }
+}
+
 export default function App() {
   const { t, language } = useLanguage();
-  const [config, setConfig] = useState(() => ({ ...getDefaultConfig(), installLanguage: language }));
-  const [xml, setXml] = useState('');
-  const [errors, setErrors] = useState({});
-  const [status, setStatus] = useState(null);
-  const [activeSection, setActiveSection] = useState('presets');
+  const [config, setConfig] = useState(() => loadConfig(language));
+  const [xml, setXml] = useState(''); const [errors, setErrors] = useState({}); const [status, setStatus] = useState(null); const [activeSection, setActiveSection] = useState('presets');
   const resetPresetRef = useRef(null); const statusTimeoutRef = useRef(null); const visibleSectionsRef = useRef(new Set()); const observerActiveRef = useRef(null);
   const updateConfig = useCallback((updates) => setConfig(prev => typeof updates === 'function' ? updates(prev) : { ...prev, ...updates }), []);
+  useEffect(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(secretFreeConfig(config))); } catch {} }, [config]);
   const showStatus = useCallback((type, message, duration = 5000) => { if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current); setStatus({ type, message }); statusTimeoutRef.current = setTimeout(() => setStatus(null), duration); }, []);
   const handleGenerate = useCallback(() => {
     const validation = validateConfig(config, t);
@@ -38,7 +52,7 @@ export default function App() {
     try { setXml(applyGeneratorGuards(generateXml(config), config)); setErrors({}); showStatus('success', t('app.status.success')); }
     catch (err) { console.error('XML generation error:', err); showStatus('error', err?.message || t('app.status.error.generation')); }
   }, [config, showStatus, t]);
-  const handleReset = useCallback(() => { setConfig({ ...getDefaultConfig(), installLanguage: language }); setXml(''); setErrors({}); setActiveSection('presets'); document.querySelector('.scrollable-sections')?.scrollTo({ top: 0 }); resetPresetRef.current?.(); showStatus('warning', t('app.status.warning.reset')); }, [showStatus, t, language]);
+  const handleReset = useCallback(() => { const next = { ...getDefaultConfig(), installLanguage: language }; setConfig(next); try { localStorage.removeItem(STORAGE_KEY); } catch {} setXml(''); setErrors({}); setActiveSection('presets'); document.querySelector('.scrollable-sections')?.scrollTo({ top: 0 }); resetPresetRef.current?.(); showStatus('warning', t('app.status.warning.reset')); }, [showStatus, t, language]);
   const handleCopy = useCallback((s) => showStatus(s === 'error' ? 'error' : 'success', t(s === 'error' ? 'app.status.copy.error' : 'app.status.copy.success')), [showStatus, t]);
   const handleDownload = useCallback((s) => showStatus(s === 'error' ? 'error' : 'success', t(s === 'error' ? 'app.status.download.error' : 'app.status.download.success')), [showStatus, t]);
   const handleSectionClick = useCallback((id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), []);
