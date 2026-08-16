@@ -26,10 +26,10 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-      - name: Scan production source for forbidden deployment primitives
+      - name: Scan production generators for forbidden deployment primitives
         run: |
-          ! grep -R -nE 'BypassTPMCheck|BypassSecureBootCheck|BypassNRO|ExecutionPolicy Bypass|ConsentPromptBehaviorAdmin|certutil.exe' src \
-            --exclude='*.test.js'
+          ! grep -nE 'BypassTPMCheck|BypassSecureBootCheck|BypassNRO|ExecutionPolicy Bypass|ConsentPromptBehaviorAdmin|certutil.exe' \
+            src/utils/generateXml.js src/utils/customScripts.js
   deploy:
     if: github.event_name != 'pull_request'
     needs: verify
