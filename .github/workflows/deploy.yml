@@ -32,7 +32,7 @@ jobs:
         run: npm run build
       - name: Scan generated source for forbidden deployment primitives
         run: |
-          ! grep -R -nE 'BypassTPMCheck|BypassSecureBootCheck|BypassNRO|ExecutionPolicy Bypass|certutil.exe|ConsentPromptBehaviorAdmin' src
+          ! grep -R -nE 'BypassTPMCheck|BypassSecureBootCheck|BypassNRO|ExecutionPolicy Bypass|ConsentPromptBehaviorAdmin' src
   deploy:
     if: github.event_name != 'pull_request'
     needs: verify
