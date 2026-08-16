@@ -24,7 +24,7 @@ export function applyGeneratorGuards(xml, config) {
       'FORMAT QUICK FS=NTFS LABEL="Recovery"',
       'SET ID="de94bba4-06d1-4d40-a16a-bfd50179d6ac"',
     ];
-    const pathPattern = /(<Path>cmd \/c (?:&gt;|&gt;&gt;)X:\\\\diskpart\.txt echo )([^<]*)(<\\/Path>)/g;
+    const pathPattern = /(<Path>cmd \/c (?:&gt;|&gt;&gt;)X:\\diskpart\.txt echo )([^<]*)(<\/Path>)/g;
     let candidateIndex = 0;
     result = result.replace(pathPattern, (full, prefix, encodedLine, suffix) => {
       const line = encodedLine.replace(/&quot;/g, '"');
