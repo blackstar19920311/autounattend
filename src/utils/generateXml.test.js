@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateXml, validateGeneratedXml, escapeXml } from './generateXml.js';
 import { validateConfig } from './validation.js';
+import { assertUnattendStructure } from './unattendSchema.js';
 
 test('generated XML has safe structure and no deployment payloads', () => {
   const xml = generateXml({ installLanguage: 'hu', architecture: 'amd64', username: 'operator', password: 'Long-enough-Password-123', computerName: 'PC', partitioning: { enabled: false, mode: 'manual' } });
@@ -21,4 +22,5 @@ test('unsafe options and malformed input are rejected', () => {
   assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', wifi: { mode: 'skip', ssid: 'Corp\nGuest', password: '' } }).isValid, false);
   assert.equal(escapeXml('Corp-Guest'), 'Corp-Guest');
   assert.throws(() => escapeXml('bad\u0001value'));
+  assert.throws(() => assertUnattendStructure('<unattend/>'));
 });
