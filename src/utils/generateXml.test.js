@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateXml, validateGeneratedXml } from './generateXml.js';
+import { generateXml, validateGeneratedXml, escapeXml } from './generateXml.js';
 import { validateConfig } from './validation.js';
 
 test('generated XML has safe structure and no deployment payloads', () => {
@@ -11,9 +11,12 @@ test('generated XML has safe structure and no deployment payloads', () => {
   assert.doesNotMatch(xml, /LabConfig|BypassNRO|ExecutionPolicy Bypass|certutil|RunSynchronous/);
 });
 
-test('unsafe partitioning and control characters are rejected', () => {
+test('unsafe partitioning, control characters, and unsupported options are rejected', () => {
   assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', bypassHardware: true }).isValid, false);
   assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', partitioning: { enabled: true, mode: 'auto' } }).isValid, false);
-  assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', wifi: { mode: 'auto', ssid: 'Corp-Guest', password: '12345678' } }).isValid, true);
-  assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', wifi: { mode: 'auto', ssid: 'Corp\nGuest', password: '12345678' } }).isValid, false);
+  assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', wifi: { mode: 'auto', ssid: 'Corp-Guest', password: '12345678' } }).isValid, false);
+  assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', desktopIcons: { computer: true } }).isValid, false);
+  assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', wifi: { mode: 'skip', ssid: 'Corp-Guest', password: '' } }).isValid, true);
+  assert.equal(validateConfig({ username: 'user', password: 'safe', computerName: 'PC', wifi: { mode: 'skip', ssid: 'Corp\nGuest', password: '' } }).isValid, false);
+  assert.equal(escapeXml('Corp-Guest'), 'Corp-Guest');
 });
