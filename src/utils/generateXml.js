@@ -1274,11 +1274,8 @@ $packagesToRemove = @(
   ${packageList}
 )
 foreach ($pkg in $packagesToRemove) {
-  # Eltávolítás a jövőbeli felhasználóktól (Default/Image)
-  Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -like "*$pkg*" } | ForEach-Object {
-    try { Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue } catch {}
-  }
-  # Eltávolítás az aktuálisan bejelentkezett felhasználótól (az első Admin)
+  # Eltávolítás csak az aktuálisan bejelentkezett felhasználótól (az első Admin / aktuális user)
+  # A gépszintű Remove-AppxProvisionedPackage szándékosan kimaradt, hogy ne omoljon össze a Start menü!
   Get-AppxPackage -Name "*$pkg*" | ForEach-Object {
     try { Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue } catch {}
   }
