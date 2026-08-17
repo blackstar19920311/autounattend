@@ -170,8 +170,8 @@ export const translations = {
     'pers.startMenu.hideTips.desc': 'Tippekre, parancsikonokra, új alkalmazásokra és egyebekre vonatkozó javaslatok elrejtése.',
     'pers.startMenu.disableWebSearch': 'Webes keresés letiltása',
     'pers.startMenu.disableWebSearch.desc': 'Webes keresés letiltása a Start menüben.',
-    'pers.startMenu.cleanPins': 'Gépház kitűzése a Start menübe',
-    'pers.startMenu.cleanPins.desc': 'A Gépház ikonjának kitűzése a Start menübe a Default User profilban.',
+    'pers.startMenu.cleanPins': 'Start menü kiürítése és Gépház kitűzése',
+    'pers.startMenu.cleanPins.desc': 'A Start menü alapértelmezett ikonjainak törlése, és csak a Gépház kitűzése (Schneegans módszerrel).',
 
     'perf.title': 'Rendszer finomhangolások és teljesítmény',
     'perf.fastStartup': 'Gyorsindítás kikapcsolása',
@@ -431,8 +431,8 @@ export const translations = {
     'pers.startMenu.hideTips.desc': 'Hide tips, shortcuts, new app suggestions, and more.',
     'pers.startMenu.disableWebSearch': 'Disable Web Search',
     'pers.startMenu.disableWebSearch.desc': 'Disable web search in the Start menu.',
-    'pers.startMenu.cleanPins': 'Pin Settings to Start Menu',
-    'pers.startMenu.cleanPins.desc': 'Pins the Settings app icon to the Start Menu for the Default User.',
+    'pers.startMenu.cleanPins': 'Empty Start Menu and Pin Settings',
+    'pers.startMenu.cleanPins.desc': 'Clears default Start Menu pins and only pins the Settings app (Schneegans method).',
 
     'perf.title': 'System Tweaks and Performance',
     'perf.fastStartup': 'Disable Fast Startup',
