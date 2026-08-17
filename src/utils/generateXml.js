@@ -738,6 +738,22 @@ foreach ($pkg in $packagesToRemove) {
       hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
     }
 
+    // Asztali ikonok (Default User)
+    if (config.desktopIcons) {
+      const iconMap = {
+        computer:     '{20D04FE0-3AEA-1069-A2D8-08002B30309D}',
+        recycleBin:   '{645FF040-5081-101B-9F08-00AA002F954E}',
+        userFiles:    '{59031a47-3f72-44a7-89c5-5595fe6b30ee}',
+        controlPanel: '{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}',
+        network:      '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}',
+      };
+      for (const [key, clsid] of Object.entries(iconMap)) {
+        if (config.desktopIcons[key]) {
+          defaultUserRegCmds.push(`reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v ${clsid} /t REG_DWORD /d 0 /f`);
+        }
+      }
+    }
+
     if (defaultUserRegCmds.length > 0 || hklmGpoCmds.length > 0) {
       runSyncCmds.push('');
       runSyncCmds.push('        <!-- Start menü és személyre szabási beállítások (Default User + GPO) -->');
@@ -1014,33 +1030,7 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
     }
   }
 
-  // --- Asztali ikonok ---
-  const iconMap = {
-    computer:     '{20D04FE0-3AEA-1069-A2D8-08002B30309D}',
-    recycleBin:   '{645FF040-5081-101B-9F08-00AA002F954E}',
-    userFiles:    '{59031a47-3f72-44a7-89c5-5595fe6b30ee}',
-    controlPanel: '{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}',
-    network:      '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}',
-  };
-
-  const iconNames = {
-    computer: 'Számítógép',
-    recycleBin: 'Lomtár',
-    userFiles: 'Felhasználói fájlok',
-    controlPanel: 'Vezérlőpult',
-    network: 'Hálózat',
-  };
-
-  if (config.desktopIcons) {
-    for (const [key, clsid] of Object.entries(iconMap)) {
-      if (config.desktopIcons[key]) {
-        commands.push({
-          command: `cmd /c reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v ${clsid} /t REG_DWORD /d 0 /f`,
-          description: `${iconNames[key]} ikon megjelenítése az asztalon`,
-        });
-      }
-    }
-  }
+  // Asztali ikonok átkerültek a specialize fázisba (Default User)
 
 
   // Start menü és személyre szabási beállítások átkerültek a specialize fázisba (Default User + GPO)
