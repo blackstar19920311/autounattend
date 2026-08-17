@@ -31,7 +31,7 @@ export default function SystemInfoSection({ config, setConfig, errors = {} }) {
 
   const prefix = config.computerName || 'PC';
   const previewName = config.randomSuffix
-    ? `${prefix}-AB12`
+    ? `${prefix}-ABC123`
     : prefix;
 
   const handleArchChange = (value) => {

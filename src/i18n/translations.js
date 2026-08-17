@@ -127,7 +127,7 @@ export const translations = {
     'bypass.eula.desc': 'Az EULA automatikusan elfogadásra kerül a telepítés során.',
 
     'user.computerName': 'Számítógépnév',
-    'user.randomSuffix': 'Random utótag (2 betű + 2 szám)',
+    'user.randomSuffix': 'Random utótag (3 betű + 3 szám)',
     'user.suffix.desc': '— Az utótag telepítéskor generálódik, így minden gép egyedi nevet kap.',
     'user.productKey': 'Termékkulcs (opcionális)',
     'user.productKey.ph': 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
@@ -388,7 +388,7 @@ export const translations = {
     'bypass.eula.desc': 'The EULA will be automatically accepted during setup.',
 
     'user.computerName': 'Computer Name',
-    'user.randomSuffix': 'Random suffix (2 letters + 2 numbers)',
+    'user.randomSuffix': 'Random suffix (3 letters + 3 numbers)',
     'user.suffix.desc': '— The suffix is generated during install, giving each PC a unique name.',
     'user.productKey': 'Product Key (optional)',
     'user.productKey.ph': 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
