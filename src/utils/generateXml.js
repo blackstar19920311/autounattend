@@ -749,7 +749,7 @@ foreach ($pkg in $packagesToRemove) {
       };
       for (const [key, clsid] of Object.entries(iconMap)) {
         if (config.desktopIcons[key]) {
-          defaultUserRegCmds.push(`reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v ${clsid} /t REG_DWORD /d 0 /f`);
+          defaultUserRegCmds.push(`reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v "${clsid}" /t REG_DWORD /d 0 /f`);
         }
       }
     }
