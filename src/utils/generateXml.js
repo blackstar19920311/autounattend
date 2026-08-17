@@ -631,52 +631,6 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     order = orderRef.val;
   }
 
-  // --- Bloatware eltávolítása (Specialize fázis - SYSTEM szinten, még bejelentkezés előtt) ---
-  if (config.bloatware) {
-    const bloatwarePackages = {
-      todo: 'Microsoft.Todos',
-      stickyNotes: 'Microsoft.MicrosoftStickyNotes',
-      quickAssist: 'MicrosoftCorporationII.QuickAssist',
-      weather: 'Microsoft.BingWeather',
-      camera: 'Microsoft.WindowsCamera',
-      bingNews: 'Microsoft.BingNews',
-      clipchamp: 'Clipchamp.Clipchamp',
-      clock: 'Microsoft.WindowsAlarms',
-      outlook: 'Microsoft.OutlookForWindows',
-      powerAutomate: 'Microsoft.PowerAutomateDesktop',
-      solitaire: 'Microsoft.MicrosoftSolitaireCollection',
-      terminal: 'Microsoft.WindowsTerminal',
-      feedbackHub: 'Microsoft.WindowsFeedbackHub',
-    };
-
-    const selectedPackages = [];
-    for (const [key, packageName] of Object.entries(bloatwarePackages)) {
-      if (config.bloatware[key]) {
-        const packages = packageName.split(' ');
-        selectedPackages.push(...packages);
-      }
-    }
-
-    if (selectedPackages.length > 0) {
-      runSyncCmds.push('');
-      runSyncCmds.push('        <!-- Bloatware eltávolítása (Provisioned csomagok - Specialize) -->');
-      const packageList = selectedPackages.map(p => `'${p}'`).join(',\n  ');
-      const bloatwareScript = `
-$packagesToRemove = @(
-  ${packageList}
-)
-foreach ($pkg in $packagesToRemove) {
-  Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -like "*$pkg*" } | ForEach-Object {
-    try { Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue } catch {}
-  }
-}
-`;
-      const orderRef = { val: order };
-      addBase64ScriptToSyncCmds(runSyncCmds, orderRef, bloatwareScript.trim(), 'C:\\Windows\\Temp\\bloatware.b64', 'C:\\Windows\\Temp\\bloatware.ps1');
-      order = orderRef.val;
-    }
-  }
-
   // --- Start menü és személyre szabási beállítások (Default User profil + HKLM GPO házirendek) ---
   {
     const defaultUserRegCmds = [];
@@ -1291,6 +1245,60 @@ if($ok){
         'Egyéni Szkript: Active Directory Tartományba léptetés'
       ));
       scriptCounter++;
+    }
+
+    // --- Bloatware eltávolítása (FirstLogon fázis - az aktív és a jövőbeli felhasználóknak) ---
+    if (config.bloatware) {
+      const bloatwarePackages = {
+        todo: 'Microsoft.Todos',
+        stickyNotes: 'Microsoft.MicrosoftStickyNotes',
+        quickAssist: 'MicrosoftCorporationII.QuickAssist',
+        weather: 'Microsoft.BingWeather',
+        camera: 'Microsoft.WindowsCamera',
+        bingNews: 'Microsoft.BingNews',
+        clipchamp: 'Clipchamp.Clipchamp',
+        clock: 'Microsoft.WindowsAlarms',
+        outlook: 'Microsoft.OutlookForWindows',
+        powerAutomate: 'Microsoft.PowerAutomateDesktop',
+        solitaire: 'Microsoft.MicrosoftSolitaireCollection',
+        terminal: 'Microsoft.WindowsTerminal',
+        feedbackHub: 'Microsoft.WindowsFeedbackHub',
+      };
+
+      const selectedPackages = [];
+      for (const [key, packageName] of Object.entries(bloatwarePackages)) {
+        if (config.bloatware[key]) {
+          const packages = packageName.split(' ');
+          selectedPackages.push(...packages);
+        }
+      }
+
+      if (selectedPackages.length > 0) {
+        const packageList = selectedPackages.map(p => `'${p}'`).join(',\n  ');
+        const bloatwareScript = `
+$packagesToRemove = @(
+  ${packageList}
+)
+foreach ($pkg in $packagesToRemove) {
+  # Eltávolítás a jövőbeli felhasználóktól (Default/Image)
+  Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -like "*$pkg*" } | ForEach-Object {
+    try { Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue } catch {}
+  }
+  # Eltávolítás az aktuálisan bejelentkezett felhasználótól (az első Admin)
+  Get-AppxPackage -Name "*$pkg*" | ForEach-Object {
+    try { Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue } catch {}
+  }
+}
+`;
+        scriptPaths.push(addBase64ScriptToFirstLogon(
+          commands,
+          bloatwareScript.trim(),
+          `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
+          `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
+          'Egyéni Szkript: Bloatware alkalmazások eltávolítása'
+        ));
+        scriptCounter++;
+      }
     }
 
     // Windows Update (Utolsóként a takarítás előtt)
