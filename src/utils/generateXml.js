@@ -677,6 +677,7 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     // Tippek és javaslatok kikapcsolása (HKLM GPO - minden felhasználóra érvényes)
     if (config.hideTipsAndSuggestions) {
       hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f');
+      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableCloudOptimizedContent /t REG_DWORD /d 1 /f');
     }
 
     // Webes keresés letiltása (HKLM GPO - minden felhasználóra érvényes)
