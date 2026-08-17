@@ -61,6 +61,7 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
       base.hideTaskbarIcons = true;
       base.showAllTrayIcons = true;
       base.disableTransparency = true;
+      base.disableWallpaperChange = true;
       base.hideRecentApps = true;
       base.hideMostUsedApps = true;
       base.hideRecommendedFiles = true;
@@ -75,6 +76,7 @@ export default function PresetsSection({ config, setConfig, resetPresetRef }) {
         base.partitioning.diskNumber = 0;
         base.partitioning.installPartitionId = 3;
         base.bypassHardware = false;
+        base.disableWallpaperChange = false;
         base.wifi = { mode: 'skip', ssid: '', password: '' };
         base.computerName = 'IT';
         base.randomSuffix = true;
