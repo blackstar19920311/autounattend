@@ -648,6 +648,9 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
       defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f');
     }
 
+    // Fájlkezelő indítása az "Ez a gép" nézetben (1 = Ez a gép, 2 = Kezdőlap)
+    defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f');
+
     // Egérgyorsítás kikapcsolása (Default User)
     if (config.disableMouseAcceleration) {
       defaultUserRegCmds.push('reg add "HKU\\DefaultUser\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f');
