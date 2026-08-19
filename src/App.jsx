@@ -11,7 +11,6 @@ import UserAccountSection from './sections/UserAccountSection'
 import PersonalizationSection from './sections/PersonalizationSection'
 import PrivacySection from './sections/PrivacySection'
 import PerformanceSection from './sections/PerformanceSection'
-import BloatwareSection from './sections/BloatwareSection'
 import WifiSection from './sections/WifiSection'
 import CustomScriptsSection from './sections/CustomScriptsSection'
 
@@ -251,7 +250,6 @@ export default function App() {
           <div id="personalization"><PersonalizationSection config={config} setConfig={updateConfig} /></div>
           <div id="privacy"><PrivacySection config={config} setConfig={updateConfig} /></div>
           <div id="performance"><PerformanceSection config={config} setConfig={updateConfig} /></div>
-          <div id="bloatware"><BloatwareSection config={config} setConfig={updateConfig} /></div>
           <div id="custom-scripts"><CustomScriptsSection config={config} setConfig={updateConfig} errors={errors} /></div>
           </div>
 

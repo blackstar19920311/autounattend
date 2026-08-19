@@ -1032,9 +1032,6 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
   // Egérgyorsulás kikapcsolása kikerült innen, most a specialize fázisban van (Default User)
 
 
-  // Bloatware eltávolítás átkerült a specialize fázisba (Remove-AppxProvisionedPackage)
-
-
   // --- 8. Egyéni Szkriptek (FirstLogon) ---
   if (config.customScripts) {
     let scriptCounter = 1;
@@ -1242,57 +1239,6 @@ if($ok){
         'Egyéni Szkript: Active Directory Tartományba léptetés'
       ));
       scriptCounter++;
-    }
-
-    // --- Bloatware eltávolítása (FirstLogon fázis - az aktív és a jövőbeli felhasználóknak) ---
-    if (config.bloatware) {
-      const bloatwarePackages = {
-        todo: 'Microsoft.Todos',
-        stickyNotes: 'Microsoft.MicrosoftStickyNotes',
-        quickAssist: 'MicrosoftCorporationII.QuickAssist',
-        weather: 'Microsoft.BingWeather',
-        camera: 'Microsoft.WindowsCamera',
-        bingNews: 'Microsoft.BingNews',
-        clipchamp: 'Clipchamp.Clipchamp',
-        clock: 'Microsoft.WindowsAlarms',
-        outlook: 'Microsoft.OutlookForWindows',
-        powerAutomate: 'Microsoft.PowerAutomateDesktop',
-        solitaire: 'Microsoft.MicrosoftSolitaireCollection',
-        terminal: 'Microsoft.WindowsTerminal',
-        feedbackHub: 'Microsoft.WindowsFeedbackHub',
-      };
-
-      const selectedPackages = [];
-      for (const [key, packageName] of Object.entries(bloatwarePackages)) {
-        if (config.bloatware[key]) {
-          const packages = packageName.split(' ');
-          selectedPackages.push(...packages);
-        }
-      }
-
-      if (selectedPackages.length > 0) {
-        const packageList = selectedPackages.map(p => `'${p}'`).join(',\n  ');
-        const bloatwareScript = `
-$packagesToRemove = @(
-  ${packageList}
-)
-foreach ($pkg in $packagesToRemove) {
-  # Eltávolítás csak az aktuálisan bejelentkezett felhasználótól (az első Admin / aktuális user)
-  # A gépszintű Remove-AppxProvisionedPackage szándékosan kimaradt, hogy ne omoljon össze a Start menü!
-  Get-AppxPackage -Name "*$pkg*" | ForEach-Object {
-    try { Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue } catch {}
-  }
-}
-`;
-        scriptPaths.push(addBase64ScriptToFirstLogon(
-          commands,
-          bloatwareScript.trim(),
-          `C:\\Windows\\Temp\\custom_script_${scriptCounter}.b64`,
-          `C:\\Windows\\Temp\\custom_script_${scriptCounter}.ps1`,
-          'Egyéni Szkript: Bloatware alkalmazások eltávolítása'
-        ));
-        scriptCounter++;
-      }
     }
 
     // Windows Update (Utolsóként a takarítás előtt)

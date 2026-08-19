@@ -17,7 +17,6 @@ const ICON_COLORS = {
   'personalization': '#ec4899', // Pink
   'privacy': '#6366f1',         // Indigo
   'performance': '#f97316',     // Orange
-  'bloatware': '#14b8a6',       // Teal
   'custom-scripts': '#eab308'   // Yellow
 };
 

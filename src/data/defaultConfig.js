@@ -83,23 +83,6 @@ GPT ATTRIBUTES=0x8000000000000001`,
     disableFastStartup: false,
     disableSleep: false,
     disableMouseAcceleration: false,
-
-    // 9. Bloatware
-    bloatware: {
-      todo: false,
-      stickyNotes: false,
-      quickAssist: false,
-      weather: false,
-      camera: false,
-      bingNews: false,
-      clipchamp: false,
-      clock: false,
-      outlook: false,
-      powerAutomate: false,
-      solitaire: false,
-      terminal: false,
-      feedbackHub: false,
-    },
     
     // 10. Egyéni szkriptek (FirstLogon)
     customScripts: {

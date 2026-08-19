@@ -14,7 +14,6 @@ export const translations = {
     'section.personalization': 'Személyre szabás',
     'section.privacy': 'Adatvédelem',
     'section.performance': 'Teljesítmény',
-    'section.bloatware': 'Bloatware',
     'section.customScripts': 'Egyéni Szkriptek',
     'btn.reset': 'Alapértelmezések visszaállítása',
     'presets.enable': 'Gyorsbeállítások használata',
@@ -47,8 +46,6 @@ export const translations = {
     'app.status.success.sub': 'Az autounattend.xml elkészült.',
     'app.reset.btn': 'Alapértelmezések visszaállítása',
     'app.generate.btn': 'XML Generálása',
-
-    'bloat.title': 'Bloatware eltávolítása (Opcionális)',
     'bloat.selectAll': 'Összes kijelölése',
     'bloat.deselectAll': 'Kijelölés törlése',
     'bloat.item.todo': 'Microsoft To Do',
@@ -257,8 +254,7 @@ export const translations = {
     'tt.personalizationDesc': 'Az asztali ikonok megjelenítésének, a tálca vizuális tisztításának és a Start menü funkcióinak testreszabása, például az áttetszőség és a webes keresés letiltásával.',
     'tt.privacyDesc': 'A Windows diagnosztikai adatgyűjtésének csökkentése, valamint az Edge üdvözlőképernyőjének és a Fiókfelügyelet (UAC) letiltása. Figyelem, az UAC kikapcsolása biztonsági kockázatot jelenthet.',
     'tt.performanceDesc': 'A gyorsindítás, az automatikus alvó állapot és az egérgyorsítás letiltása a jobb rendszerteljesítmény és a precízebb egérmozgás elérése érdekében.',
-    'tt.csDesc': 'A telepítés után automatikusan lefutó műveletek beállítása, mint például a frissítések letöltése, a különböző alkalmazások és az Office csomag telepítése, valamint a számítógép tartományba léptetése.',
-    'tt.bloatwareDesc': 'A Windows előre telepített alkalmazásainak (bloatware) eltávolítása. A kiválasztott programok már a telepítés során törlésre kerülnek, így nem foglalják a helyet és az erőforrásokat.'
+    'tt.csDesc': 'A telepítés után automatikusan lefutó műveletek beállítása, mint például a frissítések letöltése, a különböző alkalmazások és az Office csomag telepítése, valamint a számítógép tartományba léptetése.'
 
   },
   en: {
@@ -275,7 +271,6 @@ export const translations = {
     'section.personalization': 'Personalization',
     'section.privacy': 'Privacy',
     'section.performance': 'Performance',
-    'section.bloatware': 'Bloatware',
     'section.customScripts': 'Custom Scripts',
     'btn.reset': 'Restore Defaults',
     'presets.enable': 'Use Presets',
@@ -309,8 +304,6 @@ export const translations = {
     'app.status.success.sub': 'autounattend.xml is ready.',
     'app.reset.btn': 'Restore Defaults',
     'app.generate.btn': 'Generate XML',
-
-    'bloat.title': 'Bloatware Removal (Optional)',
     'bloat.selectAll': 'Select All',
     'bloat.deselectAll': 'Deselect All',
     'bloat.item.todo': 'Microsoft To-Do',
@@ -518,8 +511,7 @@ export const translations = {
     'tt.personalizationDesc': 'Customize the appearance of desktop icons, clean up the taskbar, and modify Start menu features such as disabling transparency and web search.',
     'tt.privacyDesc': 'Reduce Windows diagnostic data collection and disable the Edge welcome screen and User Account Control (UAC). Warning, disabling UAC may present a security risk.',
     'tt.performanceDesc': 'Disable fast startup, automatic sleep mode, and mouse acceleration to achieve better system performance and accurate mouse tracking.',
-    'tt.csDesc': 'Configure post-installation tasks that run automatically, such as downloading updates, installing various applications and the Office suite, and joining a domain.',
-    'tt.bloatwareDesc': 'Remove pre-installed Windows applications (bloatware). The selected apps are removed during setup, saving disk space and system resources.'
+    'tt.csDesc': 'Configure post-installation tasks that run automatically, such as downloading updates, installing various applications and the Office suite, and joining a domain.'
 
   }
 };

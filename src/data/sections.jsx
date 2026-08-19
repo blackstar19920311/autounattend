@@ -10,6 +10,5 @@ export const SECTIONS = [
   { id: 'personalization', labelKey: 'section.personalization', icon: <Palette size={18} /> },
   { id: 'privacy', labelKey: 'section.privacy', icon: <EyeOff size={18} /> },
   { id: 'performance', labelKey: 'section.performance', icon: <Zap size={18} /> },
-  { id: 'bloatware', labelKey: 'section.bloatware', icon: <Trash2 size={18} /> },
   { id: 'custom-scripts', labelKey: 'section.customScripts', icon: <Code size={18} /> },
 ]
