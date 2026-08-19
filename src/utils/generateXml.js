@@ -689,6 +689,16 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
       hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f');
     }
 
+    // --- FirstLogonCommands-ból áthozott gépszintű kulcsok (HKLM) ---
+    if (config.bypassNetwork) hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f');
+    if (config.disableTelemetry) {
+      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f');
+      hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f');
+    }
+    if (config.disableUAC) hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f');
+    if (config.disableEdgeFirstRun) hklmGpoCmds.push('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t REG_DWORD /d 1 /f');
+    if (config.disableFastStartup) hklmGpoCmds.push('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f');
+
     // Asztali ikonok (Default User)
     if (config.desktopIcons) {
       const iconMap = {
