@@ -1006,10 +1006,6 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
       command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f',
       description: 'UAC (Felhasználói fiókok felügyelete) kikapcsolása',
     });
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v EnableLUA /t REG_DWORD /d 0 /f',
-      description: 'UAC: LUA (Limited User Account) teljes kikapcsolása',
-    });
   }
 
   if (config.disableEdgeFirstRun) {
