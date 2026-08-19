@@ -925,13 +925,6 @@ function buildFirstLogonCommands(config, uiLanguage) {
     });
   }
 
-  // --- Hálózat megkerülése ---
-  if (config.bypassNetwork) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f',
-      description: 'Hálózati követelmény megkerülése',
-    });
-  }
 
   // --- Wi-Fi beállítások ---
   if (config.wifi) {
@@ -999,39 +992,9 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
 
   // Start menü takarítás kikerült innen, most a specialize fázisban van (LayoutModification.json)
 
-  if (config.disableTelemetry) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f',
-      description: 'Telemetria letiltása (rendszabály)',
-    });
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f',
-      description: 'Telemetria letiltása (adatgyűjtés)',
-    });
-  }
 
-  // --- UAC Kikapcsolása ---
-  if (config.disableUAC) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f',
-      description: 'UAC (Felhasználói fiókok felügyelete) kikapcsolása',
-    });
-  }
 
-  if (config.disableEdgeFirstRun) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t REG_DWORD /d 1 /f',
-      description: 'Edge első indítási képernyők letiltása',
-    });
-  }
 
-  // --- Gyorsindítás kikapcsolása ---
-  if (config.disableFastStartup) {
-    commands.push({
-      command: 'cmd /c reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f',
-      description: 'Gyorsindítás kikapcsolása',
-    });
-  }
 
   // Alvás letiltása és teljesítmény energiaséma kikerült innen, most a specialize fázisban van
 
