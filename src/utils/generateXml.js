@@ -1017,8 +1017,11 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
           'if(-not (Test-Path "D:\\Apps\\TotalCommander")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\TotalCommander" -Force -ErrorAction Stop | Out-Null } catch {} }\n$apps=@('
         );
       } else {
-        // Ha nem 'autocd', akkor kényszerítsünk mindent a C:\ meghajtóra
-        scriptA = scriptA.replace(/D:\\\\/g, 'C:\\\\');
+        // Ha nem 'autocd', akkor távolítsuk el az egyéni D:\ útvonalakat és override-okat
+        // Így a Winget teljesen az alapértelmezett (default) útvonalakat fogja használni
+        scriptA = scriptA
+          .replace(/;Location="D:\\\\[^"]+"/g, '')
+          .replace(/;Override="\/q INSTALLDIR=D:\\\\[^"]+"/g, '');
       }
       scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
