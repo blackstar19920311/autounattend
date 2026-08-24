@@ -1016,6 +1016,9 @@ netsh wlan connect name='${ssid.replace(/'/g, "''")}'
           '$apps=@(',
           'if(-not (Test-Path "D:\\Apps\\TotalCommander")){ try { New-Item -ItemType Directory -Path "D:\\Apps\\TotalCommander" -Force -ErrorAction Stop | Out-Null } catch {} }\n$apps=@('
         );
+      } else {
+        // Ha nem 'autocd', akkor kényszerítsünk mindent a C:\ meghajtóra
+        scriptA = scriptA.replace(/D:\\\\/g, 'C:\\\\');
       }
       scriptPaths.push(addBase64ScriptToFirstLogon(
         commands,
